@@ -114,7 +114,7 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 	return err
 }
 
-func (mh *MqttTransport) PublishRaw(topic string, bytem []byte, domain string) {
+func (mh *MqttTransport) PublishRaw(topic string, bytem []byte) {
 	log.Debug("Publishing msg to topic:", topic)
 	mh.client.Publish(topic, mh.pubQos, false, bytem)
 }

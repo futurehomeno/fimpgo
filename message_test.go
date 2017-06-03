@@ -70,17 +70,94 @@ func BenchmarkFimpMessage_Serialize2(b *testing.B) {
 	}
 }
 
-func TestNewMessageFromBytes(t *testing.T) {
+func TestNewMessageFromBytes_BoolValue(t *testing.T) {
 	msgString := "{\"serv\":\"out_bin_switch\",\"type\":\"cmd.binary.set\",\"val_t\":\"bool\",\"val\":true,\"props\":null,\"tags\":null}"
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
 	}
 	val, err := fimp.GetBoolValue()
-	if val == false {
+	if val != true {
 		t.Error("Wrong value")
 	}
 	t.Log("ok")
+}
+
+func TestNewMessageFromBytes_BoolInt(t *testing.T) {
+	msgString := "{\"serv\":\"out_bin_switch\",\"type\":\"cmd.binary.set\",\"val_t\":\"int\",\"val\":1234,\"props\":null,\"tags\":null}"
+	fimp, err := NewMessageFromBytes([]byte(msgString))
+	if err != nil {
+		t.Error(err)
+	}
+	val, err := fimp.GetIntValue()
+	if val != 1234 {
+		t.Error("Wrong value ",val)
+	}
+	t.Log("ok")
+}
+
+func TestFimpMessage_GetStrArrayValue(t *testing.T) {
+	msgString := "{\"serv\":\"dev_sys\",\"type\":\"cmd.config.set\",\"val_t\":\"str_array\",\"val\":[\"val1\",\"val2\"],\"props\":null,\"tags\":null}"
+	fimp, err := NewMessageFromBytes([]byte(msgString))
+	if err != nil {
+		t.Error(err)
+	}
+
+	val, err := fimp.GetStrArrayValue()
+	if err != nil {
+		t.Error(err)
+	}
+	if val[1] != "val2" {
+		t.Error("Wrong map result : ",val[1])
+	}
+}
+
+func TestFimpMessage_GetIntArrayValue(t *testing.T) {
+	msgString := "{\"serv\":\"dev_sys\",\"type\":\"cmd.config.set\",\"val_t\":\"str_array\",\"val\":[123,1234],\"props\":null,\"tags\":null}"
+	fimp, err := NewMessageFromBytes([]byte(msgString))
+	if err != nil {
+		t.Error(err)
+	}
+
+	val, err := fimp.GetIntArrayValue()
+	if err != nil {
+		t.Error(err)
+	}
+	if val[1] != 1234 {
+		t.Error("Wrong map result : ",val[1])
+	}
+}
+
+func TestFimpMessage_GetFloatArrayValue(t *testing.T) {
+	msgString := "{\"serv\":\"dev_sys\",\"type\":\"cmd.config.set\",\"val_t\":\"float_array\",\"val\":[1.5,2.5],\"props\":null,\"tags\":null}"
+	fimp, err := NewMessageFromBytes([]byte(msgString))
+	if err != nil {
+		t.Error(err)
+	}
+
+	val, err := fimp.GetFloatArrayValue()
+	if err != nil {
+		t.Error(err)
+	}
+	if val[1] != 2.5 {
+		t.Error("Wrong map result : ",val[1])
+	}
+}
+
+func TestFimpMessage_GetBoolArrayValue(t *testing.T) {
+	msgString := "{\"serv\":\"dev_sys\",\"type\":\"cmd.config.set\",\"val_t\":\"bool_array\",\"val\":[true,true],\"props\":null,\"tags\":null}"
+	fimp, err := NewMessageFromBytes([]byte(msgString))
+	if err != nil {
+		t.Error(err)
+	}
+
+	val, err := fimp.GetBoolArrayValue()
+	if err != nil {
+		t.Error(err)
+	}
+	if val[1] != true {
+		t.Error("Wrong map result : ",val[1])
+	}
 }
 
 func TestFimpMessage_GetStrMapValue(t *testing.T) {
@@ -95,6 +172,54 @@ func TestFimpMessage_GetStrMapValue(t *testing.T) {
 		t.Error(err)
 	}
 	if val["param2"] != "val2" {
+		t.Error("Wrong map result")
+	}
+}
+
+func TestFimpMessage_GetIntMapValue(t *testing.T) {
+	msgString := "{\"serv\":\"dev_sys\",\"type\":\"cmd.config.set\",\"val_t\":\"int_map\",\"val\":{\"param1\":1,\"param2\":2},\"props\":null,\"tags\":null}"
+	fimp, err := NewMessageFromBytes([]byte(msgString))
+	if err != nil {
+		t.Error(err)
+	}
+
+	val, err := fimp.GetIntMapValue()
+	if err != nil {
+		t.Error(err)
+	}
+	if val["param2"] != 2 {
+		t.Error("Wrong map result")
+	}
+}
+
+func TestFimpMessage_GetFloatMapValue(t *testing.T) {
+	msgString := "{\"serv\":\"dev_sys\",\"type\":\"cmd.config.set\",\"val_t\":\"float_map\",\"val\":{\"param1\":0.5,\"param2\":2.5},\"props\":null,\"tags\":null}"
+	fimp, err := NewMessageFromBytes([]byte(msgString))
+	if err != nil {
+		t.Error(err)
+	}
+
+	val, err := fimp.GetFloatMapValue()
+	if err != nil {
+		t.Error(err)
+	}
+	if val["param2"] != 2.5 {
+		t.Error("Wrong map result")
+	}
+}
+
+func TestFimpMessage_GetBoolMapValue(t *testing.T) {
+	msgString := "{\"serv\":\"dev_sys\",\"type\":\"cmd.config.set\",\"val_t\":\"bool_map\",\"val\":{\"param1\":true,\"param2\":true},\"props\":null,\"tags\":null}"
+	fimp, err := NewMessageFromBytes([]byte(msgString))
+	if err != nil {
+		t.Error(err)
+	}
+
+	val, err := fimp.GetBoolMapValue()
+	if err != nil {
+		t.Error(err)
+	}
+	if val["param2"] != true {
 		t.Error("Wrong map result")
 	}
 }

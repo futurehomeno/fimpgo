@@ -156,6 +156,8 @@ func (msg *FimpMessage) SerializeToJson() ([]byte, error) {
 
 }
 
+
+
 func NewMessage(type_ string, service string, valueType string, value interface{}, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
 	msg := FimpMessage{Type: type_,
 		Service:    service,
@@ -241,7 +243,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	case VTypeBoolArray:
 		val := []bool{}
 		jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-			item, _ := jsonparser.GetBoolean(value)
+			item, _ := jsonparser.ParseBoolean(value)
 			val = append(val, item)
 		}, "val")
 
@@ -249,7 +251,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	case VTypeStrArray:
 		val := []string{}
 		jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-			item, _ := jsonparser.GetString(value)
+			item, _ := jsonparser.ParseString(value)
 			val = append(val, item)
 		}, "val")
 
@@ -257,14 +259,14 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	case VTypeIntArray:
 		val := []int64{}
 		jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-			item, _ := jsonparser.GetInt(value)
+			item, _ := jsonparser.ParseInt(value)
 			val = append(val, item)
 		}, "val")
 		fimpmsg.Value = val
 	case VTypeFloatArray:
 		val := []float64{}
 		jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-			item, _ := jsonparser.GetFloat(value)
+			item, _ := jsonparser.ParseFloat(value)
 			val = append(val, item)
 		}, "val")
 		fimpmsg.Value = val
@@ -272,7 +274,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	case VTypeStrMap:
 		val := make(map[string]string)
 		jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
-			val[string(key)], err = jsonparser.GetString(value)
+			val[string(key)],err = jsonparser.ParseString(value)
 			return nil
 		}, "val")
 		fimpmsg.Value = val
@@ -280,7 +282,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	case VTypeIntMap:
 		val := make(map[string]int64)
 		jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
-			val[string(key)], err = jsonparser.GetInt(value)
+			val[string(key)], err = jsonparser.ParseInt(value)
 			return nil
 		}, "val")
 		fimpmsg.Value = val
@@ -288,7 +290,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	case VTypeFloatMap:
 		val := make(map[string]float64)
 		jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
-			val[string(key)], err = jsonparser.GetFloat(value)
+			val[string(key)], err = jsonparser.ParseFloat(value)
 			return nil
 		}, "val")
 		fimpmsg.Value = val
@@ -296,7 +298,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	case VTypeBoolMap:
 		val := make(map[string]bool)
 		jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
-			val[string(key)], err = jsonparser.GetBoolean(value)
+			val[string(key)], err = jsonparser.ParseBoolean(value)
 			return nil
 		}, "val")
 		fimpmsg.Value = val
