@@ -13,7 +13,7 @@ type MqttTransport struct {
 	pubQos     byte
 }
 
-type MessageHandler func(topic string, addr *Address, iotMsg *FimpMessage)
+type MessageHandler func(topic string, addr *Address, iotMsg *FimpMessage , rawPayload []byte)
 
 // NewMqttAdapter constructor
 //serverUri="tcp://localhost:1883"
@@ -94,7 +94,7 @@ func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
 	}
 	fimpMsg, err := NewMessageFromBytes(msg.Payload())
 	if err == nil {
-		mh.msgHandler(msg.Topic(), addr, fimpMsg)
+		mh.msgHandler(msg.Topic(), addr, fimpMsg , msg.Payload())
 	} else {
 		log.Debug(string(msg.Payload()))
 		log.Error("Error processing payload :" ,err)

@@ -8,7 +8,7 @@ import (
 
 var msgChan = make(chan int)
 
-func onMsg(topic string, addr *Address, iotMsg *FimpMessage){
+func onMsg(topic string, addr *Address, iotMsg *FimpMessage,rawMessage []byte){
 	if addr.ServiceName == "temp_sensor" && addr.ServiceAddress == "300"{
 		msgChan <- 1
 	}else {
