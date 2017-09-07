@@ -11,6 +11,8 @@ type MqttTransport struct {
 	msgHandler MessageHandler
 	subQos     byte
 	pubQos     byte
+	subs       map[string]byte
+
 }
 
 type MessageHandler func(topic string, addr *Address, iotMsg *FimpMessage , rawPayload []byte)
@@ -32,6 +34,8 @@ func NewMqttTransport(serverURI string, clientID string, username string, passwo
 	mh.client = MQTT.NewClient(opts)
 	mh.pubQos = pubQos
 	mh.subQos = subQos
+	mh.subs = make(map[string]byte)
+
 	return &mh
 }
 
@@ -42,7 +46,7 @@ func (mh *MqttTransport) SetMessageHandler(msgHandler MessageHandler) {
 
 // Start , starts adapter async.
 func (mh *MqttTransport) Start() error {
-	log.Info("Connecting to MQTT broker ")
+	log.Info("<MqttAd> Connecting to MQTT broker ")
 	if token := mh.client.Connect(); token.Wait() && token.Error() != nil {
 		return token.Error()
 	}
@@ -58,38 +62,45 @@ func (mh *MqttTransport) Stop() {
 func (mh *MqttTransport) Subscribe(topic string) error {
 	//subscribe to the topic /go-mqtt/sample and request messages to be delivered
 	//at a maximum qos of zero, wait for the receipt to confirm the subscription
-	log.Debug("Subscribing to topic:", topic)
+	log.Debug("<MqttAd> Subscribing to topic:", topic)
 	if token := mh.client.Subscribe(topic, mh.subQos, nil); token.Wait() && token.Error() != nil {
-		log.Error("Can't subscribe. Error :", token.Error())
+		log.Error("<MqttAd> Can't subscribe. Error :", token.Error())
 		return token.Error()
 	}
+	mh.subs[topic]=mh.subQos
 	return nil
 }
 
 // Unsubscribe , unsubscribing from topic
 func (mh *MqttTransport) Unsubscribe(topic string) error {
-	log.Debug("Unsubscribing from topic:", topic)
+	log.Debug("<MqttAd> Unsubscribing from topic:", topic)
 	if token := mh.client.Unsubscribe(topic); token.Wait() && token.Error() != nil {
 		return token.Error()
 	}
+	delete(mh.subs,topic)
 	return nil
 }
 
 func (mh *MqttTransport) onConnectionLost(client MQTT.Client, err error) {
-	log.Errorf("Connection lost with MQTT broker . Error : %v", err)
+	log.Errorf("<MqttAd> Connection lost with MQTT broker . Error : %v", err)
 }
 
 func (mh *MqttTransport) onConnect(client MQTT.Client) {
-	log.Infof("Connection established with MQTT broker .")
+	log.Infof("<MqttAd> Connection established with MQTT broker .")
+	if len(mh.subs) >0 {
+		if token := mh.client.SubscribeMultiple(mh.subs, nil); token.Wait() && token.Error() != nil {
+			log.Error("Can't subscribe. Error :", token.Error())
+		}
+	}
 }
 
 //define a function for the default message handler
 func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
-	log.Debugf(" New msg from TOPIC: %s", msg.Topic())
+	log.Debugf("<MqttAd> New msg from TOPIC: %s", msg.Topic())
 	// log.Debug("MSG: %s\n", msg.Payload())
 	addr, err := NewAddressFromString(msg.Topic())
 	if err != nil {
-		log.Error("Error processing address :" ,err)
+		log.Error("<MqttAd> Error processing address :" ,err)
 		return
 	}
 	fimpMsg, err := NewMessageFromBytes(msg.Payload())
@@ -97,7 +108,7 @@ func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
 		mh.msgHandler(msg.Topic(), addr, fimpMsg , msg.Payload())
 	} else {
 		log.Debug(string(msg.Payload()))
-		log.Error("Error processing payload :" ,err)
+		log.Error("<MqttAd> Error processing payload :" ,err)
 
 	}
 }
@@ -107,7 +118,7 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 	bytm, err := fimpMsg.SerializeToJson()
 	topic := addr.Serialize()
 	if err == nil {
-		log.Debug("Publishing msg to topic:", topic)
+		log.Debug("<MqttAd> Publishing msg to topic:", topic)
 		mh.client.Publish(topic, mh.pubQos, false, bytm)
 		return nil
 	}
@@ -115,6 +126,6 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 }
 
 func (mh *MqttTransport) PublishRaw(topic string, bytem []byte) {
-	log.Debug("Publishing msg to topic:", topic)
+	log.Debug("<MqttAd> Publishing msg to topic:", topic)
 	mh.client.Publish(topic, mh.pubQos, false, bytem)
 }
