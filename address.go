@@ -39,7 +39,7 @@ func (adr *Address) Serialize() string {
 			adr.prepComp("mt", adr.MsgType),
 			adr.prepComp("rt", adr.ResourceType),
 			adr.prepComp("rn", adr.ResourceName),
-			adr.prepComp("pt", adr.ResourceAddress))
+			adr.prepComp("ad", adr.ResourceAddress))
 	case ResourceTypeDevice:
 		result = fmt.Sprintf("%s/%s/%s/%s/%s/%s/%s",
 			adr.prepComp("pt", adr.PayloadType),
