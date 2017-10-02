@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/buger/jsonparser"
+	"github.com/satori/go.uuid"
 )
 
 const (
@@ -166,10 +167,14 @@ func NewMessage(type_ string, service string, valueType string, value interface{
 		Tags:       tags,
 		Properties: props,
 		Version:    "1",
+		CreationTime:time.Now(),
+		UID:uuid.NewV4().String(),
 	}
+
 	if requestMessage != nil {
 		msg.CorrelationID = requestMessage.UID
 	}
+
 	return &msg
 }
 

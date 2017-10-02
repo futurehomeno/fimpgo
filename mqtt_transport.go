@@ -5,6 +5,14 @@ import (
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
 
+type MessageCh chan *Message
+
+type Message struct {
+	Topic string
+	Addr  *Address
+	Payload *FimpMessage
+}
+
 // MqttAdapter , mqtt adapter .
 type MqttTransport struct {
 	client     MQTT.Client
@@ -12,6 +20,7 @@ type MqttTransport struct {
 	subQos     byte
 	pubQos     byte
 	subs       map[string]byte
+	subChannels map[string]MessageCh
 
 }
 
@@ -35,13 +44,21 @@ func NewMqttTransport(serverURI string, clientID string, username string, passwo
 	mh.pubQos = pubQos
 	mh.subQos = subQos
 	mh.subs = make(map[string]byte)
-
+	mh.subChannels = make(map[string]MessageCh)
 	return &mh
 }
 
 // SetMessageHandler message handler setter
 func (mh *MqttTransport) SetMessageHandler(msgHandler MessageHandler) {
 	mh.msgHandler = msgHandler
+}
+// RegisterChannel should be used if new message has to be send to channel instead of callback
+func (mh *MqttTransport) RegisterChannel(channelId string,messageCh MessageCh) {
+	mh.subChannels[channelId] = messageCh
+}
+// UnregisterChannel shold be used to unregiter channel
+func (mh *MqttTransport) UnregisterChannel(channelId string ) {
+	delete(mh.subChannels,channelId)
 }
 
 // Start , starts adapter async.
@@ -104,11 +121,25 @@ func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
 		return
 	}
 	fimpMsg, err := NewMessageFromBytes(msg.Payload())
-	if err == nil {
-		mh.msgHandler(msg.Topic(), addr, fimpMsg , msg.Payload())
-	} else {
-		log.Debug(string(msg.Payload()))
-		log.Error("<MqttAd> Error processing payload :" ,err)
+	if mh.msgHandler != nil {
+		if err == nil {
+			mh.msgHandler(msg.Topic(), addr, fimpMsg , msg.Payload())
+		} else {
+			log.Debug(string(msg.Payload()))
+			log.Error("<MqttAd> Error processing payload :" ,err)
+
+		}
+	}
+
+
+	for i := range mh.subChannels {
+		msg := Message{Topic:msg.Topic(),Addr:addr,Payload:fimpMsg}
+		select {
+			case mh.subChannels[i] <- &msg:
+				// send to channel
+			default :
+				log.Info("<MqttAd> Channel is not ready")
+		}
 
 	}
 }
