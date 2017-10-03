@@ -5,14 +5,15 @@ import (
 	"time"
 	log "github.com/Sirupsen/logrus"
 	"errors"
+	"github.com/satori/go.uuid"
 )
 
 type transaction struct {
-	respTopic string
+	respTopic   string
 	respService string
 	respMsgType string
-	respUid string
-	isActive bool
+	requestUid  string
+	isActive    bool
 	respChannel chan *FimpMessage
 }
 
@@ -23,11 +24,14 @@ type SyncClient struct {
 	 mux                 sync.Mutex
 	 transactionPoolSize int
 	 inboundMsgChannel MessageCh
+	 inboundChannelName string
 	 stopSignalCh chan bool
+	 isStartedUsingConnect bool
 }
 
 func NewSyncClient(mqttTransport *MqttTransport) *SyncClient {
 	sc := SyncClient{mqttTransport:mqttTransport}
+	sc.transactionPoolSize = 3
 	sc.init()
 	return &sc
 }
@@ -35,27 +39,44 @@ func NewSyncClient(mqttTransport *MqttTransport) *SyncClient {
 func (sc *SyncClient) init() {
 	sc.stopSignalCh = make (chan bool)
 	sc.inboundMsgChannel = make (MessageCh)
+	sc.inboundChannelName = uuid.NewV4().String()
 	sc.transactions = []transaction{}
-	go sc.MessageListener()
+	if sc.mqttTransport != nil {
+		sc.mqttTransport.RegisterChannel(sc.inboundChannelName,sc.inboundMsgChannel)
+	}
+	go sc.messageListener()
 }
 
-// Connect establishes connection to mqtt broker and initializes mqtt
+// Connect establishes internal connection to mqtt broker and initializes mqtt
 // Should be used if MqttTransport instance is not provided in constructor .
 func (sc *SyncClient) Connect(serverURI string, clientID string, username string, password string, cleanSession bool, subQos byte, pubQos byte) error {
-	sc.mqttTransport = NewMqttTransport(serverURI,clientID,username,password,cleanSession,subQos,pubQos)
-	err := sc.mqttTransport.Start()
-	if err != nil {
-		log.Error("Error connecting to broker ",err)
-		return err
+	if sc.mqttTransport == nil {
+		log.Info("<SyncClient> Connecting to mqtt broker")
+		sc.mqttTransport = NewMqttTransport(serverURI,clientID,username,password,cleanSession,subQos,pubQos)
+		err := sc.mqttTransport.Start()
+		if err != nil {
+			log.Error("<SyncClient> Error connecting to broker :",err)
+			return err
+		}
+		sc.isStartedUsingConnect = true
+		sc.mqttTransport.RegisterChannel(sc.inboundChannelName,sc.inboundMsgChannel)
+	}else {
+		log.Info("<SyncClient> Already connected")
 	}
+
 	return nil
 }
 
+// Stop has to be invoked to stop message listener
 func (sc *SyncClient) Stop() {
-	sc.stopSignalCh <- true;
+	sc.mqttTransport.UnregisterChannel(sc.inboundChannelName)
+	close(sc.inboundMsgChannel)
+	if sc.isStartedUsingConnect {
+		sc.mqttTransport.Stop()
+	}
 
 }
-
+// AddSubscription has to be invoked before Send methods
 func (sc *SyncClient) AddSubscription(topic string) {
 	sc.mqttTransport.Subscribe(topic)
 }
@@ -70,6 +91,7 @@ func (sc *SyncClient) SendFimp(topic string, fimpMsg *FimpMessage,timeout int64)
 	return sc.SendFimpWithTopicResponse(topic,fimpMsg,"","","",timeout)
 }
 
+// SendFimpWithTopicResponse send message over mqtt and awaits response from responseTopic with responseService and responseMsgType
 func (sc *SyncClient) SendFimpWithTopicResponse(topic string, fimpMsg *FimpMessage,responseTopic string,responseService string,responseMsgType string,timeout int64) (*FimpMessage,error) {
 
 	msgB , err := fimpMsg.SerializeToJson()
@@ -80,10 +102,11 @@ func (sc *SyncClient) SendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	sc.mqttTransport.PublishRaw(topic,msgB)
 	select {
 	case fimpResponse := <- responseChannel :
+		sc.unregisterRequest(fimpMsg.UID,responseTopic,responseService,responseMsgType)
 		return fimpResponse,nil
 
 	case <- time.After(time.Second* time.Duration(timeout)):
-		log.Info("No response from queue for 10 seconds")
+		log.Info("<SyncClient> No response from queue for ",timeout)
 
 
 	}
@@ -99,17 +122,19 @@ func (sc *SyncClient) registerRequest(responseUid string,responseTopic string , 
 	for i := range sc.transactions {
 		if sc.transactions[i].isActive == false {
 			sc.transactions[i].isActive = true
-			sc.transactions[i].respUid = responseUid
+			sc.transactions[i].requestUid = responseUid
 			sc.transactions[i].respService = responseService
 			sc.transactions[i].respMsgType = responseMsgType
 			sc.transactions[i].respTopic = responseTopic
+			//log.Info("<SyncClient> Transaction from pool")
 			return sc.transactions[i].respChannel
 		}
 	}
 	// no active transactions , let's create one
 	respChan := make(chan *FimpMessage)
-	runReq := transaction{respTopic:responseTopic,respMsgType:responseMsgType,respChannel:respChan,respUid:responseUid}
+	runReq := transaction{respTopic:responseTopic,respService:responseService,respMsgType:responseMsgType,respChannel:respChan, requestUid:responseUid}
 	sc.transactions = append(sc.transactions,runReq)
+	//log.Info("<SyncClient> Transaction was added")
 	return respChan
 }
 
@@ -121,17 +146,20 @@ func (sc *SyncClient) unregisterRequest(responseUid string,responseTopic string 
 	for i := range sc.transactions {
 		if (sc.transactions[i].respTopic == responseTopic &&
 		   sc.transactions[i].respMsgType == responseMsgType &&
-		   sc.transactions[i].respService == responseService) || sc.transactions[i].respUid == responseUid {
+		   sc.transactions[i].respService == responseService) || sc.transactions[i].requestUid == responseUid {
 
 		   if len(sc.transactions)> sc.transactionPoolSize {
+			   log.Debugf("<SyncClient> Removing transaction from pool")
 			   result = append(sc.transactions[:i],sc.transactions[i+1:]...)
 			   break
 		   }
 			sc.transactions[i].respTopic = ""
 			sc.transactions[i].respMsgType = ""
 			sc.transactions[i].respService = ""
-			sc.transactions[i].respUid = ""
+			sc.transactions[i].requestUid = ""
 			sc.transactions[i].isActive = false
+		}else {
+			log.Debug("<SyncClient> Nothing to unregister")
 		}
 	}
 	if result != nil {
@@ -144,21 +172,28 @@ func (sc *SyncClient) unregisterRequest(responseUid string,responseTopic string 
 
 // OnMessage is invoked by an adapter on every new message
 // The code is executed in callers goroutine
-func (sc *SyncClient) MessageListener() {
-	var msg *Message
-	select {
-		case msg =<- sc.inboundMsgChannel:
-			log.Debugf("New message from topic %s",msg.Topic)
+func (sc *SyncClient) messageListener() {
+	log.Debug("<SyncClient> Msg listener is started")
+	for msg := range sc.inboundMsgChannel{
 			for i := range sc.transactions {
 				if (sc.transactions[i].respMsgType == msg.Payload.Type && sc.transactions[i].respService == msg.Payload.Service && sc.transactions[i].respTopic == msg.Topic) ||
-					sc.transactions[i].respUid == msg.Payload.CorrelationID{
+					sc.transactions[i].requestUid == msg.Payload.CorrelationID{
+					//log.Debug("<SyncClient> Transaction match , transaction size = ",len(sc.transactions))
 					//sending message to coresponding channel
-					sc.transactions[i].respChannel <- msg.Payload
+					select {
+					case sc.transactions[i].respChannel <- msg.Payload:
+					default:
+						log.Error("<SyncClient> No channel to send the message.")
+
+					}
+
+
+
 				}
 			}
-		case _ =<-sc.stopSignalCh:
-			log.Info("Stopping Message listener")
-	}
+		}
+
+	log.Debug("Stopping Message listener")
 
 
 }

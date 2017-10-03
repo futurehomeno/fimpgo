@@ -52,7 +52,8 @@ func NewMqttTransport(serverURI string, clientID string, username string, passwo
 func (mh *MqttTransport) SetMessageHandler(msgHandler MessageHandler) {
 	mh.msgHandler = msgHandler
 }
-// RegisterChannel should be used if new message has to be send to channel instead of callback
+// RegisterChannel should be used if new message has to be send to channel instead of callback.
+// multiple channels can be registered , in that case a message bill be multicated to all channels.
 func (mh *MqttTransport) RegisterChannel(channelId string,messageCh MessageCh) {
 	mh.subChannels[channelId] = messageCh
 }
