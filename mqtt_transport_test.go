@@ -91,3 +91,41 @@ func TestMqttTransport_TestChannels(t *testing.T) {
 	t.Log("Channel test - OK")
 
 }
+
+func TestAddGlobalPrefixToTopic(t *testing.T) {
+	result := AddGlobalPrefixToTopic("12345","pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0")
+	if result != "12345/pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0" {
+		t.Error("Wrong topic")
+	}else {
+		t.Log("AddGlobalPrefixToTopic test 1 - OK")
+	}
+	result = AddGlobalPrefixToTopic("12345","/pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0")
+	if result != "12345/pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0" {
+		t.Error("Wrong topic")
+	}else {
+		t.Log("AddGlobalPrefixToTopic test 2 - OK")
+	}
+	result = AddGlobalPrefixToTopic("","pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0")
+	if result != "pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0" {
+		t.Error("Wrong topic")
+	}else {
+		t.Log("AddGlobalPrefixToTopic test 3 - OK")
+	}
+}
+
+func TestDetachGlobalPrefixFromTopic(t *testing.T) {
+	globalPrefix,topic := DetachGlobalPrefixFromTopic("12345/pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0")
+	if globalPrefix != "12345" || topic != "pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0" {
+		t.Error("Wrong topic")
+	}else {
+		t.Log("DetachGlobalPrefixFromTopic test 1 - OK")
+	}
+	globalPrefix,topic = DetachGlobalPrefixFromTopic("ABC/12345/pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0")
+	if globalPrefix != "ABC/12345" || topic != "pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0" {
+		t.Error("Wrong topic")
+	}else {
+		t.Log("Result ,",globalPrefix,topic)
+		t.Log("DetachGlobalPrefixFromTopic test 2 - OK")
+	}
+}
+

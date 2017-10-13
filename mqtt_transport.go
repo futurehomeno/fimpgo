@@ -3,6 +3,7 @@ package fimpgo
 import (
 	log "github.com/Sirupsen/logrus"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
+	"strings"
 )
 
 type MessageCh chan *Message
@@ -21,6 +22,7 @@ type MqttTransport struct {
 	pubQos     byte
 	subs       map[string]byte
 	subChannels map[string]MessageCh
+	globalTopicPrefix string
 
 }
 
@@ -46,6 +48,10 @@ func NewMqttTransport(serverURI string, clientID string, username string, passwo
 	mh.subs = make(map[string]byte)
 	mh.subChannels = make(map[string]MessageCh)
 	return &mh
+}
+
+func(mh *MqttTransport) SetGlobalTopicPrefix(prefix string) {
+	mh.globalTopicPrefix = prefix
 }
 
 // SetMessageHandler message handler setter
@@ -80,6 +86,7 @@ func (mh *MqttTransport) Stop() {
 func (mh *MqttTransport) Subscribe(topic string) error {
 	//subscribe to the topic /go-mqtt/sample and request messages to be delivered
 	//at a maximum qos of zero, wait for the receipt to confirm the subscription
+	topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix,topic)
 	log.Debug("<MqttAd> Subscribing to topic:", topic)
 	if token := mh.client.Subscribe(topic, mh.subQos, nil); token.Wait() && token.Error() != nil {
 		log.Error("<MqttAd> Can't subscribe. Error :", token.Error())
@@ -91,6 +98,7 @@ func (mh *MqttTransport) Subscribe(topic string) error {
 
 // Unsubscribe , unsubscribing from topic
 func (mh *MqttTransport) Unsubscribe(topic string) error {
+	topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix,topic)
 	log.Debug("<MqttAd> Unsubscribing from topic:", topic)
 	if token := mh.client.Unsubscribe(topic); token.Wait() && token.Error() != nil {
 		return token.Error()
@@ -115,33 +123,38 @@ func (mh *MqttTransport) onConnect(client MQTT.Client) {
 //define a function for the default message handler
 func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
 	log.Debugf("<MqttAd> New msg from TOPIC: %s", msg.Topic())
+	var topic string
+	if mh.globalTopicPrefix != "" {
+		_,topic = DetachGlobalPrefixFromTopic(msg.Topic())
+	}else {
+		topic = msg.Topic()
+	}
 	// log.Debug("MSG: %s\n", msg.Payload())
-	addr, err := NewAddressFromString(msg.Topic())
+	addr, err := NewAddressFromString(topic)
 	if err != nil {
 		log.Error("<MqttAd> Error processing address :" ,err)
 		return
 	}
+
 	fimpMsg, err := NewMessageFromBytes(msg.Payload())
 	if mh.msgHandler != nil {
 		if err == nil {
-			mh.msgHandler(msg.Topic(), addr, fimpMsg , msg.Payload())
+			mh.msgHandler(topic, addr, fimpMsg , msg.Payload())
 		} else {
 			log.Debug(string(msg.Payload()))
 			log.Error("<MqttAd> Error processing payload :" ,err)
-
 		}
 	}
 
 
 	for i := range mh.subChannels {
-		msg := Message{Topic:msg.Topic(),Addr:addr,Payload:fimpMsg}
+		msg := Message{Topic:topic,Addr:addr,Payload:fimpMsg}
 		select {
 			case mh.subChannels[i] <- &msg:
 				// send to channel
 			default :
 				log.Info("<MqttAd> Channel is not ready")
 		}
-
 	}
 }
 
@@ -149,6 +162,9 @@ func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
 func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 	bytm, err := fimpMsg.SerializeToJson()
 	topic := addr.Serialize()
+	if mh.globalTopicPrefix != "" {
+		topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix,topic)
+	}
 	if err == nil {
 		log.Debug("<MqttAd> Publishing msg to topic:", topic)
 		mh.client.Publish(topic, mh.pubQos, false, bytm)
@@ -160,4 +176,34 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 func (mh *MqttTransport) PublishRaw(topic string, bytem []byte) {
 	log.Debug("<MqttAd> Publishing msg to topic:", topic)
 	mh.client.Publish(topic, mh.pubQos, false, bytem)
+}
+
+// AddGlobalPrefixToTopic , adds prefix to topic .
+func AddGlobalPrefixToTopic(domain string, topic string) string {
+	// Check if topic is already prefixed with  "/" if yes then concat without adding "/"
+	// 47 is code of "/"
+	if topic[0] == 47 {
+		return domain + topic
+	}
+	if domain == "" {
+		return topic
+	}
+	return domain + "/" + topic
+}
+
+// DetachGlobalPrefixFromTopic detaches domain from topic
+func DetachGlobalPrefixFromTopic(topic string) (string, string) {
+	spt := strings.Split(topic, "/")
+	var resultTopic ,globalPrefix string
+	for i := range spt {
+		if strings.Contains(spt[i], "pt:") {
+			 //resultTopic= strings.Replace(topic, spt[0]+"/", "", 1)
+			 resultTopic = strings.Join(spt[i:],"/")
+			 globalPrefix = strings.Join(spt[:i],"/")
+			 break
+		}
+	}
+
+	// returns domain , topic
+	return globalPrefix, resultTopic
 }
