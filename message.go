@@ -236,8 +236,8 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	fimpmsg.Type, err = jsonparser.GetString(msg, "type")
 	fimpmsg.Service, err = jsonparser.GetString(msg, "serv")
 	fimpmsg.ValueType, err = jsonparser.GetString(msg, "val_t")
-	fimpmsg.UID, err = jsonparser.GetString(msg, "uid")
-	fimpmsg.CorrelationID, err = jsonparser.GetString(msg, "corid")
+	fimpmsg.UID, _ = jsonparser.GetString(msg, "uid")
+	fimpmsg.CorrelationID, _ = jsonparser.GetString(msg, "corid")
 	switch fimpmsg.ValueType {
 	case VTypeString:
 		fimpmsg.Value, err = jsonparser.GetString(msg, "val")
