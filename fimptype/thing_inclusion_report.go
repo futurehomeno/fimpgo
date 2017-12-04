@@ -16,8 +16,9 @@ type ThingInclusionReport struct {
 	SwVersion      string    `json:"sw_ver"`
 	PowerSource    string    `json:"power_source"`
 	WakeUpInterval string    `json:"wakeup_interval"`
+	Security       string    `json:"security"`
 	Tags           []string  `json:"tags"`
-	PropSets                   map[string]map[string]string  `json:"prop_set"`
+	PropSets                   map[string]map[string]interface{}  `json:"prop_set"`
 	TechSpecificProps          map[string]string             `json:"tech_specific_props"`
 	Services       []Service `json:"services"`
 
@@ -27,6 +28,7 @@ type Service struct {
 	Name          string                    `json:"name" storm:"index"`
 	Alias         string                    `json:"alias"`
 	Address       string                    `json:"address"`
+	Enabled       bool                    `json:"enabled"`
 	Groups        []string                  `json:"groups"`
 	Props         map[string]interface{}    `json:"props"`
 	Tags          []string                  `json:"tags"`
