@@ -80,7 +80,7 @@ func TestNewMessageFromBytes_CorruptedPayload1(t *testing.T) {
 }
 
 func TestNewMessageFromBytes_BoolValue(t *testing.T) {
-	msgString := "{\"serv\":\"out_bin_switch\",\"type\":\"cmd.binary.set\",\"val_t\":\"bool\",\"val\":true,\"props\":null,\"tags\":null}"
+	msgString := "{\"serv\":\"out_bin_switch\",\"type\":\"cmd.binary.set\",\"val_t\":\"bool\",\"val\":true,\"props\":{\"p1\":\"pv1\"},\"tags\":null}"
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -88,6 +88,9 @@ func TestNewMessageFromBytes_BoolValue(t *testing.T) {
 	val, err := fimp.GetBoolValue()
 	if val != true {
 		t.Error("Wrong value")
+	}
+	if fimp.Properties["p1"]!="pv1" {
+		t.Error("Wrong props value")
 	}
 	t.Log("ok")
 }

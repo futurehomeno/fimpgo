@@ -314,6 +314,11 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 		fimpmsg.ValueObj, _, _, err = jsonparser.Get(msg, "val")
 
 	}
+	fimpmsg.Properties = make(Props)
+	jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+		fimpmsg.Properties[string(key)],err = jsonparser.ParseString(value)
+		return nil
+	}, "props")
 
 	return &fimpmsg, err
 

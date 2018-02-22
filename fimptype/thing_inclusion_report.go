@@ -18,6 +18,7 @@ type ThingInclusionReport struct {
 	WakeUpInterval string    `json:"wakeup_interval"`
 	Security       string    `json:"security"`
 	Tags           []string  `json:"tags"`
+	Groups         []string  `json:"groups"`
 	PropSets                   map[string]map[string]interface{}  `json:"prop_set"`
 	TechSpecificProps          map[string]string             `json:"tech_specific_props"`
 	Services       []Service `json:"services"`
