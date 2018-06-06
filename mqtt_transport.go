@@ -4,6 +4,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"strings"
+	"time"
 )
 
 type MessageCh chan *Message
@@ -23,6 +24,7 @@ type MqttTransport struct {
 	subs       map[string]byte
 	subChannels map[string]MessageCh
 	globalTopicPrefix string
+	startFailRetryCount int
 
 }
 
@@ -47,11 +49,17 @@ func NewMqttTransport(serverURI string, clientID string, username string, passwo
 	mh.subQos = subQos
 	mh.subs = make(map[string]byte)
 	mh.subChannels = make(map[string]MessageCh)
+	mh.startFailRetryCount = 10
 	return &mh
 }
 
 func(mh *MqttTransport) SetGlobalTopicPrefix(prefix string) {
 	mh.globalTopicPrefix = prefix
+}
+
+// Set number of retries transport will attempt on startup . Default value is 10
+func (mh *MqttTransport) SetStartAutoRetryCount(count int) {
+	mh.startFailRetryCount = count
 }
 
 // SetMessageHandler message handler setter
@@ -71,10 +79,19 @@ func (mh *MqttTransport) UnregisterChannel(channelId string ) {
 // Start , starts adapter async.
 func (mh *MqttTransport) Start() error {
 	log.Info("<MqttAd> Connecting to MQTT broker ")
-	if token := mh.client.Connect(); token.Wait() && token.Error() != nil {
-		return token.Error()
+	var err error
+	var delay time.Duration
+	for i:=1;i<mh.startFailRetryCount;i++{
+		if token := mh.client.Connect(); token.Wait() && token.Error() == nil {
+			return nil
+		}else {
+			err = token.Error()
+		}
+		delay = time.Duration(i)*time.Duration(i)
+		log.Infof("<MqttAd> Connection failed , retrying after %d sec.... ",delay)
+		time.Sleep(delay * time.Second)
 	}
-	return nil
+	return err
 }
 
 // Stop , stops adapter.
