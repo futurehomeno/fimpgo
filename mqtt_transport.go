@@ -41,7 +41,6 @@ func NewMqttTransport(serverURI string, clientID string, username string, passwo
 	opts.SetDefaultPublishHandler(mh.onMessage)
 	opts.SetCleanSession(cleanSession)
 	opts.SetAutoReconnect(true)
-	opts.SetConnectionLostHandler(mh.onConnectionLost)
 	opts.SetOnConnectHandler(mh.onConnect)
 	//create and start a client using the above ClientOptions
 	mh.client = MQTT.NewClient(opts)
@@ -66,6 +65,12 @@ func (mh *MqttTransport) SetStartAutoRetryCount(count int) {
 func (mh *MqttTransport) SetMessageHandler(msgHandler MessageHandler) {
 	mh.msgHandler = msgHandler
 }
+
+// OnConnectionLost Handler, handling connection state outside of the lib
+func (mh *MqttTransport) SetOnConnectionLostHandler(connHandler MQTT.ConnectionLostHandler) {
+	mh.onConnectionLost = connHandler
+}
+
 // RegisterChannel should be used if new message has to be send to channel instead of callback.
 // multiple channels can be registered , in that case a message bill be multicated to all channels.
 func (mh *MqttTransport) RegisterChannel(channelId string,messageCh MessageCh) {
@@ -122,10 +127,6 @@ func (mh *MqttTransport) Unsubscribe(topic string) error {
 	}
 	delete(mh.subs,topic)
 	return nil
-}
-
-func (mh *MqttTransport) onConnectionLost(client MQTT.Client, err error) {
-	log.Errorf("<MqttAd> Connection lost with MQTT broker . Error : %v", err)
 }
 
 func (mh *MqttTransport) onConnect(client MQTT.Client) {
