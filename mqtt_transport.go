@@ -68,7 +68,7 @@ func (mh *MqttTransport) SetMessageHandler(msgHandler MessageHandler) {
 
 // OnConnectionLost Handler, handling connection state outside of the lib
 func (mh *MqttTransport) SetOnConnectionLostHandler(connHandler MQTT.ConnectionLostHandler) {
-	mh.onConnectionLost = connHandler
+	mh.SetOnConnectionLostHandler(connHandler)
 }
 
 // RegisterChannel should be used if new message has to be send to channel instead of callback.
