@@ -2,6 +2,7 @@ package fimpgo
 
 import (
 	log "github.com/Sirupsen/logrus"
+	"github.com/alivinco/fimpgo/utils"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"strings"
 	"time"
@@ -13,7 +14,16 @@ type Message struct {
 	Topic string
 	Addr  *Address
 	Payload *FimpMessage
+	RawPayload []byte
 }
+
+type FimpFilter struct {
+	Topic string
+	Service string
+	Interface string
+}
+
+type FilterFunc func(topic string, addr *Address, iotMsg *FimpMessage) bool
 
 // MqttAdapter , mqtt adapter .
 type MqttTransport struct {
@@ -23,6 +33,8 @@ type MqttTransport struct {
 	pubQos     byte
 	subs       map[string]byte
 	subChannels map[string]MessageCh
+	subFilters map[string]FimpFilter
+	subFilterFuncs map[string]FilterFunc
 	globalTopicPrefix string
 	startFailRetryCount int
 
@@ -49,6 +61,8 @@ func NewMqttTransport(serverURI string, clientID string, username string, passwo
 	mh.subQos = subQos
 	mh.subs = make(map[string]byte)
 	mh.subChannels = make(map[string]MessageCh)
+	mh.subFilters = make(map[string]FimpFilter)
+	mh.subFilterFuncs = make(map[string]FilterFunc)
 	mh.startFailRetryCount = 10
 	return &mh
 }
@@ -66,15 +80,33 @@ func (mh *MqttTransport) SetStartAutoRetryCount(count int) {
 func (mh *MqttTransport) SetMessageHandler(msgHandler MessageHandler) {
 	mh.msgHandler = msgHandler
 }
-// RegisterChannel should be used if new message has to be send to channel instead of callback.
-// multiple channels can be registered , in that case a message bill be multicated to all channels.
+// RegisterChannel should be used if new message has to be sent to channel instead of callback.
+// multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannel(channelId string,messageCh MessageCh) {
 	mh.subChannels[channelId] = messageCh
 }
 // UnregisterChannel shold be used to unregiter channel
 func (mh *MqttTransport) UnregisterChannel(channelId string ) {
 	delete(mh.subChannels,channelId)
+	delete(mh.subFilters,channelId)
+	delete(mh.subFilterFuncs,channelId)
 }
+
+// RegisterChannel should be used if new message has to be sent to channel instead of callback.
+// multiple channels can be registered , in that case a message bill be multicasted to all channels.
+func (mh *MqttTransport) RegisterChannelWithFilter(channelId string,messageCh MessageCh,filter FimpFilter) {
+	mh.subChannels[channelId] = messageCh
+	mh.subFilters[channelId] = filter
+}
+
+// RegisterChannel should be used if new message has to be sent to channel instead of callback.
+// multiple channels can be registered , in that case a message bill be multicasted to all channels.
+func (mh *MqttTransport) RegisterChannelWithFilterFunc(channelId string,messageCh MessageCh,filterFunc FilterFunc) {
+	mh.subChannels[channelId] = messageCh
+	mh.subFilterFuncs[channelId] = filterFunc
+}
+
+
 
 // Start , starts adapter async.
 func (mh *MqttTransport) Start() error {
@@ -146,6 +178,8 @@ func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
 	}else {
 		topic = msg.Topic()
 	}
+
+
 	// log.Debug("MSG: %s\n", msg.Payload())
 	addr, err := NewAddressFromString(topic)
 	if err != nil {
@@ -165,6 +199,11 @@ func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
 
 
 	for i := range mh.subChannels {
+
+		if !mh.isChannelInterested(i,topic,addr,fimpMsg) {
+			continue
+		}
+
 		msg := Message{Topic:topic,Addr:addr,Payload:fimpMsg}
 		select {
 			case mh.subChannels[i] <- &msg:
@@ -174,6 +213,34 @@ func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
 		}
 	}
 }
+
+// isChannelInterested validates if channel is interested in message. Filtering is executed against either static filters or filter function
+func (mh *MqttTransport) isChannelInterested(chanName string,topic string,addr *Address,msg *FimpMessage) bool{
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error("<MqttAd> Filter CRASHED with error :" ,r)
+		}
+	}()
+
+	filterFunc , ok := mh.subFilterFuncs[chanName]
+	if ok {
+		return filterFunc(topic,addr,msg)
+	}
+	filter,ok := mh.subFilters[chanName]
+	if !ok {
+		// no filters has been set
+		return true
+	}
+
+	if utils.RouteIncludesTopic(filter.Topic, topic) &&
+		(msg.Service == filter.Service || filter.Service == "*") &&
+		(msg.Type == filter.Interface || filter.Interface == "*") {
+			return true
+
+	}
+	return false
+}
+
 
 // Publish iotMsg
 func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
