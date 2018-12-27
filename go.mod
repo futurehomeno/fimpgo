@@ -1,4 +1,4 @@
-module github.com/alivinco/fimpgo
+module github.com/futurehomeno/fimpgo
 
 require (
 	github.com/Sirupsen/logrus v1.0.6

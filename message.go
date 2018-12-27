@@ -22,6 +22,7 @@ const (
 	VTypeFloatArray = "float_array"
 	VTypeBoolArray  = "bool_array"
 	VTypeObject     = "object"
+	VTypeBinary     = "bin"
 	VTypeNull       = "null"
 )
 

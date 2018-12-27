@@ -27,6 +27,23 @@ func TestNewFloatMessage(t *testing.T) {
 	t.Log("ok")
 }
 
+func TestNewObjectMessage(t *testing.T) {
+
+	type Event struct {
+		Field1 int
+		Field2 int
+	}
+	obj:= []Event{}
+
+	obj = append(obj,Event{
+		Field1: 1,
+		Field2: 2,
+	})
+	msg := NewMessage("evt.timeline.report", "kind-owl",VTypeObject, obj, nil, nil, nil)
+	bObj ,_ :=  msg.SerializeToJson()
+	t.Log("ok",string(bObj))
+}
+
 func TestFimpMessage_SerializeBool(t *testing.T) {
 	msg := NewBoolMessage("cmd.binary.set", "out_bin_switch", true, nil, nil, nil)
 	serVal, err := msg.SerializeToJson()
