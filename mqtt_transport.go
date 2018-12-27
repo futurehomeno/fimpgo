@@ -2,7 +2,7 @@ package fimpgo
 
 import (
 	log "github.com/Sirupsen/logrus"
-	"github.com/alivinco/fimpgo/utils"
+	"github.com/futurehomeno/fimpgo/utils"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"strings"
 	"time"
@@ -14,7 +14,7 @@ type Message struct {
 	Topic string
 	Addr  *Address
 	Payload *FimpMessage
-	RawPayload []byte
+	//RawPayload []byte
 }
 
 type FimpFilter struct {
