@@ -2,7 +2,7 @@ package fimpgo
 
 import (
 	"testing"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 func TestSyncClient_Connect(t *testing.T) {

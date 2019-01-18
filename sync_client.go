@@ -3,7 +3,7 @@ package fimpgo
 import (
 	"sync"
 	"time"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"errors"
 	"github.com/satori/go.uuid"
 )

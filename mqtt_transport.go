@@ -1,7 +1,7 @@
 package fimpgo
 
 import (
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/futurehomeno/fimpgo/utils"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"strings"
