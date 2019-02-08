@@ -47,6 +47,45 @@ func TestMqttTransport_Publish(t *testing.T) {
 
 }
 
+func TestMqttTransport_PublishTls(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	// for test replace XYZ with actual AWS IoT core address and ABC with actual clientid
+	mqtt := NewMqttTransport("ssl://XYZ.amazonaws.com:443","ABC","","",true,1,1)
+
+	// for test enter valid site-id
+	mqtt.SetGlobalTopicPrefix("XXX")
+	// for test place certificate and key into certs folder
+	err := mqtt.ConfigureTls("awsiot.private.key","awsiot.crt","./certs",true)
+
+	if err != nil {
+		t.Error("Certificate error :",err)
+	}
+
+	err = mqtt.Start()
+	t.Log("Connected")
+	if err != nil {
+		t.Error("Error connecting to broker ",err)
+	}
+
+	mqtt.SetMessageHandler(onMsg)
+	time.Sleep(time.Second*1)
+	mqtt.Subscribe("#")
+	t.Log("Publishing message")
+
+	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
+	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
+	mqtt.Publish(&adr,msg)
+
+	t.Log("Waiting for new message")
+	result := <- msgChan
+	t.Log("Got new message")
+	mqtt.Stop()
+	if result != 1 {
+		t.Error("Wrong message")
+	}
+
+}
+
 func TestMqttTransport_TestChannels(t *testing.T) {
 
 	log.SetLevel(log.DebugLevel)
