@@ -22,23 +22,37 @@ type SyncClient struct {
 	 mqttTransport       *MqttTransport
 	 transactions        []transaction
 	 mux                 sync.Mutex
-	 transactionPoolSize int
+	 transactionPoolSize int // Max transaction pool size
+	 inboundBufferSize   int // Inbound message channel buffer size
 	 inboundMsgChannel MessageCh
 	 inboundChannelName string
 	 stopSignalCh chan bool
 	 isStartedUsingConnect bool
 }
 
+func (sc *SyncClient) SetTransactionPoolSize(transactionPoolSize int) {
+	sc.transactionPoolSize = transactionPoolSize
+}
+
 func NewSyncClient(mqttTransport *MqttTransport) *SyncClient {
 	sc := SyncClient{mqttTransport:mqttTransport}
-	sc.transactionPoolSize = 3
+	sc.transactionPoolSize = 20
+	sc.inboundBufferSize = 10
+	sc.init()
+	return &sc
+}
+
+func NewSyncClientV2(mqttTransport *MqttTransport,transactionPoolSize int , inboundBuffSize int) *SyncClient {
+	sc := SyncClient{mqttTransport:mqttTransport}
+	sc.transactionPoolSize = transactionPoolSize
+	sc.inboundBufferSize = inboundBuffSize
 	sc.init()
 	return &sc
 }
 
 func (sc *SyncClient) init() {
 	sc.stopSignalCh = make (chan bool)
-	sc.inboundMsgChannel = make (MessageCh)
+	sc.inboundMsgChannel = make (MessageCh,sc.inboundBufferSize)
 	sc.inboundChannelName = uuid.NewV4().String()
 	sc.transactions = []transaction{}
 	if sc.mqttTransport != nil {
@@ -175,6 +189,7 @@ func (sc *SyncClient) unregisterRequest(responseUid string,responseTopic string 
 func (sc *SyncClient) messageListener() {
 	log.Debug("<SyncClient> Msg listener is started")
 	for msg := range sc.inboundMsgChannel{
+			sc.mux.Lock()
 			for i := range sc.transactions {
 				if (sc.transactions[i].respMsgType == msg.Payload.Type && sc.transactions[i].respService == msg.Payload.Service && sc.transactions[i].respTopic == msg.Topic) ||
 					sc.transactions[i].requestUid == msg.Payload.CorrelationID{
@@ -186,15 +201,11 @@ func (sc *SyncClient) messageListener() {
 						log.Error("<SyncClient> No channel to send the message.")
 
 					}
-
-
-
 				}
 			}
+			sc.mux.Unlock()
 		}
-
 	log.Debug("Stopping Message listener")
-
 
 }
 
