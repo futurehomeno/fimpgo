@@ -112,19 +112,20 @@ func (sc *SyncClient) SendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	if err != nil {
 		return nil,err
 	}
+	//log.Debug("Registering request uid = ",fimpMsg.UID)
 	responseChannel := sc.registerRequest(fimpMsg.UID,responseTopic,responseService,responseMsgType)
 	sc.mqttTransport.PublishRaw(topic,msgB)
 	select {
 	case fimpResponse := <- responseChannel :
 		sc.unregisterRequest(fimpMsg.UID,responseTopic,responseService,responseMsgType)
 		return fimpResponse,nil
-
 	case <- time.After(time.Second* time.Duration(timeout)):
 		log.Info("<SyncClient> No response from queue for ",timeout)
 
 
 	}
 	sc.unregisterRequest(fimpMsg.UID,responseTopic,responseService,responseMsgType)
+
 	return nil, errors.New("request timed out")
 }
 
@@ -146,7 +147,7 @@ func (sc *SyncClient) registerRequest(responseUid string,responseTopic string , 
 	}
 	// no active transactions , let's create one
 	respChan := make(chan *FimpMessage)
-	runReq := transaction{respTopic:responseTopic,respService:responseService,respMsgType:responseMsgType,respChannel:respChan, requestUid:responseUid}
+	runReq := transaction{respTopic:responseTopic,respService:responseService,respMsgType:responseMsgType,respChannel:respChan, requestUid:responseUid,isActive:true}
 	sc.transactions = append(sc.transactions,runReq)
 	//log.Info("<SyncClient> Transaction was added")
 	return respChan
@@ -157,6 +158,9 @@ func (sc *SyncClient) unregisterRequest(responseUid string,responseTopic string 
 	sc.mux.Lock()
 	defer sc.mux.Unlock()
 	var result []transaction
+	if responseTopic == "" {
+		responseTopic = "null"
+	}
 	for i := range sc.transactions {
 		if (sc.transactions[i].respTopic == responseTopic &&
 		   sc.transactions[i].respMsgType == responseMsgType &&
@@ -173,7 +177,7 @@ func (sc *SyncClient) unregisterRequest(responseUid string,responseTopic string 
 			sc.transactions[i].requestUid = ""
 			sc.transactions[i].isActive = false
 		}else {
-			log.Debug("<SyncClient> Nothing to unregister")
+			//log.Debug("<SyncClient> Nothing to unregister")
 		}
 	}
 	if result != nil {
@@ -191,6 +195,9 @@ func (sc *SyncClient) messageListener() {
 	for msg := range sc.inboundMsgChannel{
 			sc.mux.Lock()
 			for i := range sc.transactions {
+				if !sc.transactions[i].isActive {
+					continue
+				}
 				if (sc.transactions[i].respMsgType == msg.Payload.Type && sc.transactions[i].respService == msg.Payload.Service && sc.transactions[i].respTopic == msg.Topic) ||
 					sc.transactions[i].requestUid == msg.Payload.CorrelationID{
 					//log.Debug("<SyncClient> Transaction match , transaction size = ",len(sc.transactions))
@@ -202,6 +209,7 @@ func (sc *SyncClient) messageListener() {
 
 					}
 				}
+				//log.Debugf("request uid = %s , resp cor_id = %s ",sc.transactions[i].requestUid,msg.Payload.CorrelationID)
 			}
 			sc.mux.Unlock()
 		}

@@ -44,6 +44,11 @@ type MqttTransport struct {
 	startFailRetryCount int
 	certDir             string
 	mqttOptions         *MQTT.ClientOptions
+	receiveChTimeout    int
+}
+
+func (mh *MqttTransport) SetReceiveChTimeout(receiveChTimeout int) {
+	mh.receiveChTimeout = receiveChTimeout
 }
 
 func (mh *MqttTransport) SetCertDir(certDir string) {
@@ -74,6 +79,7 @@ func NewMqttTransport(serverURI string, clientID string, username string, passwo
 	mh.subFilters = make(map[string]FimpFilter)
 	mh.subFilterFuncs = make(map[string]FilterFunc)
 	mh.startFailRetryCount = 10
+	mh.receiveChTimeout = 10
 	return &mh
 }
 
@@ -214,11 +220,13 @@ func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
 
 		msg := Message{Topic: topic, Addr: addr, Payload: fimpMsg}
 		select {
-		case mh.subChannels[i] <- &msg:
-			// send to channel
-		default:
-			log.Info("<MqttAd> Channel is not ready")
+			case mh.subChannels[i] <- &msg:
+				// send to channel
+			case <- time.After(time.Second* time.Duration(mh.receiveChTimeout)):
+				log.Info("<MqttAd> Channel is not read for ",mh.receiveChTimeout)
 		}
+
+
 	}
 }
 

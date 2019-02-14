@@ -1,8 +1,10 @@
 package fimpgo
 
 import (
+	"sync/atomic"
 	"testing"
 	log "github.com/sirupsen/logrus"
+	"time"
 )
 
 func TestSyncClient_Connect(t *testing.T) {
@@ -13,7 +15,7 @@ func TestSyncClient_Connect(t *testing.T) {
 	if err != nil {
 		t.Error("Error connecting to broker ",err)
 	}
-	inboundChan := make(MessageCh)
+	inboundChan := make(MessageCh,20)
 	// starting responder
 	go func (msgChanS MessageCh) {
 		for msg := range msgChanS {
@@ -32,29 +34,38 @@ func TestSyncClient_Connect(t *testing.T) {
 	mqtt.RegisterChannel("test",inboundChan)
 
 	// Actual test
-	syncClient := NewSyncClient(nil)
+	syncClient := NewSyncClientV2(nil,20,20)
 	syncClient.Connect("tcp://localhost:1883","fimpgotest2","","",true,1,1)
 	syncClient.AddSubscription("pt:j1/mt:evt/rt:app/rn:testapp/ad:1")
-	counter := 0
-	for i:=0 ;i<5;i++ {
-		t.Log("Iteration = ",i)
-		adr := Address{MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
-		msg := NewFloatMessage("cmd.sensor.get_report", "temp_sensor", float64(35.5), nil, nil, nil)
-		response,err := syncClient.SendFimp(adr.Serialize(),msg,5)
-		if err != nil {
-			t.Error("Error",err)
-			t.Fail()
-		}
-		val , _ := response.GetFloatValue()
-		if val != 40.0 {
-			t.Error("Wong result")
-			t.Fail()
-		}
-		counter++
-
+	var counter int32
+	for it:=0 ;it<100;it++ {
+		i := it
+		go func() {
+			t.Log("Iteration = ",i)
+			adr := Address{MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
+			msg := NewFloatMessage("cmd.sensor.get_report", "temp_sensor", float64(35.5), nil, nil, nil)
+			response,err := syncClient.SendFimp(adr.Serialize(),msg,10)
+			if err != nil {
+				t.Error("Error",err)
+				t.Fail()
+			}
+			val , _ := response.GetFloatValue()
+			if val != 40.0 {
+				t.Error("Wong result")
+				t.Fail()
+			}
+			atomic.AddInt32(&counter,1)
+			t.Log("Iteration Done = ",i)
+		}()
 	}
+
+	for 100 >counter {
+		time.Sleep(1 * time.Second)
+	}
+
+
 	syncClient.Stop()
-	if counter!=5 {
+	if counter!=100 {
 		t.Error("Wong counter value")
 		t.Fail()
 	}
