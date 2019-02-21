@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	TimeFormat      = "2006-01-02T15:04:05.999+01:00"
 	VTypeString     = "string"
 	VTypeInt        = "int"
 	VTypeFloat      = "float"
@@ -39,7 +40,7 @@ type FimpMessage struct {
 	Properties    Props       `json:"props"`
 	Version       string      `json:"ver"`
 	CorrelationID string      `json:"corid"`
-	CreationTime  time.Time   `json:"ctime"`
+	CreationTime  string      `json:"ctime"`
 	UID           string      `json:"uid"`
 }
 
@@ -168,7 +169,7 @@ func NewMessage(type_ string, service string, valueType string, value interface{
 		Tags:       tags,
 		Properties: props,
 		Version:    "1",
-		CreationTime:time.Now(),
+		CreationTime:time.Now().Format(TimeFormat),
 		UID:uuid.NewV4().String(),
 	}
 
@@ -239,6 +240,8 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	fimpmsg.ValueType, err = jsonparser.GetString(msg, "val_t")
 	fimpmsg.UID, _ = jsonparser.GetString(msg, "uid")
 	fimpmsg.CorrelationID, _ = jsonparser.GetString(msg, "corid")
+	fimpmsg.CreationTime, _ = jsonparser.GetString(msg, "ctime")
+
 	switch fimpmsg.ValueType {
 	case VTypeString:
 		fimpmsg.Value, err = jsonparser.GetString(msg, "val")

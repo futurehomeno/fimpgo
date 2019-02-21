@@ -38,7 +38,8 @@ func TestSyncClient_Connect(t *testing.T) {
 	syncClient.Connect("tcp://localhost:1883","fimpgotest2","","",true,1,1)
 	syncClient.AddSubscription("pt:j1/mt:evt/rt:app/rn:testapp/ad:1")
 	var counter int32
-	for it:=0 ;it<100;it++ {
+	iterations := 1000
+	for it:=0 ;it<iterations;it++ {
 		i := it
 		go func() {
 			t.Log("Iteration = ",i)
@@ -59,13 +60,13 @@ func TestSyncClient_Connect(t *testing.T) {
 		}()
 	}
 
-	for 100 >counter {
+	for int32(iterations) >counter {
 		time.Sleep(1 * time.Second)
 	}
 
 
 	syncClient.Stop()
-	if counter!=100 {
+	if counter!=int32(iterations) {
 		t.Error("Wong counter value")
 		t.Fail()
 	}

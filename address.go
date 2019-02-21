@@ -12,6 +12,7 @@ const (
 	ResourceTypeDevice  = "dev"
 	ResourceTypeApp     = "app"
 	ResourceTypeAdapter = "ad"
+	ResourceTypeCloud   = "cloud"
 )
 
 type Address struct {
@@ -33,7 +34,7 @@ func (adr *Address) Serialize() string {
 
 	switch adr.ResourceType {
 
-	case ResourceTypeAdapter, ResourceTypeApp:
+	case ResourceTypeAdapter, ResourceTypeApp, ResourceTypeCloud:
 		result = fmt.Sprintf("%s/%s/%s/%s/%s",
 			adr.prepComp("pt", adr.PayloadType),
 			adr.prepComp("mt", adr.MsgType),
