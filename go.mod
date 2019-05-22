@@ -2,7 +2,7 @@ module github.com/futurehomeno/fimpgo
 
 require (
 	github.com/buger/jsonparser v0.0.0-20170325175528-016ea00d7ed5
-	github.com/eclipse/paho.mqtt.golang v0.0.0-20170413214049-c37a0a275c2d
+	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/pkg/errors v0.0.0-20161029093637-248dadf4e906
 	github.com/satori/go.uuid v1.2.0
