@@ -1,0 +1,61 @@
+{
+  "corid": "",
+  "ctime": "2019-06-01T10:41:40+0200",
+  "props": {},
+  "serv": "vinculum",
+  "tags": [],
+  "type": "evt.pd7.notify",
+  "uid": "e364b4f9-4b49-42ce-b681-6e62399c0f1d",
+  "val": {
+    "changes": {
+      "presence": true,
+      "timestamp": "2019-06-01 10:41:40 +0200"
+    },
+    "cmd": "set",
+    "component": "device",
+    "id": 118,
+    "mode": "home",
+    "param": {
+      "client": {
+        "name": "Living motion sensor"
+      },
+      "fimp": {
+        "adapter": "zigbee",
+        "address": "s34",
+        "group": "ch_0"
+      },
+      "functionality": null,
+      "id": 118,
+      "lrn": true,
+      "model": "LUMI_lumi.sensor_motion",
+      "modelAlias": "lumi.sensor_motion",
+      "param": {
+        "batteryLevel": null,
+        "batteryPercentage": null,
+        "presence": true,
+        "timestamp": "2019-06-01 10:41:40 +0200"
+      },
+      "problem": false,
+      "room": 1,
+      "services": {
+        "battery": {
+          "addr": "/rt:dev/rn:zigbee/ad:1/sv:battery/ad:s34_0",
+          "enabled": true,
+          "props": {}
+        },
+        "sensor_presence": {
+          "addr": "/rt:dev/rn:zigbee/ad:1/sv:sensor_presence/ad:s34_0",
+          "enabled": true,
+          "props": {}
+        }
+      },
+      "supports": [
+        "clear",
+        "poll"
+      ],
+      "thing": 91
+    }
+  },
+  "val_t": "object",
+  "ver": "1"
+}

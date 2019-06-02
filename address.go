@@ -9,6 +9,7 @@ import (
 const (
 	MsgTypeCmd          = "cmd"
 	MsgTypeEvt          = "evt"
+	MsgTypeRsp          = "rsp"
 	ResourceTypeDevice  = "dev"
 	ResourceTypeApp     = "app"
 	ResourceTypeAdapter = "ad"
