@@ -1,0 +1,7060 @@
+{
+  "corid": "09936904-8ec8-4280-9285-945d77bd0a74",
+  "ctime": "2019-06-01T20:57:05+0200",
+  "props": {},
+  "serv": "vinculum",
+  "tags": [],
+  "type": "evt.pd7.response",
+  "uid": "142ab5ec-2f59-4699-a49a-08b3a19e2c39",
+  "val": {
+    "errors": null,
+    "param": {
+      "device": [
+        {
+          "client": {
+            "name": "Fibaro - Motion Sensor - FGMS-001"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "16",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 1,
+          "lrn": true,
+          "model": "zw_271_2048_4097",
+          "modelAlias": "Fibaro - Motion Sensor - FGMS-001",
+          "param": {
+            "alarms": {},
+            "batteryLevel": "low",
+            "batteryPercentage": 0,
+            "illuminance": 396,
+            "presence": false,
+            "supportedAlarms": {
+              "gp": []
+            },
+            "temperature": 24.7999992370605,
+            "timestamp": "2019-06-01 20:26:35 +0200",
+            "zwaveConfigParameters": []
+          },
+          "problem": false,
+          "room": 6,
+          "services": {
+            "alarm_gp": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:alarm_gp/ad:16_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_events": "gp"
+              }
+            },
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:16_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "battery": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:battery/ad:16_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:16_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "sensor_lumin": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_lumin/ad:16_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_units": [
+                  "Lux"
+                ]
+              }
+            },
+            "sensor_presence": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_presence/ad:16_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "sensor_temp": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_temp/ad:16_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_units": [
+                  "C"
+                ]
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 1
+        },
+        {
+          "client": {
+            "name": "Table lamp"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "18",
+            "group": "ch_0"
+          },
+          "functionality": "lighting",
+          "id": 2,
+          "lrn": true,
+          "model": "zw_398_4_2",
+          "param": {
+            "power": "off",
+            "timestamp": "2019-06-01 20:38:25 +0200"
+          },
+          "problem": false,
+          "room": 6,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:18_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:18_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:18_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 2
+        },
+        {
+          "client": {
+            "name": "IKEA gateway"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "19",
+            "group": "ch_0"
+          },
+          "functionality": "appliance",
+          "id": 3,
+          "lrn": true,
+          "model": "zw_271_1536_4096",
+          "modelAlias": "Fibaro - Wall Plug - FGWPE/F-101/102",
+          "param": {
+            "energy": 63.4500007629395,
+            "power": "on",
+            "timestamp": "2019-06-01 20:16:00 +0200",
+            "wattage": 1,
+            "zwaveConfigParameters": []
+          },
+          "problem": false,
+          "room": 1,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:19_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:19_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "meter_elec": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:meter_elec/ad:19_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_units": [
+                  "kWh",
+                  "W"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:19_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "sensor_power": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_power/ad:19_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_units": [
+                  "W"
+                ]
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 3
+        },
+        {
+          "client": {
+            "name": "Window sensor",
+            "openStateType": "window"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "31",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 4,
+          "lrn": true,
+          "model": "zw_410_3_3",
+          "modelAlias": "Sensative - Strips Guard - Strips-MaZw",
+          "param": {
+            "alarms": {
+              "burglar": [
+                "temper_invalid_code"
+              ]
+            },
+            "batteryLevel": "low",
+            "batteryPercentage": null,
+            "openState": "closed",
+            "supportedAlarms": {
+              "burglar": [
+                "temper_invalid_code"
+              ]
+            },
+            "temperature": 25.6000003814697,
+            "timestamp": "2019-05-16 10:10:08 +0200",
+            "zwaveConfigParameters": []
+          },
+          "problem": false,
+          "room": 6,
+          "services": {
+            "alarm_burglar": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:alarm_burglar/ad:31_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_events": [
+                  "temper_invalid_code"
+                ]
+              }
+            },
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:31_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "battery": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:battery/ad:31_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:31_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "sensor_contact": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_contact/ad:31_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "sensor_temp": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_temp/ad:31_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_units": []
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 4
+        },
+        {
+          "client": {
+            "name": "Soft remote"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "46",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 5,
+          "lrn": true,
+          "model": "zw_357_2_2",
+          "param": {
+            "batteryLevel": "ok",
+            "batteryPercentage": 100,
+            "timestamp": "2019-03-20 11:22:00 +0100",
+            "zwaveConfigParameters": []
+          },
+          "problem": false,
+          "room": 6,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:46_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "battery": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:battery/ad:46_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:46_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "scene_ctrl": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:scene_ctrl/ad:46_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_scenes": null
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 5
+        },
+        {
+          "client": {
+            "name": "Eye multisensor"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "21",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 6,
+          "lrn": true,
+          "model": "zw_271_2048_4097",
+          "modelAlias": "Fibaro - Motion Sensor - FGMS-001",
+          "param": {
+            "alarms": {},
+            "batteryLevel": "low",
+            "batteryPercentage": 0,
+            "illuminance": 86,
+            "presence": false,
+            "supportedAlarms": {
+              "gp": []
+            },
+            "temperature": 24.1000003814697,
+            "timestamp": "2019-05-23 22:25:43 +0200",
+            "zwaveConfigParameters": []
+          },
+          "problem": false,
+          "room": 5,
+          "services": {
+            "alarm_gp": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:alarm_gp/ad:21_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_events": "gp"
+              }
+            },
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:21_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "battery": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:battery/ad:21_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:21_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "sensor_lumin": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_lumin/ad:21_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_units": [
+                  "Lux"
+                ]
+              }
+            },
+            "sensor_presence": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_presence/ad:21_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "sensor_temp": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_temp/ad:21_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_units": [
+                  "C"
+                ]
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 6
+        },
+        {
+          "client": {
+            "name": "Eye multisensor"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "22",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 7,
+          "lrn": true,
+          "model": "zw_271_2048_4097",
+          "modelAlias": "Fibaro - Motion Sensor - FGMS-001",
+          "param": {
+            "alarms": {},
+            "batteryLevel": "ok",
+            "batteryPercentage": 100,
+            "illuminance": 37,
+            "presence": false,
+            "supportedAlarms": {
+              "gp": []
+            },
+            "temperature": 22.7999992370605,
+            "timestamp": "2019-06-01 20:52:03 +0200",
+            "zwaveConfigParameters": []
+          },
+          "problem": false,
+          "room": 4,
+          "services": {
+            "alarm_gp": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:alarm_gp/ad:22_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_events": "gp"
+              }
+            },
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:22_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "battery": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:battery/ad:22_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:22_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "sensor_lumin": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_lumin/ad:22_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_units": [
+                  "Lux"
+                ]
+              }
+            },
+            "sensor_presence": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_presence/ad:22_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "sensor_temp": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_temp/ad:22_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_units": [
+                  "C"
+                ]
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 7
+        },
+        {
+          "client": {
+            "name": "Table lamp"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "30",
+            "group": "ch_0"
+          },
+          "functionality": "lighting",
+          "id": 8,
+          "lrn": true,
+          "model": "zw_271_1536_4096",
+          "modelAlias": "Fibaro - Wall Plug - FGWPE/F-101/102",
+          "param": {
+            "energy": 183.929992675781,
+            "power": "on",
+            "timestamp": "2019-06-01 20:16:00 +0200",
+            "wattage": 24.2000007629395,
+            "zwaveConfigParameters": []
+          },
+          "problem": false,
+          "room": 1,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:30_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:30_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "meter_elec": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:meter_elec/ad:30_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_units": [
+                  "kWh",
+                  "W"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:30_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "sensor_power": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_power/ad:30_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_units": [
+                  "W"
+                ]
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 8
+        },
+        {
+          "client": {
+            "name": "Entrance door",
+            "openStateType": "door"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "47",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 9,
+          "lrn": true,
+          "model": "zw_134_2_112",
+          "param": {
+            "batteryLevel": "ok",
+            "batteryPercentage": 44,
+            "openState": "closed",
+            "timestamp": "2019-06-01 20:47:41 +0200",
+            "zwaveConfigParameters": [
+              {
+                "parameter": 8,
+                "size": 1,
+                "value": 0
+              }
+            ]
+          },
+          "problem": false,
+          "room": 5,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:47_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "battery": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:battery/ad:47_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:47_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "sensor_contact": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_contact/ad:47_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 9
+        },
+        {
+          "client": {
+            "name": "Disko"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "50",
+            "group": "ch_0"
+          },
+          "functionality": "lighting",
+          "id": 10,
+          "lrn": true,
+          "model": "zw_398_4_2",
+          "param": {
+            "energy": 21.1270008087158,
+            "power": "off",
+            "timestamp": "2019-06-01 17:27:42 +0200",
+            "wattage": 0
+          },
+          "problem": false,
+          "room": 1,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:50_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:50_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "meter_elec": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:meter_elec/ad:50_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_units": [
+                  "kWh",
+                  "W"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:50_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 10
+        },
+        {
+          "client": {
+            "name": "Aeotec - WallMote"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "52",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 12,
+          "lrn": true,
+          "model": "zw_134_2_130",
+          "modelAlias": "Aeotec - WallMote Quad - ZW130-C",
+          "param": {
+            "alarms": {},
+            "batteryLevel": "ok",
+            "batteryPercentage": 100,
+            "supportedAlarms": {
+              "power": [
+                "charging",
+                "charged",
+                "charge_soon",
+                "charge_now"
+              ]
+            },
+            "timestamp": "2019-06-01 17:27:41 +0200",
+            "zwaveConfigParameters": [
+              {
+                "parameter": 9,
+                "size": 4,
+                "value": 67121714
+              },
+              {
+                "parameter": 10,
+                "size": 4,
+                "value": 67188275
+              }
+            ]
+          },
+          "problem": false,
+          "room": 1,
+          "services": {
+            "alarm_power": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:alarm_power/ad:52_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_events": [
+                  "charging",
+                  "charged",
+                  "charge_soon",
+                  "charge_now"
+                ]
+              }
+            },
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:52_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "battery": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:battery/ad:52_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:52_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "scene_ctrl": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:scene_ctrl/ad:52_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_scenes": null
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 12
+        },
+        {
+          "client": {
+            "name": "Aeotec - WallMote Quad - ZW130-C ch_1"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "52",
+            "group": "ch_1"
+          },
+          "functionality": null,
+          "id": 13,
+          "lrn": true,
+          "model": "zw_134_2_130",
+          "modelAlias": "Aeotec - WallMote Quad - ZW130-C",
+          "param": {
+            "timestamp": null
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:52_1",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:52_1",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "scene_ctrl": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:scene_ctrl/ad:52_1",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_scenes": null
+              }
+            }
+          },
+          "supports": [
+            "clear"
+          ],
+          "thing": 12
+        },
+        {
+          "client": {
+            "name": "Aeotec - WallMote Quad - ZW130-C ch_2"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "52",
+            "group": "ch_2"
+          },
+          "functionality": null,
+          "id": 14,
+          "lrn": true,
+          "model": "zw_134_2_130",
+          "modelAlias": "Aeotec - WallMote Quad - ZW130-C",
+          "param": {
+            "timestamp": null
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:52_2",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:52_2",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "scene_ctrl": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:scene_ctrl/ad:52_2",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_scenes": null
+              }
+            }
+          },
+          "supports": [
+            "clear"
+          ],
+          "thing": 12
+        },
+        {
+          "client": {
+            "name": "Aeotec - WallMote Quad - ZW130-C ch_3"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "52",
+            "group": "ch_3"
+          },
+          "functionality": null,
+          "id": 15,
+          "lrn": true,
+          "model": "zw_134_2_130",
+          "modelAlias": "Aeotec - WallMote Quad - ZW130-C",
+          "param": {
+            "timestamp": null
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:52_3",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:52_3",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "scene_ctrl": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:scene_ctrl/ad:52_3",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_scenes": null
+              }
+            }
+          },
+          "supports": [
+            "clear"
+          ],
+          "thing": 12
+        },
+        {
+          "client": {
+            "name": "Aeotec - WallMote Quad - ZW130-C ch_4"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "52",
+            "group": "ch_4"
+          },
+          "functionality": null,
+          "id": 16,
+          "lrn": true,
+          "model": "zw_134_2_130",
+          "modelAlias": "Aeotec - WallMote Quad - ZW130-C",
+          "param": {
+            "timestamp": null
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:52_4",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:52_4",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "scene_ctrl": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:scene_ctrl/ad:52_4",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_scenes": null
+              }
+            }
+          },
+          "supports": [
+            "clear"
+          ],
+          "thing": 12
+        },
+        {
+          "client": {
+            "name": "White cloud"
+          },
+          "fimp": {
+            "adapter": "ikea",
+            "address": "65546",
+            "group": "ch_1"
+          },
+          "functionality": "lighting",
+          "id": 17,
+          "lrn": true,
+          "model": "TRADFRI bulb E14 WS opal 400lm",
+          "modelAlias": "White cloud",
+          "param": {
+            "color": [
+              0,
+              0,
+              220,
+              241,
+              247
+            ],
+            "dimValue": 4,
+            "power": "off",
+            "timestamp": "2019-06-01 01:32:50 +0200"
+          },
+          "problem": false,
+          "room": 8,
+          "services": {
+            "color_ctrl": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:color_ctrl/ad:65546",
+              "enabled": true,
+              "props": {
+                "sup_components": [
+                  "red",
+                  "green",
+                  "blue"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_bin_switch/ad:65546",
+              "enabled": true,
+              "props": {}
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_lvl_switch/ad:65546",
+              "enabled": true,
+              "props": {
+                "max_lvl": 254,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 13
+        },
+        {
+          "client": {
+            "name": "Sofa lamp 1"
+          },
+          "fimp": {
+            "adapter": "ikea",
+            "address": "65538",
+            "group": "ch_1"
+          },
+          "functionality": "lighting",
+          "id": 18,
+          "lrn": true,
+          "model": "TRADFRI bulb E27 WS opal 980lm",
+          "modelAlias": "TRADFRI bulb E27 WS opal 980lm 2",
+          "param": {
+            "color": [
+              0,
+              0,
+              220,
+              241,
+              247
+            ],
+            "dimValue": 100,
+            "power": "on",
+            "timestamp": "2019-06-01 18:23:12 +0200"
+          },
+          "problem": false,
+          "room": 1,
+          "services": {
+            "color_ctrl": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:color_ctrl/ad:65538",
+              "enabled": true,
+              "props": {
+                "sup_components": [
+                  "red",
+                  "green",
+                  "blue"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_bin_switch/ad:65538",
+              "enabled": true,
+              "props": {}
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_lvl_switch/ad:65538",
+              "enabled": true,
+              "props": {
+                "max_lvl": 254,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 14
+        },
+        {
+          "client": {
+            "name": "Hallway bulb 1"
+          },
+          "fimp": {
+            "adapter": "ikea",
+            "address": "65543",
+            "group": "ch_1"
+          },
+          "functionality": "lighting",
+          "id": 19,
+          "lrn": true,
+          "model": "TRADFRI bulb GU10 WS 400lm",
+          "modelAlias": "Hallway bulb 1",
+          "param": {
+            "color": [
+              0,
+              0,
+              220,
+              241,
+              247
+            ],
+            "dimValue": 93,
+            "power": "on",
+            "timestamp": "2019-06-01 19:20:55 +0200"
+          },
+          "problem": false,
+          "room": 5,
+          "services": {
+            "color_ctrl": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:color_ctrl/ad:65543",
+              "enabled": true,
+              "props": {
+                "sup_components": [
+                  "red",
+                  "green",
+                  "blue"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_bin_switch/ad:65543",
+              "enabled": true,
+              "props": {}
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_lvl_switch/ad:65543",
+              "enabled": true,
+              "props": {
+                "max_lvl": 254,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 15
+        },
+        {
+          "client": {
+            "name": "Hallway bulb 2"
+          },
+          "fimp": {
+            "adapter": "ikea",
+            "address": "65544",
+            "group": "ch_1"
+          },
+          "functionality": "lighting",
+          "id": 20,
+          "lrn": true,
+          "model": "TRADFRI bulb GU10 WS 400lm",
+          "modelAlias": "Hallway bulb 2",
+          "param": {
+            "color": [
+              0,
+              0,
+              220,
+              241,
+              247
+            ],
+            "dimValue": 93,
+            "power": "on",
+            "timestamp": "2019-06-01 19:20:54 +0200"
+          },
+          "problem": false,
+          "room": 5,
+          "services": {
+            "color_ctrl": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:color_ctrl/ad:65544",
+              "enabled": true,
+              "props": {
+                "sup_components": [
+                  "red",
+                  "green",
+                  "blue"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_bin_switch/ad:65544",
+              "enabled": true,
+              "props": {}
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_lvl_switch/ad:65544",
+              "enabled": true,
+              "props": {
+                "max_lvl": 254,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 16
+        },
+        {
+          "client": {
+            "name": "Led panel 3 floor"
+          },
+          "fimp": {
+            "adapter": "ikea",
+            "address": "65540",
+            "group": "ch_1"
+          },
+          "functionality": "lighting",
+          "id": 21,
+          "lrn": true,
+          "model": "FLOALT panel WS 60x60",
+          "modelAlias": "Led panel 3 floor",
+          "param": {
+            "color": [
+              0,
+              0,
+              220,
+              241,
+              247
+            ],
+            "dimValue": 50,
+            "power": "off",
+            "timestamp": "2019-06-01 19:21:03 +0200"
+          },
+          "problem": false,
+          "room": 7,
+          "services": {
+            "color_ctrl": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:color_ctrl/ad:65540",
+              "enabled": true,
+              "props": {
+                "sup_components": [
+                  "red",
+                  "green",
+                  "blue"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_bin_switch/ad:65540",
+              "enabled": true,
+              "props": {}
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_lvl_switch/ad:65540",
+              "enabled": true,
+              "props": {
+                "max_lvl": 254,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 17
+        },
+        {
+          "client": {
+            "name": "Led panel 2 floor"
+          },
+          "fimp": {
+            "adapter": "ikea",
+            "address": "65541",
+            "group": "ch_1"
+          },
+          "functionality": "lighting",
+          "id": 22,
+          "lrn": true,
+          "model": "FLOALT panel WS 60x60",
+          "modelAlias": "Led panel 2 floor",
+          "param": {
+            "color": [
+              0,
+              0,
+              220,
+              241,
+              247
+            ],
+            "dimValue": 10,
+            "power": "off",
+            "timestamp": "2019-06-01 19:21:03 +0200"
+          },
+          "problem": false,
+          "room": 7,
+          "services": {
+            "color_ctrl": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:color_ctrl/ad:65541",
+              "enabled": true,
+              "props": {
+                "sup_components": [
+                  "red",
+                  "green",
+                  "blue"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_bin_switch/ad:65541",
+              "enabled": true,
+              "props": {}
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_lvl_switch/ad:65541",
+              "enabled": true,
+              "props": {
+                "max_lvl": 254,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 18
+        },
+        {
+          "client": {
+            "name": "Hallway bulb 3"
+          },
+          "fimp": {
+            "adapter": "ikea",
+            "address": "65545",
+            "group": "ch_1"
+          },
+          "functionality": "lighting",
+          "id": 23,
+          "lrn": true,
+          "model": "TRADFRI bulb GU10 WS 400lm",
+          "modelAlias": "Hallway bulb 3",
+          "param": {
+            "color": [
+              0,
+              0,
+              220,
+              241,
+              247
+            ],
+            "dimValue": 93,
+            "power": "on",
+            "timestamp": "2019-06-01 19:20:56 +0200"
+          },
+          "problem": false,
+          "room": 5,
+          "services": {
+            "color_ctrl": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:color_ctrl/ad:65545",
+              "enabled": true,
+              "props": {
+                "sup_components": [
+                  "red",
+                  "green",
+                  "blue"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_bin_switch/ad:65545",
+              "enabled": true,
+              "props": {}
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_lvl_switch/ad:65545",
+              "enabled": true,
+              "props": {
+                "max_lvl": 254,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 19
+        },
+        {
+          "client": {
+            "name": "Bedroom lamp"
+          },
+          "fimp": {
+            "adapter": "ikea",
+            "address": "65547",
+            "group": "ch_1"
+          },
+          "functionality": "lighting",
+          "id": 24,
+          "lrn": true,
+          "model": "TRADFRI bulb E14 WS opal 400lm",
+          "modelAlias": "Bedroom lamp",
+          "param": {
+            "color": [
+              0,
+              0,
+              220,
+              241,
+              247
+            ],
+            "dimValue": 10,
+            "power": "on",
+            "timestamp": "2019-06-01 20:50:49 +0200"
+          },
+          "problem": false,
+          "room": 4,
+          "services": {
+            "color_ctrl": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:color_ctrl/ad:65547",
+              "enabled": true,
+              "props": {
+                "sup_components": [
+                  "red",
+                  "green",
+                  "blue"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_bin_switch/ad:65547",
+              "enabled": true,
+              "props": {}
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_lvl_switch/ad:65547",
+              "enabled": true,
+              "props": {
+                "max_lvl": 254,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 20
+        },
+        {
+          "client": {
+            "name": "Sofa lamp 2"
+          },
+          "fimp": {
+            "adapter": "ikea",
+            "address": "65537",
+            "group": "ch_1"
+          },
+          "functionality": "lighting",
+          "id": 25,
+          "lrn": true,
+          "model": "TRADFRI bulb E27 WS opal 980lm",
+          "modelAlias": "TRADFRI bulb E27 WS opal 980lm",
+          "param": {
+            "color": [
+              0,
+              0,
+              220,
+              241,
+              247
+            ],
+            "dimValue": 100,
+            "power": "on",
+            "timestamp": "2019-06-01 18:23:13 +0200"
+          },
+          "problem": false,
+          "room": 1,
+          "services": {
+            "color_ctrl": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:color_ctrl/ad:65537",
+              "enabled": true,
+              "props": {
+                "sup_components": [
+                  "red",
+                  "green",
+                  "blue"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_bin_switch/ad:65537",
+              "enabled": true,
+              "props": {}
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_lvl_switch/ad:65537",
+              "enabled": true,
+              "props": {
+                "max_lvl": 254,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 21
+        },
+        {
+          "client": {
+            "name": "Entrance lamp"
+          },
+          "fimp": {
+            "adapter": "ikea",
+            "address": "65549",
+            "group": "ch_1"
+          },
+          "functionality": "lighting",
+          "id": 26,
+          "lrn": true,
+          "model": "TRADFRI bulb E27 CWS opal 600lm",
+          "modelAlias": "Entrance lamp",
+          "param": {
+            "color": [
+              0,
+              0,
+              220,
+              241,
+              247
+            ],
+            "dimValue": 100,
+            "power": "off",
+            "timestamp": "2019-06-01 14:33:14 +0200"
+          },
+          "problem": false,
+          "room": 5,
+          "services": {
+            "color_ctrl": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:color_ctrl/ad:65549",
+              "enabled": true,
+              "props": {
+                "sup_components": [
+                  "red",
+                  "green",
+                  "blue"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_bin_switch/ad:65549",
+              "enabled": true,
+              "props": {}
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_lvl_switch/ad:65549",
+              "enabled": true,
+              "props": {
+                "max_lvl": 254,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 22
+        },
+        {
+          "client": {
+            "name": "Elina's room group"
+          },
+          "fimp": {
+            "adapter": "ikea",
+            "address": "165209",
+            "group": "ch_1"
+          },
+          "functionality": "lighting",
+          "id": 27,
+          "lrn": true,
+          "model": null,
+          "modelAlias": "Elina's room",
+          "param": {
+            "color": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "dimValue": null,
+            "power": "off",
+            "timestamp": null
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "color_ctrl": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:color_ctrl/ad:165209",
+              "enabled": true,
+              "props": {
+                "sup_components": [
+                  "red",
+                  "green",
+                  "blue"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_bin_switch/ad:165209",
+              "enabled": true,
+              "props": {}
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_lvl_switch/ad:165209",
+              "enabled": true,
+              "props": {
+                "max_lvl": 254,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 23
+        },
+        {
+          "client": {
+            "name": "Stairway group"
+          },
+          "fimp": {
+            "adapter": "ikea",
+            "address": "162855",
+            "group": "ch_1"
+          },
+          "functionality": "lighting",
+          "id": 28,
+          "lrn": true,
+          "model": null,
+          "modelAlias": "Stairway",
+          "param": {
+            "color": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "dimValue": 75,
+            "power": "on",
+            "timestamp": null
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "color_ctrl": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:color_ctrl/ad:162855",
+              "enabled": true,
+              "props": {
+                "sup_components": [
+                  "red",
+                  "green",
+                  "blue"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_bin_switch/ad:162855",
+              "enabled": true,
+              "props": {}
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_lvl_switch/ad:162855",
+              "enabled": true,
+              "props": {
+                "max_lvl": 254,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 24
+        },
+        {
+          "client": {
+            "name": "Playground group"
+          },
+          "fimp": {
+            "adapter": "ikea",
+            "address": "184295",
+            "group": "ch_1"
+          },
+          "functionality": "lighting",
+          "id": 29,
+          "lrn": true,
+          "model": null,
+          "modelAlias": "Bedroom",
+          "param": {
+            "color": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "dimValue": 20,
+            "power": "off",
+            "timestamp": "2018-11-15 00:45:17 +0100"
+          },
+          "problem": false,
+          "room": 6,
+          "services": {
+            "color_ctrl": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:color_ctrl/ad:184295",
+              "enabled": true,
+              "props": {
+                "sup_components": [
+                  "red",
+                  "green",
+                  "blue"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_bin_switch/ad:184295",
+              "enabled": true,
+              "props": {}
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_lvl_switch/ad:184295",
+              "enabled": true,
+              "props": {
+                "max_lvl": 254,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 25
+        },
+        {
+          "client": {
+            "name": "Living room group"
+          },
+          "fimp": {
+            "adapter": "ikea",
+            "address": "132635",
+            "group": "ch_1"
+          },
+          "functionality": "lighting",
+          "id": 30,
+          "lrn": true,
+          "model": null,
+          "modelAlias": "Living room",
+          "param": {
+            "color": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "dimValue": 80,
+            "power": "on",
+            "timestamp": "2019-03-20 07:55:15 +0100"
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "color_ctrl": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:color_ctrl/ad:132635",
+              "enabled": true,
+              "props": {
+                "sup_components": [
+                  "red",
+                  "green",
+                  "blue"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_bin_switch/ad:132635",
+              "enabled": true,
+              "props": {}
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_lvl_switch/ad:132635",
+              "enabled": true,
+              "props": {
+                "max_lvl": 254,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 26
+        },
+        {
+          "client": {
+            "name": "zw_271_512_4106 ch_0"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "27",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 31,
+          "lrn": true,
+          "model": "zw_271_512_4106",
+          "param": {
+            "power": "off",
+            "timestamp": "2019-05-29 01:30:54 +0200",
+            "zwaveConfigParameters": []
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:27_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:27_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:27_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 27
+        },
+        {
+          "client": {
+            "name": "Ceiling lamp 1"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "27",
+            "group": "ch_1"
+          },
+          "functionality": "lighting",
+          "id": 32,
+          "lrn": true,
+          "model": "zw_271_512_4106",
+          "param": {
+            "power": "off",
+            "timestamp": "2019-05-28 14:39:33 +0200"
+          },
+          "problem": false,
+          "room": 7,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:27_1",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:27_1",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 27
+        },
+        {
+          "client": {
+            "name": "zw_271_512_4106 ch_2"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "27",
+            "group": "ch_2"
+          },
+          "functionality": null,
+          "id": 33,
+          "lrn": true,
+          "model": "zw_271_512_4106",
+          "param": {
+            "power": "off",
+            "timestamp": "2019-05-25 19:20:31 +0200"
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:27_2",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:27_2",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 27
+        },
+        {
+          "client": {
+            "name": "zw_271_512_4106 ch_0"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "28",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 34,
+          "lrn": true,
+          "model": "zw_271_512_4106",
+          "param": {
+            "power": "off",
+            "timestamp": "2019-05-29 01:31:00 +0200",
+            "zwaveConfigParameters": []
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:28_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:28_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:28_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 28
+        },
+        {
+          "client": {
+            "name": "Ceiling lamp 2"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "28",
+            "group": "ch_1"
+          },
+          "functionality": "lighting",
+          "id": 35,
+          "lrn": true,
+          "model": "zw_271_512_4106",
+          "param": {
+            "power": "off",
+            "timestamp": "2019-05-28 14:39:33 +0200"
+          },
+          "problem": false,
+          "room": 7,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:28_1",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:28_1",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 28
+        },
+        {
+          "client": {
+            "name": "zw_271_512_4106 ch_2"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "28",
+            "group": "ch_2"
+          },
+          "functionality": null,
+          "id": 36,
+          "lrn": true,
+          "model": "zw_271_512_4106",
+          "param": {
+            "power": "off",
+            "timestamp": "2019-05-25 19:20:32 +0200"
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:28_2",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:28_2",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 28
+        },
+        {
+          "client": {
+            "name": "Water heater"
+          },
+          "functionality": "appliance",
+          "id": 37,
+          "lrn": true,
+          "model": "PSC234",
+          "param": {
+            "power": "off",
+            "wattage": null
+          },
+          "problem": false,
+          "room": 3,
+          "services": {},
+          "supports": [],
+          "thing": null
+        },
+        {
+          "client": {
+            "name": "MS bathroom ch 0"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "58",
+            "group": "ch_0"
+          },
+          "functionality": "lighting",
+          "id": 46,
+          "lrn": true,
+          "model": "zw_372_3_4098",
+          "param": {
+            "dimValue": 100,
+            "power": "off",
+            "supportedThermostatModes": [
+              "off",
+              "heat",
+              "auto",
+              "aux_heat"
+            ],
+            "targetTemperature": 20,
+            "temperature": null,
+            "thermostatMode": "auto",
+            "timestamp": "2019-06-01 11:42:20 +0200",
+            "zwaveConfigParameters": [
+              {
+                "parameter": 14,
+                "size": 1,
+                "value": 1
+              }
+            ]
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:58_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:58_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:58_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_lvl_switch/ad:58_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "max_lvl": 100,
+                "min_lvl": 0
+              }
+            },
+            "sensor_temp": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_temp/ad:58_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_units": [
+                  "C"
+                ]
+              }
+            },
+            "thermostat": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:thermostat/ad:58_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_modes": [
+                  "off",
+                  "heat",
+                  "auto",
+                  "aux_heat"
+                ],
+                "sup_setpoints": [
+                  "heat"
+                ]
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 33
+        },
+        {
+          "client": {
+            "name": "Bathroom lamp"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "58",
+            "group": "ch_1"
+          },
+          "functionality": "lighting",
+          "id": 47,
+          "lrn": true,
+          "model": "zw_372_3_4098",
+          "param": {
+            "dimValue": 100,
+            "power": "off",
+            "timestamp": "2019-06-01 20:43:28 +0200"
+          },
+          "problem": false,
+          "room": 3,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:58_1",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:58_1",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_lvl_switch/ad:58_1",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "max_lvl": 100,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 33
+        },
+        {
+          "client": {
+            "name": "Ms bathroom  ch_2"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "58",
+            "group": "ch_2"
+          },
+          "functionality": "lighting",
+          "id": 48,
+          "lrn": true,
+          "model": "zw_372_3_4098",
+          "param": {
+            "dimValue": 100,
+            "power": "on",
+            "timestamp": "2019-06-01 18:22:30 +0200"
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:58_2",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:58_2",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_lvl_switch/ad:58_2",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "max_lvl": 100,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 33
+        },
+        {
+          "client": {
+            "name": "Ms bathroom  ch_3"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "58",
+            "group": "ch_3"
+          },
+          "functionality": "lighting",
+          "id": 49,
+          "lrn": true,
+          "model": "zw_372_3_4098",
+          "param": {
+            "dimValue": null,
+            "power": "off",
+            "timestamp": "2019-05-29 22:17:56 +0200"
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:58_3",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:58_3",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_lvl_switch/ad:58_3",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "max_lvl": 100,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 33
+        },
+        {
+          "client": {
+            "name": "Ms bath ch_4"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "58",
+            "group": "ch_4"
+          },
+          "functionality": "lighting",
+          "id": 50,
+          "lrn": true,
+          "model": "zw_372_3_4098",
+          "param": {
+            "dimValue": null,
+            "power": "off",
+            "timestamp": "2019-05-29 22:18:04 +0200"
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:58_4",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:58_4",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_lvl_switch/ad:58_4",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "max_lvl": 100,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 33
+        },
+        {
+          "client": {
+            "name": "Ms bath ch_5"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "58",
+            "group": "ch_5"
+          },
+          "functionality": "lighting",
+          "id": 51,
+          "lrn": true,
+          "model": "zw_372_3_4098",
+          "param": {
+            "dimValue": 100,
+            "power": "off",
+            "timestamp": "2019-05-29 22:18:04 +0200"
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:58_5",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:58_5",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_lvl_switch/ad:58_5",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "max_lvl": 100,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 33
+        },
+        {
+          "client": {
+            "name": "Wp heater"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "59",
+            "group": "ch_0"
+          },
+          "functionality": "appliance",
+          "id": 54,
+          "lrn": true,
+          "model": "zw_398_4_2",
+          "param": {
+            "energy": 4929.955078125,
+            "power": "on",
+            "timestamp": "2019-06-01 20:56:50 +0200",
+            "wattage": 1967.1689453125
+          },
+          "problem": false,
+          "room": 3,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:59_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:59_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "meter_elec": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:meter_elec/ad:59_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_units": [
+                  "kWh",
+                  "W"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:59_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 36
+        },
+        {
+          "client": {
+            "name": "Mode switch"
+          },
+          "functionality": "input",
+          "id": 58,
+          "lrn": true,
+          "model": "FH-MODE",
+          "param": {},
+          "problem": false,
+          "room": 5,
+          "services": {},
+          "supports": [],
+          "thing": null
+        },
+        {
+          "client": {
+            "name": "Update temp from yr.no"
+          },
+          "fimp": {
+            "adapter": "flow",
+            "address": "zFY9VGGMct",
+            "group": "1"
+          },
+          "functionality": "appliance",
+          "id": 60,
+          "lrn": true,
+          "model": "flow_zFY9VGGMct",
+          "modelAlias": "yr.no virtual temp sensor",
+          "param": {
+            "power": "off",
+            "timestamp": null
+          },
+          "problem": false,
+          "room": 9,
+          "services": {
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:flow/ad:1/sv:out_bin_switch/ad:zFY9VGGMct",
+              "enabled": true,
+              "props": {}
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 41
+        },
+        {
+          "client": {
+            "name": "yr.no virtual temp sensor"
+          },
+          "fimp": {
+            "adapter": "flow",
+            "address": "zFY9VGGMct",
+            "group": "4"
+          },
+          "functionality": null,
+          "id": 61,
+          "lrn": true,
+          "model": "flow_zFY9VGGMct",
+          "modelAlias": "yr.no virtual temp sensor",
+          "param": {
+            "temperature": 12,
+            "timestamp": "2019-06-01 20:34:22 +0200"
+          },
+          "problem": false,
+          "room": 9,
+          "services": {
+            "sensor_temp": {
+              "addr": "/rt:dev/rn:virtual/ad:1/sv:sensor_temp/ad:yr_report",
+              "enabled": true,
+              "props": {}
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 41
+        },
+        {
+          "client": {
+            "name": "Flower"
+          },
+          "fimp": {
+            "adapter": "ble",
+            "address": "C4-7C-8D-63-7A-1F",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 65,
+          "lrn": true,
+          "model": "flower_care_1",
+          "modelAlias": "Flower care",
+          "param": {
+            "batteryLevel": "ok",
+            "batteryPercentage": 94,
+            "humidity": 26,
+            "illuminance": 95,
+            "temperature": 17.8,
+            "timestamp": "2019-02-03 12:13:17 +0100"
+          },
+          "problem": false,
+          "room": 6,
+          "services": {
+            "battery": {
+              "addr": "/rt:dev/rn:ble/ad:1/sv:battery/ad:C4-7C-8D-63-7A-1F",
+              "enabled": true,
+              "props": {}
+            },
+            "sensor_conduct": {
+              "addr": "/rt:dev/rn:ble/ad:1/sv:sensor_conduct/ad:C4-7C-8D-63-7A-1F",
+              "enabled": true,
+              "props": {
+                "sup_units": [
+                  "?"
+                ]
+              }
+            },
+            "sensor_humid": {
+              "addr": "/rt:dev/rn:ble/ad:1/sv:sensor_humid/ad:C4-7C-8D-63-7A-1F",
+              "enabled": true,
+              "props": {
+                "sup_units": [
+                  "%"
+                ]
+              }
+            },
+            "sensor_lumin": {
+              "addr": "/rt:dev/rn:ble/ad:1/sv:sensor_lumin/ad:C4-7C-8D-63-7A-1F",
+              "enabled": true,
+              "props": {
+                "sup_units": [
+                  "Lux"
+                ]
+              }
+            },
+            "sensor_temp": {
+              "addr": "/rt:dev/rn:ble/ad:1/sv:sensor_temp/ad:C4-7C-8D-63-7A-1F",
+              "enabled": true,
+              "props": {
+                "sup_units": [
+                  "C"
+                ]
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 44
+        },
+        {
+          "client": {
+            "name": "Flower"
+          },
+          "fimp": {
+            "adapter": "ble",
+            "address": "C4-7C-8D-63-33-14",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 66,
+          "lrn": true,
+          "model": "flower_care_1",
+          "modelAlias": "Flower care",
+          "param": {
+            "batteryLevel": "ok",
+            "batteryPercentage": 89,
+            "humidity": 10,
+            "illuminance": 19,
+            "temperature": 22.2,
+            "timestamp": "2019-02-02 18:39:58 +0100"
+          },
+          "problem": false,
+          "room": 1,
+          "services": {
+            "battery": {
+              "addr": "/rt:dev/rn:ble/ad:1/sv:battery/ad:C4-7C-8D-63-33-14",
+              "enabled": true,
+              "props": {}
+            },
+            "sensor_conduct": {
+              "addr": "/rt:dev/rn:ble/ad:1/sv:sensor_conduct/ad:C4-7C-8D-63-33-14",
+              "enabled": true,
+              "props": {
+                "sup_units": [
+                  "?"
+                ]
+              }
+            },
+            "sensor_humid": {
+              "addr": "/rt:dev/rn:ble/ad:1/sv:sensor_humid/ad:C4-7C-8D-63-33-14",
+              "enabled": true,
+              "props": {
+                "sup_units": [
+                  "%"
+                ]
+              }
+            },
+            "sensor_lumin": {
+              "addr": "/rt:dev/rn:ble/ad:1/sv:sensor_lumin/ad:C4-7C-8D-63-33-14",
+              "enabled": true,
+              "props": {
+                "sup_units": [
+                  "Lux"
+                ]
+              }
+            },
+            "sensor_temp": {
+              "addr": "/rt:dev/rn:ble/ad:1/sv:sensor_temp/ad:C4-7C-8D-63-33-14",
+              "enabled": true,
+              "props": {
+                "sup_units": [
+                  "C"
+                ]
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 45
+        },
+        {
+          "client": {
+            "name": "Yamaha AVR"
+          },
+          "fimp": {
+            "adapter": "flow",
+            "address": "7zfeSQx3Q8",
+            "group": "ch_1"
+          },
+          "functionality": "appliance",
+          "id": 69,
+          "lrn": true,
+          "model": "flow_7zfeSQx3Q8",
+          "modelAlias": "Yamaha AVR control",
+          "param": {
+            "dimValue": 70,
+            "power": "on",
+            "timestamp": "2019-06-01 15:58:21 +0200"
+          },
+          "problem": false,
+          "room": 1,
+          "services": {
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:flow/ad:1/sv:out_lvl_switch/ad:7zfeSQx3Q8",
+              "enabled": true,
+              "props": {}
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 48
+        },
+        {
+          "client": {
+            "name": "Siren"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "62",
+            "group": "ch_0"
+          },
+          "functionality": "appliance",
+          "id": 70,
+          "lrn": true,
+          "model": "zw_398_2_1",
+          "modelAlias": "Climax - Siren - SRAC - 23BZW",
+          "param": {
+            "power": "off",
+            "siren": "silence",
+            "timestamp": "2019-05-29 22:18:05 +0200",
+            "zwaveConfigParameters": []
+          },
+          "problem": false,
+          "room": 1,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:62_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:62_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:62_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "siren_ctrl": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:siren_ctrl/ad:62_0",
+              "enabled": true,
+              "props": {
+                "is_secure": true,
+                "is_unsecure": false,
+                "sup_modes": [
+                  "on",
+                  "off"
+                ]
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 49
+        },
+        {
+          "client": {
+            "name": "Siren"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "20",
+            "group": "ch_0"
+          },
+          "functionality": "appliance",
+          "id": 71,
+          "lrn": true,
+          "model": "zw_398_2_1",
+          "modelAlias": "Climax - Siren - SRAC - 23BZW",
+          "param": {
+            "power": "off",
+            "siren": "silence",
+            "timestamp": "2019-05-29 22:18:05 +0200",
+            "zwaveConfigParameters": []
+          },
+          "problem": false,
+          "room": 4,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:20_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:20_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:20_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "siren_ctrl": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:siren_ctrl/ad:20_0",
+              "enabled": true,
+              "props": {
+                "is_secure": true,
+                "is_unsecure": false,
+                "sup_modes": [
+                  "on",
+                  "off"
+                ]
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 50
+        },
+        {
+          "client": {
+            "name": "RGB bulb"
+          },
+          "fimp": {
+            "adapter": "ikea",
+            "address": "65551",
+            "group": "ch_1"
+          },
+          "functionality": null,
+          "id": 72,
+          "lrn": true,
+          "model": "TRADFRI bulb E27 CWS opal 600lm",
+          "modelAlias": "RGB bulb",
+          "param": {
+            "color": [
+              0,
+              0,
+              220,
+              241,
+              247
+            ],
+            "dimValue": 38,
+            "power": "on",
+            "timestamp": "2019-05-30 00:02:51 +0200"
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "color_ctrl": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:color_ctrl/ad:65551",
+              "enabled": true,
+              "props": {
+                "sup_components": [
+                  "red",
+                  "green",
+                  "blue"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_bin_switch/ad:65551",
+              "enabled": true,
+              "props": {}
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_lvl_switch/ad:65551",
+              "enabled": true,
+              "props": {
+                "max_lvl": 254,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 51
+        },
+        {
+          "client": {
+            "name": "Security"
+          },
+          "fimp": {
+            "adapter": "ikea",
+            "address": "184296",
+            "group": "ch_1"
+          },
+          "functionality": null,
+          "id": 73,
+          "lrn": true,
+          "model": null,
+          "modelAlias": "Security",
+          "param": {
+            "color": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "dimValue": null,
+            "power": "off",
+            "timestamp": null
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "color_ctrl": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:color_ctrl/ad:184296",
+              "enabled": true,
+              "props": {
+                "sup_components": [
+                  "red",
+                  "green",
+                  "blue"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_bin_switch/ad:184296",
+              "enabled": true,
+              "props": {}
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_lvl_switch/ad:184296",
+              "enabled": true,
+              "props": {
+                "max_lvl": 254,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 52
+        },
+        {
+          "client": {
+            "name": "Watering system "
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "64",
+            "group": "ch_0"
+          },
+          "functionality": "appliance",
+          "id": 75,
+          "lrn": true,
+          "model": "zw_398_4_2",
+          "param": {
+            "power": "off",
+            "timestamp": "2019-05-20 18:32:39 +0200"
+          },
+          "problem": false,
+          "room": 9,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:64_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:64_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:64_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 54
+        },
+        {
+          "client": {
+            "name": "Living LED backlight"
+          },
+          "fimp": {
+            "adapter": "ikea",
+            "address": "65552",
+            "group": "ch_1"
+          },
+          "functionality": "lighting",
+          "id": 83,
+          "lrn": true,
+          "model": "TRADFRI transformer 10W",
+          "modelAlias": "Living LED backlight",
+          "param": {
+            "color": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "dimValue": 100,
+            "power": "on",
+            "timestamp": "2019-06-01 18:23:14 +0200"
+          },
+          "problem": false,
+          "room": 1,
+          "services": {
+            "color_ctrl": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:color_ctrl/ad:65552",
+              "enabled": true,
+              "props": {
+                "sup_components": [
+                  "red",
+                  "green",
+                  "blue"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_bin_switch/ad:65552",
+              "enabled": true,
+              "props": {}
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:ikea/ad:1/sv:out_lvl_switch/ad:65552",
+              "enabled": true,
+              "props": {
+                "max_lvl": 254,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 62
+        },
+        {
+          "client": {
+            "name": "zw_372_3_4098 ch_0"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "29",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 85,
+          "lrn": true,
+          "model": "zw_372_3_4098",
+          "param": {
+            "dimValue": 100,
+            "power": "on",
+            "supportedThermostatModes": [
+              "off",
+              "heat",
+              "auto",
+              "aux_heat"
+            ],
+            "targetTemperature": 11,
+            "temperature": null,
+            "thermostatMode": "heat",
+            "timestamp": "2019-05-29 22:18:39 +0200",
+            "zwaveConfigParameters": []
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:29_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:29_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:29_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_lvl_switch/ad:29_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "max_lvl": 100,
+                "min_lvl": 0
+              }
+            },
+            "sensor_temp": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_temp/ad:29_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_units": [
+                  "C"
+                ]
+              }
+            },
+            "thermostat": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:thermostat/ad:29_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "sup_modes": [
+                  "off",
+                  "heat",
+                  "auto",
+                  "aux_heat"
+                ],
+                "sup_setpoints": [
+                  "heat"
+                ]
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 64
+        },
+        {
+          "client": {
+            "name": "zw_372_3_4098 ch_1"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "29",
+            "group": "ch_1"
+          },
+          "functionality": null,
+          "id": 86,
+          "lrn": true,
+          "model": "zw_372_3_4098",
+          "param": {
+            "dimValue": 100,
+            "power": "on",
+            "timestamp": "2019-06-01 18:58:21 +0200"
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:29_1",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:29_1",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_lvl_switch/ad:29_1",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "max_lvl": 100,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 64
+        },
+        {
+          "client": {
+            "name": "zw_372_3_4098 ch_2"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "29",
+            "group": "ch_2"
+          },
+          "functionality": null,
+          "id": 87,
+          "lrn": true,
+          "model": "zw_372_3_4098",
+          "param": {
+            "dimValue": 100,
+            "power": "on",
+            "timestamp": "2019-06-01 18:58:22 +0200"
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:29_2",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:29_2",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_lvl_switch/ad:29_2",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "max_lvl": 100,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 64
+        },
+        {
+          "client": {
+            "name": "zw_372_3_4098 ch_3"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "29",
+            "group": "ch_3"
+          },
+          "functionality": null,
+          "id": 88,
+          "lrn": true,
+          "model": "zw_372_3_4098",
+          "param": {
+            "dimValue": 100,
+            "power": "off",
+            "timestamp": "2019-05-29 22:18:36 +0200"
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:29_3",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:29_3",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_lvl_switch/ad:29_3",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "max_lvl": 100,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 64
+        },
+        {
+          "client": {
+            "name": "zw_372_3_4098 ch_4"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "29",
+            "group": "ch_4"
+          },
+          "functionality": null,
+          "id": 89,
+          "lrn": true,
+          "model": "zw_372_3_4098",
+          "param": {
+            "dimValue": null,
+            "power": "off",
+            "timestamp": "2019-05-29 22:18:39 +0200"
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:29_4",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:29_4",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_lvl_switch/ad:29_4",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "max_lvl": 100,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 64
+        },
+        {
+          "client": {
+            "name": "zw_372_3_4098 ch_5"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "29",
+            "group": "ch_5"
+          },
+          "functionality": null,
+          "id": 90,
+          "lrn": true,
+          "model": "zw_372_3_4098",
+          "param": {
+            "dimValue": 100,
+            "power": "on",
+            "timestamp": "2019-05-29 22:18:44 +0200"
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:29_5",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:29_5",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_lvl_switch/ad:29_5",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true,
+                "max_lvl": 100,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 64
+        },
+        {
+          "client": {
+            "name": "Virtual thermostat 1"
+          },
+          "fimp": {
+            "adapter": "flow",
+            "address": "ZoeseJcSZfvBe9w",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 91,
+          "lrn": true,
+          "model": "flow_ZoeseJcSZfvBe9w",
+          "modelAlias": "Virtual thermostat",
+          "param": {
+            "targetTemperature": null,
+            "timestamp": null
+          },
+          "problem": false,
+          "room": 1,
+          "services": {
+            "thermostat": {
+              "addr": "/rt:dev/rn:flow/ad:1/sv:thermostat/ad:ZoeseJcSZfvBe9w_0",
+              "enabled": true,
+              "props": {
+                "sup_setpoints": [
+                  "heat",
+                  "cool",
+                  "auto"
+                ]
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 65
+        },
+        {
+          "client": {
+            "name": "Mill heater"
+          },
+          "fimp": {
+            "adapter": "flow",
+            "address": "2OHYagR0gfLgkai",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 92,
+          "lrn": true,
+          "model": "flow_2OHYagR0gfLgkai",
+          "modelAlias": "Mill heater",
+          "param": {
+            "supportedThermostatModes": [
+              "off",
+              "heat"
+            ],
+            "targetTemperature": 16,
+            "temperature": 25,
+            "thermostatMode": "heat",
+            "timestamp": "2019-06-01 11:17:27 +0200"
+          },
+          "problem": false,
+          "room": 6,
+          "services": {
+            "sensor_temp": {
+              "addr": "/rt:dev/rn:flow/ad:1/sv:sensor_temp/ad:2OHYagR0gfLgkai_0",
+              "enabled": true,
+              "props": {
+                "sup_units": [
+                  "C"
+                ]
+              }
+            },
+            "thermostat": {
+              "addr": "/rt:dev/rn:flow/ad:1/sv:thermostat/ad:2OHYagR0gfLgkai_0",
+              "enabled": true,
+              "props": {
+                "sup_modes": [
+                  "off",
+                  "heat"
+                ],
+                "sup_setpoints": [
+                  "heat"
+                ]
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 66
+        },
+        {
+          "client": {
+            "name": "twinkly"
+          },
+          "fimp": {
+            "adapter": "flow",
+            "address": "pvNmsGmp9xxkZlB",
+            "group": "ch_0"
+          },
+          "functionality": "lighting",
+          "id": 93,
+          "lrn": true,
+          "model": "flow_pvNmsGmp9xxkZlB",
+          "modelAlias": "twinkly",
+          "param": {
+            "dimValue": 38,
+            "power": "on",
+            "timestamp": "2019-02-01 19:02:34 +0100"
+          },
+          "problem": true,
+          "room": 1,
+          "services": {
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:flow/ad:1/sv:out_lvl_switch/ad:pvNmsGmp9xxkZlB_0",
+              "enabled": true,
+              "props": {}
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 67
+        },
+        {
+          "client": {
+            "name": "owl-controller"
+          },
+          "fimp": {
+            "adapter": "flow",
+            "address": "ciJ1EVrE8DlGGwF",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 94,
+          "lrn": true,
+          "model": "flow_ciJ1EVrE8DlGGwF",
+          "modelAlias": "owl-controller",
+          "param": {
+            "dimValue": 10,
+            "power": "off",
+            "timestamp": "2019-02-16 11:37:54 +0100"
+          },
+          "problem": false,
+          "room": 6,
+          "services": {
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:vowl/ad:1/sv:out_lvl_switch/ad:1",
+              "enabled": true,
+              "props": {}
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 68
+        },
+        {
+          "client": {
+            "name": "FH notification tester"
+          },
+          "fimp": {
+            "adapter": "flow",
+            "address": "ryjV948MAxk2pE2",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 95,
+          "lrn": true,
+          "model": "flow_ryjV948MAxk2pE2",
+          "modelAlias": "FH notification tester",
+          "param": {
+            "power": "on",
+            "timestamp": "2019-04-26 21:59:32 +0200"
+          },
+          "problem": false,
+          "room": 6,
+          "services": {
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:flow/ad:1/sv:out_bin_switch/ad:ryjV948MAxk2pE2_0",
+              "enabled": true,
+              "props": {}
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 69
+        },
+        {
+          "client": {
+            "name": "Virtual leak sensor"
+          },
+          "fimp": {
+            "adapter": "flow",
+            "address": "PIOFnFevppUDeDz",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 96,
+          "lrn": true,
+          "model": "flow_PIOFnFevppUDeDz",
+          "modelAlias": "Virtual leak sensor",
+          "param": {
+            "alarms": {},
+            "power": "off",
+            "supportedAlarms": {
+              "water": [
+                "leak"
+              ]
+            },
+            "timestamp": "2019-01-31 23:17:27 +0100",
+            "waterLeakage": false
+          },
+          "problem": false,
+          "room": 6,
+          "services": {
+            "alarm_water": {
+              "addr": "/rt:dev/rn:flow/ad:1/sv:alarm_water/ad:PIOFnFevppUDeDz_0",
+              "enabled": true,
+              "props": {
+                "sup_events": [
+                  "leak"
+                ]
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:flow/ad:1/sv:out_bin_switch/ad:PIOFnFevppUDeDz_0",
+              "enabled": true,
+              "props": {}
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 70
+        },
+        {
+          "client": {
+            "name": "zw_398_4_2"
+          },
+          "fimp": {
+            "adapter": "zwave-ad",
+            "address": "66",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 98,
+          "lrn": true,
+          "model": "zw_398_4_2",
+          "param": {
+            "power": "off",
+            "timestamp": "2019-05-20 18:33:25 +0200"
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "basic": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:66_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "dev_sys": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:66_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            },
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:66_0",
+              "enabled": true,
+              "props": {
+                "is_secure": false,
+                "is_unsecure": true
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 72
+        },
+        {
+          "client": {
+            "name": "Wifi dashboard"
+          },
+          "fimp": {
+            "adapter": "m5stack",
+            "address": "1",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 99,
+          "lrn": true,
+          "model": "m5stack_dashb",
+          "modelAlias": "Wifi dashboard",
+          "param": {
+            "dimValue": null,
+            "power": "off",
+            "timestamp": null
+          },
+          "problem": false,
+          "room": 6,
+          "services": {
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:m5stack/ad:1/sv:out_bin_switch/ad:1_0",
+              "enabled": true,
+              "props": {}
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:m5stack/ad:1/sv:out_lvl_switch/ad:1_0",
+              "enabled": true,
+              "props": {
+                "max_lvl": 100,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 74
+        },
+        {
+          "client": {
+            "name": "TRADFRI bulb E27 opal 1000lm"
+          },
+          "fimp": {
+            "adapter": "zigbee",
+            "address": "l1",
+            "group": "ch_0"
+          },
+          "functionality": "lighting",
+          "id": 100,
+          "lrn": true,
+          "model": "IKEA of Sweden_TRADFRI bulb E27 opal 1000lm",
+          "modelAlias": "TRADFRI bulb E27 opal 1000lm",
+          "param": {
+            "dimValue": 50,
+            "power": "off",
+            "timestamp": "2019-05-16 09:29:22 +0200"
+          },
+          "problem": false,
+          "room": 6,
+          "services": {
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:out_lvl_switch/ad:l1_0",
+              "enabled": true,
+              "props": {
+                "max_lvl": 255,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 75
+        },
+        {
+          "client": {
+            "name": "Xiaomi motion sensor"
+          },
+          "fimp": {
+            "adapter": "zigbee",
+            "address": "s24",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 101,
+          "lrn": true,
+          "model": "LUMI_lumi.sensor_motion",
+          "modelAlias": "lumi.sensor_motion",
+          "param": {
+            "batteryLevel": null,
+            "batteryPercentage": null,
+            "presence": false,
+            "timestamp": "2019-06-01 20:13:28 +0200"
+          },
+          "problem": false,
+          "room": 3,
+          "services": {
+            "battery": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:battery/ad:s24_0",
+              "enabled": true,
+              "props": {}
+            },
+            "sensor_presence": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:sensor_presence/ad:s24_0",
+              "enabled": true,
+              "props": {}
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 76
+        },
+        {
+          "client": {
+            "name": "Ceiling lights "
+          },
+          "fimp": {
+            "adapter": "zigbee",
+            "address": "l2",
+            "group": "ch_0"
+          },
+          "functionality": "lighting",
+          "id": 102,
+          "lrn": true,
+          "model": "Heiman_ElkoDimmerZHA",
+          "modelAlias": "ElkoDimmerZHA",
+          "param": {
+            "dimValue": 53,
+            "power": "off",
+            "timestamp": "2019-05-30 21:38:43 +0200"
+          },
+          "problem": false,
+          "room": 6,
+          "services": {
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:out_lvl_switch/ad:l2_0",
+              "enabled": true,
+              "props": {
+                "max_lvl": 255,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 77
+        },
+        {
+          "client": {
+            "name": "Roof window",
+            "openStateType": "window"
+          },
+          "fimp": {
+            "adapter": "zigbee",
+            "address": "s6",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 103,
+          "lrn": true,
+          "model": "LUMI_lumi.sensor_magnet",
+          "modelAlias": "lumi.sensor_magnet",
+          "param": {
+            "batteryLevel": null,
+            "batteryPercentage": null,
+            "openState": "closed",
+            "timestamp": "2019-06-01 11:17:24 +0200"
+          },
+          "problem": false,
+          "room": 6,
+          "services": {
+            "battery": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:battery/ad:s6_0",
+              "enabled": true,
+              "props": {}
+            },
+            "sensor_contact": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:sensor_contact/ad:s6_0",
+              "enabled": true,
+              "props": {}
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 78
+        },
+        {
+          "client": {
+            "name": "lumi.sensor_ht"
+          },
+          "fimp": {
+            "adapter": "zigbee",
+            "address": "s25",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 104,
+          "lrn": true,
+          "model": "LUMI_lumi.sensor_ht",
+          "modelAlias": "lumi.sensor_ht",
+          "param": {
+            "batteryLevel": null,
+            "batteryPercentage": null,
+            "temperature": 22.77,
+            "timestamp": "2019-06-01 18:40:00 +0200"
+          },
+          "problem": false,
+          "room": 8,
+          "services": {
+            "battery": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:battery/ad:s25_0",
+              "enabled": true,
+              "props": {}
+            },
+            "sensor_temp": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:sensor_temp/ad:s25_0",
+              "enabled": true,
+              "props": {
+                "sup_units": [
+                  "C"
+                ]
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 79
+        },
+        {
+          "client": {
+            "name": "lumi.sensor_ht"
+          },
+          "fimp": {
+            "adapter": "zigbee",
+            "address": "s26",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 105,
+          "lrn": true,
+          "model": "LUMI_lumi.sensor_ht",
+          "modelAlias": "lumi.sensor_ht",
+          "param": {
+            "batteryLevel": null,
+            "batteryPercentage": null,
+            "humidity": 52,
+            "timestamp": "2019-06-01 18:40:01 +0200"
+          },
+          "problem": false,
+          "room": 8,
+          "services": {
+            "battery": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:battery/ad:s26_0",
+              "enabled": true,
+              "props": {}
+            },
+            "sensor_humid": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:sensor_humid/ad:s26_0",
+              "enabled": true,
+              "props": {
+                "sup_units": [
+                  "%"
+                ]
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 80
+        },
+        {
+          "client": {
+            "name": "Motion sensor"
+          },
+          "fimp": {
+            "adapter": "zigbee",
+            "address": "s7",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 106,
+          "lrn": true,
+          "model": "LUMI_lumi.sensor_motion",
+          "modelAlias": "lumi.sensor_motion",
+          "param": {
+            "batteryLevel": null,
+            "batteryPercentage": null,
+            "presence": false,
+            "timestamp": "2019-06-01 20:42:41 +0200"
+          },
+          "problem": false,
+          "room": 8,
+          "services": {
+            "battery": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:battery/ad:s7_0",
+              "enabled": true,
+              "props": {}
+            },
+            "sensor_presence": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:sensor_presence/ad:s7_0",
+              "enabled": true,
+              "props": {}
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 81
+        },
+        {
+          "client": {
+            "name": "Door sensor",
+            "openStateType": "door"
+          },
+          "fimp": {
+            "adapter": "zigbee",
+            "address": "s27",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 107,
+          "lrn": true,
+          "model": "LUMI_lumi.sensor_magnet",
+          "modelAlias": "lumi.sensor_magnet",
+          "param": {
+            "batteryLevel": null,
+            "batteryPercentage": null,
+            "openState": "closed",
+            "timestamp": "2019-06-01 20:12:52 +0200"
+          },
+          "problem": false,
+          "room": 3,
+          "services": {
+            "battery": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:battery/ad:s27_0",
+              "enabled": true,
+              "props": {}
+            },
+            "sensor_contact": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:sensor_contact/ad:s27_0",
+              "enabled": true,
+              "props": {}
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 82
+        },
+        {
+          "client": {
+            "name": "Bathroom temp"
+          },
+          "fimp": {
+            "adapter": "zigbee",
+            "address": "s28",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 108,
+          "lrn": true,
+          "model": "LUMI_lumi.sensor_ht",
+          "modelAlias": "lumi.sensor_ht",
+          "param": {
+            "batteryLevel": null,
+            "batteryPercentage": null,
+            "temperature": 27.71,
+            "timestamp": "2019-06-01 20:23:50 +0200"
+          },
+          "problem": false,
+          "room": 3,
+          "services": {
+            "battery": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:battery/ad:s28_0",
+              "enabled": true,
+              "props": {}
+            },
+            "sensor_temp": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:sensor_temp/ad:s28_0",
+              "enabled": true,
+              "props": {
+                "sup_units": [
+                  "C"
+                ]
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 83
+        },
+        {
+          "client": {
+            "name": "Bathroom humidity"
+          },
+          "fimp": {
+            "adapter": "zigbee",
+            "address": "s29",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 109,
+          "lrn": true,
+          "model": "LUMI_lumi.sensor_ht",
+          "modelAlias": "lumi.sensor_ht",
+          "param": {
+            "batteryLevel": null,
+            "batteryPercentage": null,
+            "humidity": 57,
+            "timestamp": "2019-06-01 20:23:50 +0200"
+          },
+          "problem": false,
+          "room": 3,
+          "services": {
+            "battery": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:battery/ad:s29_0",
+              "enabled": true,
+              "props": {}
+            },
+            "sensor_humid": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:sensor_humid/ad:s29_0",
+              "enabled": true,
+              "props": {
+                "sup_units": [
+                  "%"
+                ]
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 84
+        },
+        {
+          "client": {
+            "name": "Motion sensor"
+          },
+          "fimp": {
+            "adapter": "zigbee",
+            "address": "s30",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 110,
+          "lrn": true,
+          "model": "LUMI_lumi.sensor_motion",
+          "modelAlias": "lumi.sensor_motion",
+          "param": {
+            "batteryLevel": null,
+            "batteryPercentage": null,
+            "presence": true,
+            "timestamp": "2019-06-01 20:56:52 +0200"
+          },
+          "problem": false,
+          "room": 2,
+          "services": {
+            "battery": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:battery/ad:s30_0",
+              "enabled": true,
+              "props": {}
+            },
+            "sensor_presence": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:sensor_presence/ad:s30_0",
+              "enabled": true,
+              "props": {}
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 85
+        },
+        {
+          "client": {
+            "name": "Hue lamp"
+          },
+          "fimp": {
+            "adapter": "zigbee",
+            "address": "l3",
+            "group": "ch_0"
+          },
+          "functionality": "lighting",
+          "id": 112,
+          "lrn": true,
+          "model": "Philips_LTP003",
+          "modelAlias": "LTP003",
+          "param": {
+            "dimValue": null,
+            "power": "on",
+            "timestamp": "2019-06-01 20:42:00 +0200"
+          },
+          "problem": false,
+          "room": 2,
+          "services": {
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:out_lvl_switch/ad:l3_0",
+              "enabled": true,
+              "props": {
+                "max_lvl": 255,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 87
+        },
+        {
+          "client": {
+            "name": "Hue remote kitchen"
+          },
+          "fimp": {
+            "adapter": "zigbee",
+            "address": "s32",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 113,
+          "lrn": true,
+          "model": "Philips_RWL021",
+          "modelAlias": "RWL021",
+          "param": {
+            "batteryLevel": null,
+            "batteryPercentage": null,
+            "timestamp": "2019-06-01 11:27:07 +0200"
+          },
+          "problem": false,
+          "room": 2,
+          "services": {
+            "battery": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:battery/ad:s32_0",
+              "enabled": true,
+              "props": {}
+            },
+            "scene_ctrl": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:scene_ctrl/ad:s32_0",
+              "enabled": true,
+              "props": {}
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 88
+        },
+        {
+          "client": {
+            "name": "Entrance mode button"
+          },
+          "fimp": {
+            "adapter": "zigbee",
+            "address": "s33",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 114,
+          "lrn": true,
+          "model": "LUMI_lumi.sensor_switch",
+          "modelAlias": "lumi.sensor_switch",
+          "param": {
+            "batteryLevel": null,
+            "batteryPercentage": null,
+            "timestamp": "2019-06-01 14:29:34 +0200"
+          },
+          "problem": false,
+          "room": 5,
+          "services": {
+            "battery": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:battery/ad:s33_0",
+              "enabled": true,
+              "props": {}
+            },
+            "scene_ctrl": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:scene_ctrl/ad:s33_0",
+              "enabled": true,
+              "props": {}
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 89
+        },
+        {
+          "client": {
+            "name": "TELLO ch_0"
+          },
+          "fimp": {
+            "adapter": "tello",
+            "address": "1",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 115,
+          "lrn": true,
+          "model": "TELLO-DR-1",
+          "modelAlias": "TELLO",
+          "param": {
+            "batteryLevel": null,
+            "batteryPercentage": null,
+            "dimValue": null,
+            "power": "off",
+            "timestamp": "2019-05-12 20:52:23 +0200"
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "battery": {
+              "addr": "/rt:dev/rn:tello/ad:1/sv:battery/ad:1_0",
+              "enabled": true,
+              "props": {}
+            },
+            "camera": {
+              "addr": "/rt:dev/rn:tello/ad:1/sv:camera/ad:1_0",
+              "enabled": true,
+              "props": {}
+            },
+            "drone": {
+              "addr": "/rt:dev/rn:tello/ad:1/sv:drone/ad:1_0",
+              "enabled": true,
+              "props": {
+                "sup_modes": [
+                  "take_off",
+                  "throw_take_off",
+                  "land",
+                  "palm_land",
+                  "stop_landing",
+                  "right_flip",
+                  "left_flip",
+                  "set_home",
+                  "back_flip",
+                  "bounce",
+                  "reconnect"
+                ],
+                "sup_moves": [
+                  "right",
+                  "left",
+                  "up",
+                  "down",
+                  "forw",
+                  "back",
+                  "yaw"
+                ]
+              }
+            },
+            "out_lvl_switch": {
+              "addr": "/rt:dev/rn:tello/ad:1/sv:out_lvl_switch/ad:1_0",
+              "enabled": true,
+              "props": {
+                "max_lvl": 100,
+                "min_lvl": 0
+              }
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 90
+        },
+        {
+          "client": {
+            "name": "TELLO ch_1"
+          },
+          "fimp": {
+            "adapter": "tello",
+            "address": "1",
+            "group": "ch_1"
+          },
+          "functionality": null,
+          "id": 116,
+          "lrn": true,
+          "model": "TELLO-DR-1",
+          "modelAlias": "TELLO",
+          "param": {
+            "power": "off",
+            "timestamp": "2019-05-14 13:47:44 +0200"
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:tello/ad:1/sv:out_bin_switch/ad:1_1",
+              "enabled": true,
+              "props": {}
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 90
+        },
+        {
+          "client": {
+            "name": "TELLO ch_2"
+          },
+          "fimp": {
+            "adapter": "tello",
+            "address": "1",
+            "group": "ch_2"
+          },
+          "functionality": null,
+          "id": 117,
+          "lrn": true,
+          "model": "TELLO-DR-1",
+          "modelAlias": "TELLO",
+          "param": {
+            "power": "off",
+            "timestamp": "2019-05-14 13:47:45 +0200"
+          },
+          "problem": false,
+          "room": null,
+          "services": {
+            "out_bin_switch": {
+              "addr": "/rt:dev/rn:tello/ad:1/sv:out_bin_switch/ad:1_2",
+              "enabled": true,
+              "props": {}
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 90
+        },
+        {
+          "client": {
+            "name": "Living motion sensor"
+          },
+          "fimp": {
+            "adapter": "zigbee",
+            "address": "s34",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 118,
+          "lrn": true,
+          "model": "LUMI_lumi.sensor_motion",
+          "modelAlias": "lumi.sensor_motion",
+          "param": {
+            "batteryLevel": null,
+            "batteryPercentage": null,
+            "presence": true,
+            "timestamp": "2019-06-01 20:55:42 +0200"
+          },
+          "problem": false,
+          "room": 1,
+          "services": {
+            "battery": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:battery/ad:s34_0",
+              "enabled": true,
+              "props": {}
+            },
+            "sensor_presence": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:sensor_presence/ad:s34_0",
+              "enabled": true,
+              "props": {}
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 91
+        },
+        {
+          "client": {
+            "name": "Mode switch button"
+          },
+          "fimp": {
+            "adapter": "zigbee",
+            "address": "s5",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 119,
+          "lrn": true,
+          "model": "LUMI_lumi.sensor_switch",
+          "modelAlias": "lumi.sensor_switch",
+          "param": {
+            "batteryLevel": null,
+            "batteryPercentage": null,
+            "timestamp": "2019-05-29 17:23:15 +0200"
+          },
+          "problem": false,
+          "room": 6,
+          "services": {
+            "battery": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:battery/ad:s5_0",
+              "enabled": true,
+              "props": {}
+            },
+            "scene_ctrl": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:scene_ctrl/ad:s5_0",
+              "enabled": true,
+              "props": {}
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 92
+        },
+        {
+          "client": {
+            "name": "Bedroom mode button"
+          },
+          "fimp": {
+            "adapter": "zigbee",
+            "address": "s13",
+            "group": "ch_0"
+          },
+          "functionality": null,
+          "id": 120,
+          "lrn": true,
+          "model": "LUMI_lumi.sensor_switch",
+          "modelAlias": "lumi.sensor_switch",
+          "param": {
+            "batteryLevel": null,
+            "batteryPercentage": null,
+            "timestamp": "2019-05-29 01:30:52 +0200"
+          },
+          "problem": false,
+          "room": 4,
+          "services": {
+            "battery": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:battery/ad:s13_0",
+              "enabled": true,
+              "props": {}
+            },
+            "scene_ctrl": {
+              "addr": "/rt:dev/rn:zigbee/ad:1/sv:scene_ctrl/ad:s13_0",
+              "enabled": true,
+              "props": {}
+            }
+          },
+          "supports": [
+            "clear",
+            "poll"
+          ],
+          "thing": 93
+        }
+      ],
+      "house": {
+        "fimp": true,
+        "learning": null,
+        "mode": "home",
+        "time": "2019-06-01T18:57:05Z",
+        "uptime": 254463672
+      },
+      "hub": {
+        "fimp": {
+          "brokeDevices": [],
+          "installing": null,
+          "progress": null,
+          "ready": false,
+          "running": "fimp"
+        },
+        "mode": {
+          "current": "home"
+        },
+        "time": {
+          "auto": true,
+          "local": "2019-06-01T20:57:05",
+          "tz": "Europe/Oslo",
+          "utc": "2019-06-01T18:57:05Z"
+        }
+      },
+      "mode": [
+        {
+          "action": {
+            "device": {
+              "2": {
+                "power": "off"
+              },
+              "8": {
+                "power": "off"
+              },
+              "10": {
+                "power": "off"
+              },
+              "17": {
+                "power": "off"
+              },
+              "18": {
+                "power": "off"
+              },
+              "19": {
+                "power": "off"
+              },
+              "20": {
+                "power": "off"
+              },
+              "21": {
+                "power": "off"
+              },
+              "22": {
+                "power": "off"
+              },
+              "23": {
+                "power": "off"
+              },
+              "24": {
+                "power": "off"
+              },
+              "25": {
+                "power": "off"
+              },
+              "32": {
+                "power": "off"
+              },
+              "35": {
+                "power": "off"
+              },
+              "47": {
+                "power": "off"
+              },
+              "69": {
+                "power": "off"
+              },
+              "83": {
+                "power": "off"
+              },
+              "100": {
+                "power": "off"
+              },
+              "102": {
+                "power": "off"
+              },
+              "112": {
+                "power": "off"
+              }
+            },
+            "room": {
+              "2": {
+                "heating": {
+                  "desired": 19
+                }
+              },
+              "3": {
+                "heating": {
+                  "desired": 24
+                }
+              },
+              "4": {
+                "heating": {
+                  "desired": 19
+                }
+              },
+              "5": {
+                "heating": {
+                  "desired": 19
+                }
+              },
+              "7": {
+                "heating": {
+                  "desired": 19
+                }
+              },
+              "8": {
+                "heating": {
+                  "desired": 19
+                }
+              },
+              "9": {
+                "heating": {
+                  "desired": 19
+                }
+              },
+              "10": {
+                "heating": {
+                  "desired": 19
+                }
+              }
+            }
+          },
+          "id": "away"
+        },
+        {
+          "action": {
+            "room": {
+              "2": {
+                "heating": {
+                  "desired": 23
+                }
+              },
+              "3": {
+                "heating": {
+                  "desired": 25
+                }
+              },
+              "6": {
+                "heating": {
+                  "desired": 16
+                }
+              },
+              "9": {
+                "heating": {
+                  "desired": 23
+                }
+              },
+              "10": {
+                "heating": {
+                  "desired": 23
+                }
+              }
+            }
+          },
+          "id": "home"
+        },
+        {
+          "action": {
+            "device": {
+              "2": {
+                "power": "off"
+              },
+              "8": {
+                "power": "off"
+              },
+              "10": {
+                "power": "off"
+              },
+              "18": {
+                "dimValue": 0
+              },
+              "19": {
+                "dimValue": 0
+              },
+              "20": {
+                "dimValue": 0
+              },
+              "21": {
+                "dimValue": 0
+              },
+              "22": {
+                "dimValue": 0
+              },
+              "23": {
+                "dimValue": 0
+              },
+              "25": {
+                "dimValue": 0
+              },
+              "32": {
+                "power": "off"
+              },
+              "35": {
+                "power": "off"
+              },
+              "47": {
+                "dimValue": 0
+              },
+              "83": {
+                "power": "off"
+              }
+            },
+            "room": {
+              "2": {
+                "heating": {
+                  "desired": 19
+                }
+              },
+              "3": {
+                "heating": {
+                  "desired": 25
+                }
+              },
+              "4": {
+                "heating": {
+                  "desired": 19
+                }
+              },
+              "5": {
+                "heating": {
+                  "desired": 19
+                }
+              },
+              "6": {
+                "heating": {
+                  "desired": 16
+                }
+              },
+              "7": {
+                "heating": {
+                  "desired": 19
+                }
+              },
+              "8": {
+                "heating": {
+                  "desired": 19
+                }
+              },
+              "9": {
+                "heating": {
+                  "desired": 19
+                }
+              },
+              "10": {
+                "heating": {
+                  "desired": 19
+                }
+              }
+            }
+          },
+          "id": "sleep"
+        },
+        {
+          "action": {
+            "room": {
+              "1": {
+                "heating": {
+                  "desired": 8
+                }
+              },
+              "2": {
+                "heating": {
+                  "desired": 8
+                }
+              },
+              "3": {
+                "heating": {
+                  "desired": 8
+                }
+              },
+              "4": {
+                "heating": {
+                  "desired": 8
+                }
+              },
+              "5": {
+                "heating": {
+                  "desired": 8
+                }
+              },
+              "6": {
+                "heating": {
+                  "desired": 8
+                }
+              },
+              "7": {
+                "heating": {
+                  "desired": 8
+                }
+              },
+              "8": {
+                "heating": {
+                  "desired": 8
+                }
+              },
+              "9": {
+                "heating": {
+                  "desired": 8
+                }
+              },
+              "10": {
+                "heating": {
+                  "desired": 8
+                }
+              }
+            }
+          },
+          "id": "vacation"
+        }
+      ],
+      "room": [
+        {
+          "alias": "Living Room",
+          "area": 1,
+          "client": {
+            "name": ""
+          },
+          "id": 1,
+          "outside": false,
+          "param": {
+            "heating": {
+              "actuator": false,
+              "desired": 23,
+              "humidity": 10,
+              "power": "on",
+              "target": 23,
+              "temperature": 22.2,
+              "thermostat": true
+            },
+            "lighting": {
+              "illuminance": 19
+            },
+            "security": {
+              "mode": null,
+              "presence": true
+            },
+            "sensors": [
+              "temperature",
+              "presence",
+              "illuminance",
+              "humidity"
+            ],
+            "shading": {},
+            "triggers": {
+              "magnetHeat": 19,
+              "motionLight": {
+                "all": {
+                  "devices": {
+                    "8": null,
+                    "10": null,
+                    "18": null,
+                    "25": null,
+                    "83": null,
+                    "93": null
+                  },
+                  "enabled": true,
+                  "timeout": 300000
+                },
+                "sleep": {
+                  "devices": {
+                    "8": null,
+                    "10": null,
+                    "18": 20,
+                    "25": 20,
+                    "83": 20,
+                    "93": 20
+                  },
+                  "enabled": true,
+                  "timeout": 300000
+                }
+              }
+            }
+          },
+          "type": "living"
+        },
+        {
+          "alias": "Kitchen",
+          "area": 1,
+          "client": {
+            "name": ""
+          },
+          "id": 2,
+          "outside": false,
+          "param": {
+            "heating": {
+              "actuator": false,
+              "desired": 23,
+              "power": "off",
+              "target": 23,
+              "thermostat": false
+            },
+            "lighting": {},
+            "security": {
+              "mode": null,
+              "presence": true
+            },
+            "sensors": [
+              "presence"
+            ],
+            "shading": {},
+            "triggers": {
+              "magnetHeat": 19,
+              "motionLight": {
+                "all": {
+                  "devices": {
+                    "112": "on"
+                  },
+                  "enabled": true,
+                  "timeout": 600001
+                },
+                "sleep": {
+                  "devices": {
+                    "112": 100
+                  },
+                  "enabled": true,
+                  "timeout": 300000
+                }
+              }
+            }
+          },
+          "type": "kitchen"
+        },
+        {
+          "alias": "Bathroom",
+          "area": 2,
+          "client": {
+            "name": ""
+          },
+          "id": 3,
+          "outside": false,
+          "param": {
+            "heating": {
+              "actuator": false,
+              "desired": 25,
+              "humidity": 57,
+              "power": "off",
+              "target": 25,
+              "temperature": 27.71,
+              "thermostat": false
+            },
+            "lighting": {},
+            "security": {
+              "mode": null,
+              "openState": "closed",
+              "presence": false
+            },
+            "sensors": [
+              "temperature",
+              "presence",
+              "openState",
+              "humidity"
+            ],
+            "shading": {},
+            "triggers": {
+              "magnetHeat": 19,
+              "motionLight": {
+                "all": {
+                  "devices": {
+                    "47": null
+                  },
+                  "enabled": true,
+                  "timeout": 900000
+                },
+                "sleep": {
+                  "devices": {
+                    "47": null
+                  },
+                  "enabled": true,
+                  "timeout": 900000
+                }
+              }
+            }
+          },
+          "type": "bath"
+        },
+        {
+          "alias": "Bedroom",
+          "area": 2,
+          "client": {
+            "name": ""
+          },
+          "id": 4,
+          "outside": false,
+          "param": {
+            "heating": {
+              "actuator": false,
+              "desired": 19,
+              "power": "off",
+              "target": 19,
+              "temperature": 22.7999992370605,
+              "thermostat": false
+            },
+            "lighting": {
+              "illuminance": 37
+            },
+            "security": {
+              "mode": null,
+              "presence": false
+            },
+            "sensors": [
+              "temperature",
+              "presence",
+              "illuminance"
+            ],
+            "shading": {},
+            "triggers": {
+              "magnetHeat": 19,
+              "motionLight": {
+                "all": {
+                  "devices": {
+                    "24": null
+                  },
+                  "enabled": true,
+                  "timeout": 600000
+                },
+                "sleep": {
+                  "devices": {
+                    "24": null
+                  },
+                  "enabled": true,
+                  "timeout": 300000
+                }
+              }
+            }
+          },
+          "type": "bed"
+        },
+        {
+          "alias": "Hallway",
+          "area": 1,
+          "client": {
+            "name": ""
+          },
+          "id": 5,
+          "outside": false,
+          "param": {
+            "heating": {
+              "actuator": false,
+              "desired": 19,
+              "power": "off",
+              "target": 19,
+              "temperature": 24.1000003814697,
+              "thermostat": false
+            },
+            "lighting": {
+              "illuminance": 86
+            },
+            "security": {
+              "mode": null,
+              "openState": "closed",
+              "presence": false
+            },
+            "sensors": [
+              "temperature",
+              "presence",
+              "openState",
+              "illuminance"
+            ],
+            "shading": {},
+            "triggers": {
+              "magnetHeat": 19,
+              "motionLight": {
+                "all": {
+                  "devices": {
+                    "19": null,
+                    "20": null,
+                    "23": null,
+                    "26": null
+                  },
+                  "enabled": true,
+                  "timeout": 900000
+                },
+                "sleep": {
+                  "devices": {
+                    "19": 20,
+                    "20": 20,
+                    "23": 20,
+                    "26": 20
+                  },
+                  "enabled": true,
+                  "timeout": 600000
+                }
+              }
+            }
+          },
+          "type": "hallway"
+        },
+        {
+          "alias": "Office",
+          "area": 3,
+          "client": {
+            "name": "Office"
+          },
+          "id": 6,
+          "outside": false,
+          "param": {
+            "heating": {
+              "actuator": false,
+              "desired": 16,
+              "humidity": 26,
+              "power": "off",
+              "target": 16,
+              "temperature": 23.29999990463255,
+              "thermostat": true
+            },
+            "lighting": {
+              "illuminance": 245.5
+            },
+            "security": {
+              "mode": null,
+              "openState": "closed",
+              "presence": false,
+              "waterLeakage": false
+            },
+            "sensors": [
+              "temperature",
+              "presence",
+              "openState",
+              "waterLeakage",
+              "illuminance",
+              "humidity"
+            ],
+            "shading": {},
+            "triggers": {
+              "magnetHeat": 15,
+              "motionLight": {
+                "all": {
+                  "devices": {
+                    "2": null,
+                    "29": null,
+                    "100": null,
+                    "102": null
+                  },
+                  "enabled": true,
+                  "timeout": 900000
+                },
+                "sleep": {
+                  "devices": {
+                    "2": null,
+                    "29": null,
+                    "100": null,
+                    "102": null
+                  },
+                  "enabled": true,
+                  "timeout": 900000
+                }
+              }
+            }
+          },
+          "type": null
+        },
+        {
+          "alias": "Stairway",
+          "area": 2,
+          "client": {
+            "name": "Stairway"
+          },
+          "id": 7,
+          "outside": false,
+          "param": {
+            "heating": {
+              "actuator": false,
+              "desired": 19,
+              "power": "off",
+              "target": 19,
+              "thermostat": false
+            },
+            "lighting": {},
+            "security": {
+              "mode": null
+            },
+            "sensors": [],
+            "shading": {},
+            "triggers": {
+              "magnetHeat": 19,
+              "motionLight": {
+                "all": {
+                  "devices": {
+                    "21": null,
+                    "22": null,
+                    "32": null,
+                    "35": null
+                  },
+                  "enabled": true,
+                  "timeout": 900000
+                },
+                "sleep": {
+                  "devices": {
+                    "21": null,
+                    "22": null,
+                    "32": null,
+                    "35": null
+                  },
+                  "enabled": true,
+                  "timeout": 600000
+                }
+              }
+            }
+          },
+          "type": null
+        },
+        {
+          "alias": "Kids",
+          "area": 2,
+          "client": {
+            "name": "Kids"
+          },
+          "id": 8,
+          "outside": false,
+          "param": {
+            "heating": {
+              "actuator": false,
+              "desired": 19,
+              "humidity": 52,
+              "power": "off",
+              "target": 19,
+              "temperature": 22.77,
+              "thermostat": false
+            },
+            "lighting": {},
+            "security": {
+              "mode": null,
+              "presence": false
+            },
+            "sensors": [
+              "temperature",
+              "presence",
+              "humidity"
+            ],
+            "shading": {},
+            "triggers": {
+              "magnetHeat": 19,
+              "motionLight": {
+                "all": {
+                  "devices": {
+                    "17": null
+                  },
+                  "enabled": true,
+                  "timeout": null
+                },
+                "sleep": {
+                  "devices": {
+                    "17": null
+                  },
+                  "enabled": true,
+                  "timeout": null
+                }
+              }
+            }
+          },
+          "type": "childrens"
+        },
+        {
+          "alias": "Outside",
+          "area": 1,
+          "client": {
+            "name": "Outside"
+          },
+          "id": 9,
+          "outside": true,
+          "param": {
+            "heating": {
+              "actuator": false,
+              "desired": 23,
+              "power": "on",
+              "target": 23,
+              "temperature": 12,
+              "thermostat": false
+            },
+            "lighting": {},
+            "security": {
+              "mode": null
+            },
+            "sensors": [
+              "temperature"
+            ],
+            "shading": {},
+            "triggers": {
+              "magnetHeat": 19,
+              "motionLight": {
+                "all": {
+                  "devices": {},
+                  "enabled": true,
+                  "timeout": null
+                },
+                "sleep": {
+                  "devices": {},
+                  "enabled": true,
+                  "timeout": null
+                }
+              }
+            }
+          },
+          "type": null
+        },
+        {
+          "alias": "Hidden 1",
+          "area": null,
+          "client": {
+            "name": "Hidden 1"
+          },
+          "id": 10,
+          "outside": false,
+          "param": {
+            "heating": {
+              "actuator": false,
+              "desired": 23,
+              "power": "off",
+              "target": 23,
+              "thermostat": false
+            },
+            "lighting": {},
+            "security": {
+              "mode": null
+            },
+            "sensors": [],
+            "shading": {},
+            "triggers": {
+              "magnetHeat": 19,
+              "motionLight": {
+                "all": {
+                  "devices": {},
+                  "enabled": true,
+                  "timeout": null
+                },
+                "sleep": {
+                  "devices": {},
+                  "enabled": true,
+                  "timeout": null
+                }
+              }
+            }
+          },
+          "type": null
+        }
+      ],
+      "shortcut": [
+        {
+          "action": {
+            "device": {
+              "8": {
+                "power": "off"
+              },
+              "10": {
+                "power": "off"
+              },
+              "18": {
+                "dimValue": 0
+              },
+              "19": {
+                "dimValue": 0
+              },
+              "20": {
+                "dimValue": 0
+              },
+              "22": {
+                "power": "off"
+              },
+              "23": {
+                "dimValue": 0
+              },
+              "25": {
+                "dimValue": 0
+              },
+              "26": {
+                "power": "off"
+              },
+              "83": {
+                "power": "off"
+              }
+            },
+            "room": {
+              "1": {
+                "heating": {
+                  "desired": 23
+                }
+              },
+              "5": {
+                "heating": {
+                  "desired": 19
+                }
+              },
+              "7": {
+                "heating": {
+                  "desired": 19
+                }
+              }
+            }
+          },
+          "client": {
+            "name": "Movie time 🎬"
+          },
+          "id": 1
+        },
+        {
+          "action": {
+            "device": {
+              "8": {
+                "power": "off"
+              },
+              "10": {
+                "power": "off"
+              },
+              "18": {
+                "dimValue": 70
+              },
+              "19": {
+                "dimValue": 10
+              },
+              "20": {
+                "dimValue": 0
+              },
+              "21": {
+                "dimValue": 0
+              },
+              "22": {
+                "power": "off"
+              },
+              "23": {
+                "dimValue": 10
+              },
+              "25": {
+                "dimValue": 70
+              },
+              "26": {
+                "dimValue": 0
+              },
+              "83": {
+                "power": "off"
+              }
+            }
+          },
+          "client": {
+            "name": "Late evening"
+          },
+          "id": 4
+        },
+        {
+          "action": {
+            "device": {
+              "8": {
+                "power": "on"
+              },
+              "18": {
+                "dimValue": 100
+              },
+              "19": {
+                "dimValue": 100
+              },
+              "20": {
+                "dimValue": 100
+              },
+              "21": {
+                "dimValue": 50
+              },
+              "22": {
+                "dimValue": 50
+              },
+              "23": {
+                "dimValue": 100
+              },
+              "25": {
+                "dimValue": 100
+              }
+            }
+          },
+          "client": {
+            "name": "Good morning"
+          },
+          "id": 5
+        },
+        {
+          "action": {
+            "device": {
+              "21": {
+                "dimValue": 0
+              },
+              "22": {
+                "dimValue": 0
+              },
+              "32": {
+                "power": "off"
+              }
+            }
+          },
+          "client": {
+            "name": "Stairs lights off"
+          },
+          "id": 6
+        },
+        {
+          "action": {
+            "device": {
+              "8": {
+                "power": "on"
+              },
+              "18": {
+                "dimValue": 90
+              },
+              "19": {
+                "dimValue": 73
+              },
+              "20": {
+                "dimValue": 76
+              },
+              "22": {
+                "dimValue": 10
+              },
+              "23": {
+                "dimValue": 74
+              },
+              "25": {
+                "dimValue": 90
+              }
+            }
+          },
+          "client": {
+            "name": "Living lights on"
+          },
+          "id": 7
+        },
+        {
+          "action": {
+            "device": {
+              "8": {
+                "power": "off"
+              },
+              "18": {
+                "power": "off"
+              },
+              "19": {
+                "power": "off"
+              },
+              "20": {
+                "power": "off"
+              },
+              "22": {
+                "power": "off"
+              },
+              "23": {
+                "power": "off"
+              },
+              "25": {
+                "power": "off"
+              }
+            }
+          },
+          "client": {
+            "name": "Home lights off"
+          },
+          "id": 8
+        },
+        {
+          "action": {
+            "device": {
+              "18": {
+                "dimValue": 84
+              },
+              "25": {
+                "dimValue": 82
+              }
+            }
+          },
+          "client": {
+            "name": "Evening"
+          },
+          "id": 9
+        },
+        {
+          "action": {
+            "device": {
+              "24": {
+                "power": "on"
+              }
+            },
+            "room": {
+              "4": {
+                "heating": {
+                  "desired": 19
+                }
+              }
+            }
+          },
+          "client": {
+            "name": "Turn on bedroom lamp"
+          },
+          "id": 12
+        },
+        {
+          "action": {
+            "device": {
+              "2": {
+                "power": "on"
+              }
+            }
+          },
+          "client": {
+            "hidden": false,
+            "name": "Turn on office"
+          },
+          "id": 13
+        }
+      ],
+      "thing": [
+        {
+          "addr": "/rn:zw/ad:1/ad:16",
+          "devices": [
+            1
+          ],
+          "id": 1,
+          "name": "Fibaro - Motion Sensor - FGMS-001",
+          "props": {
+            "manufacturer_id": "271",
+            "product_hash": "zw_271_2048_4097",
+            "product_id": "2048_4097",
+            "product_name": "Fibaro - Motion Sensor - FGMS-001"
+          },
+          "room": 6
+        },
+        {
+          "addr": "/rn:zw/ad:1/ad:18",
+          "devices": [
+            2
+          ],
+          "id": 2,
+          "name": "zw_398_4_2",
+          "props": {
+            "manufacturer_id": "398",
+            "product_hash": "zw_398_4_2",
+            "product_id": "4_2",
+            "product_name": null
+          },
+          "room": 6
+        },
+        {
+          "addr": "/rn:zw/ad:1/ad:19",
+          "devices": [
+            3
+          ],
+          "id": 3,
+          "name": "Fibaro - Wall Plug - FGWPE/F-101/102",
+          "props": {
+            "manufacturer_id": "271",
+            "product_hash": "zw_271_1536_4096",
+            "product_id": "1536_4096",
+            "product_name": "Fibaro - Wall Plug - FGWPE/F-101/102"
+          },
+          "room": 1
+        },
+        {
+          "addr": "/rn:zw/ad:1/ad:31",
+          "devices": [
+            4
+          ],
+          "id": 4,
+          "name": "Sensative - Strips Guard - Strips-MaZw",
+          "props": {
+            "manufacturer_id": "410",
+            "product_hash": "zw_410_3_3",
+            "product_id": "3_3",
+            "product_name": "Sensative - Strips Guard - Strips-MaZw"
+          },
+          "room": 6
+        },
+        {
+          "addr": "/rn:zw/ad:1/ad:46",
+          "devices": [
+            5
+          ],
+          "id": 5,
+          "name": "zw_357_2_2",
+          "props": {
+            "manufacturer_id": "357",
+            "product_hash": "zw_357_2_2",
+            "product_id": "2_2",
+            "product_name": null
+          },
+          "room": 6
+        },
+        {
+          "addr": "/rn:zw/ad:1/ad:21",
+          "devices": [
+            6
+          ],
+          "id": 6,
+          "name": "Fibaro - Motion Sensor - FGMS-001",
+          "props": {
+            "manufacturer_id": "271",
+            "product_hash": "zw_271_2048_4097",
+            "product_id": "2048_4097",
+            "product_name": "Fibaro - Motion Sensor - FGMS-001"
+          },
+          "room": 5
+        },
+        {
+          "addr": "/rn:zw/ad:1/ad:22",
+          "devices": [
+            7
+          ],
+          "id": 7,
+          "name": "Fibaro - Motion Sensor - FGMS-001",
+          "props": {
+            "manufacturer_id": "271",
+            "product_hash": "zw_271_2048_4097",
+            "product_id": "2048_4097",
+            "product_name": "Fibaro - Motion Sensor - FGMS-001"
+          },
+          "room": 4
+        },
+        {
+          "addr": "/rn:zw/ad:1/ad:30",
+          "devices": [
+            8
+          ],
+          "id": 8,
+          "name": "Fibaro - Wall Plug - FGWPE/F-101/102",
+          "props": {
+            "manufacturer_id": "271",
+            "product_hash": "zw_271_1536_4096",
+            "product_id": "1536_4096",
+            "product_name": "Fibaro - Wall Plug - FGWPE/F-101/102"
+          },
+          "room": 1
+        },
+        {
+          "addr": "/rn:zw/ad:1/ad:47",
+          "devices": [
+            9
+          ],
+          "id": 9,
+          "name": "zw_134_2_112",
+          "props": {
+            "manufacturer_id": "134",
+            "product_hash": "zw_134_2_112",
+            "product_id": "2_112",
+            "product_name": null
+          },
+          "room": 5
+        },
+        {
+          "addr": "/rn:zw/ad:1/ad:50",
+          "devices": [
+            10
+          ],
+          "id": 10,
+          "name": "zw_398_4_2",
+          "props": {
+            "manufacturer_id": "398",
+            "product_hash": "zw_398_4_2",
+            "product_id": "4_2",
+            "product_name": null
+          },
+          "room": 1
+        },
+        {
+          "addr": "/rn:zw/ad:1/ad:52",
+          "devices": [
+            12,
+            13,
+            14,
+            15,
+            16
+          ],
+          "id": 12,
+          "name": "Aeotec - WallMote Quad - ZW130-C",
+          "props": {
+            "manufacturer_id": "134",
+            "product_hash": "zw_134_2_130",
+            "product_id": "2_130",
+            "product_name": "Aeotec - WallMote Quad - ZW130-C"
+          },
+          "room": 1
+        },
+        {
+          "addr": "/rn:ikea/ad:1/ad:65546",
+          "devices": [
+            17
+          ],
+          "id": 13,
+          "name": "White cloud",
+          "props": {
+            "manufacturer_id": "IKEA of Sweden",
+            "product_hash": "TRADFRI bulb E14 WS opal 400lm",
+            "product_id": "TRADFRI bulb E14 WS opal 400lm",
+            "product_name": "White cloud"
+          },
+          "room": 8
+        },
+        {
+          "addr": "/rn:ikea/ad:1/ad:65538",
+          "devices": [
+            18
+          ],
+          "id": 14,
+          "name": "TRADFRI bulb E27 WS opal 980lm 2",
+          "props": {
+            "manufacturer_id": "IKEA of Sweden",
+            "product_hash": "TRADFRI bulb E27 WS opal 980lm",
+            "product_id": "TRADFRI bulb E27 WS opal 980lm",
+            "product_name": "TRADFRI bulb E27 WS opal 980lm 2"
+          },
+          "room": 1
+        },
+        {
+          "addr": "/rn:ikea/ad:1/ad:65543",
+          "devices": [
+            19
+          ],
+          "id": 15,
+          "name": "Hallway bulb 1",
+          "props": {
+            "manufacturer_id": "IKEA of Sweden",
+            "product_hash": "TRADFRI bulb GU10 WS 400lm",
+            "product_id": "TRADFRI bulb GU10 WS 400lm",
+            "product_name": "Hallway bulb 1"
+          },
+          "room": 5
+        },
+        {
+          "addr": "/rn:ikea/ad:1/ad:65544",
+          "devices": [
+            20
+          ],
+          "id": 16,
+          "name": "Hallway bulb 2",
+          "props": {
+            "manufacturer_id": "IKEA of Sweden",
+            "product_hash": "TRADFRI bulb GU10 WS 400lm",
+            "product_id": "TRADFRI bulb GU10 WS 400lm",
+            "product_name": "Hallway bulb 2"
+          },
+          "room": 5
+        },
+        {
+          "addr": "/rn:ikea/ad:1/ad:65540",
+          "devices": [
+            21
+          ],
+          "id": 17,
+          "name": "Led panel 3 floor",
+          "props": {
+            "manufacturer_id": "IKEA of Sweden",
+            "product_hash": "FLOALT panel WS 60x60",
+            "product_id": "FLOALT panel WS 60x60",
+            "product_name": "Led panel 3 floor"
+          },
+          "room": 7
+        },
+        {
+          "addr": "/rn:ikea/ad:1/ad:65541",
+          "devices": [
+            22
+          ],
+          "id": 18,
+          "name": "Led panel 2 floor",
+          "props": {
+            "manufacturer_id": "IKEA of Sweden",
+            "product_hash": "FLOALT panel WS 60x60",
+            "product_id": "FLOALT panel WS 60x60",
+            "product_name": "Led panel 2 floor"
+          },
+          "room": 7
+        },
+        {
+          "addr": "/rn:ikea/ad:1/ad:65545",
+          "devices": [
+            23
+          ],
+          "id": 19,
+          "name": "Hallway bulb 3",
+          "props": {
+            "manufacturer_id": "IKEA of Sweden",
+            "product_hash": "TRADFRI bulb GU10 WS 400lm",
+            "product_id": "TRADFRI bulb GU10 WS 400lm",
+            "product_name": "Hallway bulb 3"
+          },
+          "room": 5
+        },
+        {
+          "addr": "/rn:ikea/ad:1/ad:65547",
+          "devices": [
+            24
+          ],
+          "id": 20,
+          "name": "Bedroom lamp",
+          "props": {
+            "manufacturer_id": "IKEA of Sweden",
+            "product_hash": "TRADFRI bulb E14 WS opal 400lm",
+            "product_id": "TRADFRI bulb E14 WS opal 400lm",
+            "product_name": "Bedroom lamp"
+          },
+          "room": 4
+        },
+        {
+          "addr": "/rn:ikea/ad:1/ad:65537",
+          "devices": [
+            25
+          ],
+          "id": 21,
+          "name": "TRADFRI bulb E27 WS opal 980lm",
+          "props": {
+            "manufacturer_id": "IKEA of Sweden",
+            "product_hash": "TRADFRI bulb E27 WS opal 980lm",
+            "product_id": "TRADFRI bulb E27 WS opal 980lm",
+            "product_name": "TRADFRI bulb E27 WS opal 980lm"
+          },
+          "room": 1
+        },
+        {
+          "addr": "/rn:ikea/ad:1/ad:65549",
+          "devices": [
+            26
+          ],
+          "id": 22,
+          "name": "Entrance lamp",
+          "props": {
+            "manufacturer_id": "IKEA of Sweden",
+            "product_hash": "TRADFRI bulb E27 CWS opal 600lm",
+            "product_id": "TRADFRI bulb E27 CWS opal 600lm",
+            "product_name": "Entrance lamp"
+          },
+          "room": 5
+        },
+        {
+          "addr": "/rn:ikea/ad:1/ad:165209",
+          "devices": [
+            27
+          ],
+          "id": 23,
+          "name": "Elina's room",
+          "props": {
+            "manufacturer_id": null,
+            "product_hash": null,
+            "product_id": null,
+            "product_name": "Elina's room"
+          },
+          "room": null
+        },
+        {
+          "addr": "/rn:ikea/ad:1/ad:162855",
+          "devices": [
+            28
+          ],
+          "id": 24,
+          "name": "Stairway",
+          "props": {
+            "manufacturer_id": null,
+            "product_hash": null,
+            "product_id": null,
+            "product_name": "Stairway"
+          },
+          "room": null
+        },
+        {
+          "addr": "/rn:ikea/ad:1/ad:184295",
+          "devices": [
+            29
+          ],
+          "id": 25,
+          "name": "Bedroom",
+          "props": {
+            "manufacturer_id": null,
+            "product_hash": null,
+            "product_id": null,
+            "product_name": "Bedroom"
+          },
+          "room": 6
+        },
+        {
+          "addr": "/rn:ikea/ad:1/ad:132635",
+          "devices": [
+            30
+          ],
+          "id": 26,
+          "name": "Living room",
+          "props": {
+            "manufacturer_id": null,
+            "product_hash": null,
+            "product_id": null,
+            "product_name": "Living room"
+          },
+          "room": null
+        },
+        {
+          "addr": "/rn:zw/ad:1/ad:27",
+          "devices": [
+            31,
+            32,
+            33
+          ],
+          "id": 27,
+          "name": "zw_271_512_4106",
+          "props": {
+            "manufacturer_id": "271",
+            "product_hash": "zw_271_512_4106",
+            "product_id": "512_4106",
+            "product_name": null
+          },
+          "room": 7
+        },
+        {
+          "addr": "/rn:zw/ad:1/ad:28",
+          "devices": [
+            34,
+            35,
+            36
+          ],
+          "id": 28,
+          "name": "zw_271_512_4106",
+          "props": {
+            "manufacturer_id": "271",
+            "product_hash": "zw_271_512_4106",
+            "product_id": "512_4106",
+            "product_name": null
+          },
+          "room": 7
+        },
+        {
+          "addr": "/rn:zw/ad:1/ad:58",
+          "devices": [
+            46,
+            47,
+            48,
+            49,
+            50,
+            51
+          ],
+          "id": 33,
+          "name": "zw_372_3_4098",
+          "props": {
+            "manufacturer_id": "372",
+            "product_hash": "zw_372_3_4098",
+            "product_id": "3_4098",
+            "product_name": null
+          },
+          "room": 3
+        },
+        {
+          "addr": "/rn:zw/ad:1/ad:59",
+          "devices": [
+            54
+          ],
+          "id": 36,
+          "name": "zw_398_4_2",
+          "props": {
+            "manufacturer_id": "398",
+            "product_hash": "zw_398_4_2",
+            "product_id": "4_2",
+            "product_name": null
+          },
+          "room": 3
+        },
+        {
+          "addr": "/rn:flow/ad:1/ad:zFY9VGGMct",
+          "devices": [
+            60,
+            61
+          ],
+          "id": 41,
+          "name": "yr.no virtual temp sensor",
+          "props": {
+            "manufacturer_id": "fh",
+            "product_hash": "flow_zFY9VGGMct",
+            "product_id": "flow_1",
+            "product_name": "yr.no virtual temp sensor"
+          },
+          "room": 9
+        },
+        {
+          "addr": "/rn:ble/ad:1/ad:C4-7C-8D-63-7A-1F",
+          "devices": [
+            65
+          ],
+          "id": 44,
+          "name": "Flower care",
+          "props": {
+            "manufacturer_id": "mi",
+            "product_hash": "flower_care_1",
+            "product_id": "flower_care",
+            "product_name": "Flower care"
+          },
+          "room": 6
+        },
+        {
+          "addr": "/rn:ble/ad:1/ad:C4-7C-8D-63-33-14",
+          "devices": [
+            66
+          ],
+          "id": 45,
+          "name": "Flower care",
+          "props": {
+            "manufacturer_id": "mi",
+            "product_hash": "flower_care_1",
+            "product_id": "flower_care",
+            "product_name": "Flower care"
+          },
+          "room": 1
+        },
+        {
+          "addr": "/rn:flow/ad:1/ad:7zfeSQx3Q8",
+          "devices": [
+            69
+          ],
+          "id": 48,
+          "name": "Yamaha AVR control",
+          "props": {
+            "manufacturer_id": "fh",
+            "product_hash": "flow_7zfeSQx3Q8",
+            "product_id": "flow_1",
+            "product_name": "Yamaha AVR control"
+          },
+          "room": 1
+        },
+        {
+          "addr": "/rn:zw/ad:1/ad:62",
+          "devices": [
+            70
+          ],
+          "id": 49,
+          "name": "Climax - Siren - SRAC - 23BZW",
+          "props": {
+            "manufacturer_id": "398",
+            "product_hash": "zw_398_2_1",
+            "product_id": "2_1",
+            "product_name": "Climax - Siren - SRAC - 23BZW"
+          },
+          "room": 1
+        },
+        {
+          "addr": "/rn:zw/ad:1/ad:20",
+          "devices": [
+            71
+          ],
+          "id": 50,
+          "name": "Climax - Siren - SRAC - 23BZW",
+          "props": {
+            "manufacturer_id": "398",
+            "product_hash": "zw_398_2_1",
+            "product_id": "2_1",
+            "product_name": "Climax - Siren - SRAC - 23BZW"
+          },
+          "room": 4
+        },
+        {
+          "addr": "/rn:ikea/ad:1/ad:65551",
+          "devices": [
+            72
+          ],
+          "id": 51,
+          "name": "RGB bulb",
+          "props": {
+            "manufacturer_id": "IKEA of Sweden",
+            "product_hash": "TRADFRI bulb E27 CWS opal 600lm",
+            "product_id": "TRADFRI bulb E27 CWS opal 600lm",
+            "product_name": "RGB bulb"
+          },
+          "room": null
+        },
+        {
+          "addr": "/rn:ikea/ad:1/ad:184296",
+          "devices": [
+            73
+          ],
+          "id": 52,
+          "name": "Security",
+          "props": {
+            "manufacturer_id": null,
+            "product_hash": null,
+            "product_id": null,
+            "product_name": "Security"
+          },
+          "room": null
+        },
+        {
+          "addr": "/rn:zw/ad:1/ad:64",
+          "devices": [
+            75
+          ],
+          "id": 54,
+          "name": "zw_398_4_2",
+          "props": {
+            "manufacturer_id": "398",
+            "product_hash": "zw_398_4_2",
+            "product_id": "4_2",
+            "product_name": null
+          },
+          "room": 9
+        },
+        {
+          "addr": "/rn:ikea/ad:1/ad:65552",
+          "devices": [
+            83
+          ],
+          "id": 62,
+          "name": "Living LED backlight",
+          "props": {
+            "manufacturer_id": "IKEA of Sweden",
+            "product_hash": "TRADFRI transformer 10W",
+            "product_id": "TRADFRI transformer 10W",
+            "product_name": "Living LED backlight"
+          },
+          "room": 1
+        },
+        {
+          "addr": "/rn:zw/ad:1/ad:29",
+          "devices": [
+            85,
+            86,
+            87,
+            88,
+            89,
+            90
+          ],
+          "id": 64,
+          "name": "zw_372_3_4098",
+          "props": {
+            "manufacturer_id": "372",
+            "product_hash": "zw_372_3_4098",
+            "product_id": "3_4098",
+            "product_name": null
+          },
+          "room": null
+        },
+        {
+          "addr": "/rn:flow/ad:1/ad:ZoeseJcSZfvBe9w",
+          "devices": [
+            91
+          ],
+          "id": 65,
+          "name": "Virtual thermostat",
+          "props": {
+            "manufacturer_id": "fh",
+            "product_hash": "flow_ZoeseJcSZfvBe9w",
+            "product_id": "flow_1",
+            "product_name": "Virtual thermostat"
+          },
+          "room": 1
+        },
+        {
+          "addr": "/rn:flow/ad:1/ad:2OHYagR0gfLgkai",
+          "devices": [
+            92
+          ],
+          "id": 66,
+          "name": "Mill heater",
+          "props": {
+            "manufacturer_id": "fh",
+            "product_hash": "flow_2OHYagR0gfLgkai",
+            "product_id": "flow_1",
+            "product_name": "Mill heater"
+          },
+          "room": 6
+        },
+        {
+          "addr": "/rn:flow/ad:1/ad:pvNmsGmp9xxkZlB",
+          "devices": [
+            93
+          ],
+          "id": 67,
+          "name": "twinkly",
+          "props": {
+            "manufacturer_id": "fh",
+            "product_hash": "flow_pvNmsGmp9xxkZlB",
+            "product_id": "flow_1",
+            "product_name": "twinkly"
+          },
+          "room": 1
+        },
+        {
+          "addr": "/rn:flow/ad:1/ad:ciJ1EVrE8DlGGwF",
+          "devices": [
+            94
+          ],
+          "id": 68,
+          "name": "owl-controller",
+          "props": {
+            "manufacturer_id": "fh",
+            "product_hash": "flow_ciJ1EVrE8DlGGwF",
+            "product_id": "flow_1",
+            "product_name": "owl-controller"
+          },
+          "room": 6
+        },
+        {
+          "addr": "/rn:flow/ad:1/ad:ryjV948MAxk2pE2",
+          "devices": [
+            95
+          ],
+          "id": 69,
+          "name": "FH notification tester",
+          "props": {
+            "manufacturer_id": "fh",
+            "product_hash": "flow_ryjV948MAxk2pE2",
+            "product_id": "flow_1",
+            "product_name": "FH notification tester"
+          },
+          "room": 6
+        },
+        {
+          "addr": "/rn:flow/ad:1/ad:PIOFnFevppUDeDz",
+          "devices": [
+            96
+          ],
+          "id": 70,
+          "name": "Virtual leak sensor",
+          "props": {
+            "manufacturer_id": "fh",
+            "product_hash": "flow_PIOFnFevppUDeDz",
+            "product_id": "flow_1",
+            "product_name": "Virtual leak sensor"
+          },
+          "room": 6
+        },
+        {
+          "addr": "/rn:zw/ad:1/ad:66",
+          "devices": [
+            98
+          ],
+          "id": 72,
+          "name": "zw_398_4_2",
+          "props": {
+            "manufacturer_id": "398",
+            "product_hash": "zw_398_4_2",
+            "product_id": "4_2",
+            "product_name": null
+          },
+          "room": null
+        },
+        {
+          "addr": "/rn:flow/ad:1/ad:iSPymh1qLI",
+          "devices": [],
+          "id": 73,
+          "name": "Living room mode switch",
+          "props": {
+            "manufacturer_id": "fh",
+            "product_hash": "flow_iSPymh1qLI",
+            "product_id": "flow_1",
+            "product_name": "Living room mode switch"
+          },
+          "room": null
+        },
+        {
+          "addr": "/rn:m5stack/ad:1/ad:1",
+          "devices": [
+            99
+          ],
+          "id": 74,
+          "name": "Wifi dashboard",
+          "props": {
+            "manufacturer_id": "alivinco",
+            "product_hash": "m5stack_dashb",
+            "product_id": "m5stack_dash_1",
+            "product_name": "Wifi dashboard"
+          },
+          "room": 6
+        },
+        {
+          "addr": "/rn:zigbee/ad:1/ad:l1",
+          "devices": [
+            100
+          ],
+          "id": 75,
+          "name": "TRADFRI bulb E27 opal 1000lm",
+          "props": {
+            "manufacturer_id": "IKEA of Sweden",
+            "product_hash": "IKEA of Sweden_TRADFRI bulb E27 opal 1000lm",
+            "product_id": "TRADFRI bulb E27 opal 1000lm",
+            "product_name": "TRADFRI bulb E27 opal 1000lm"
+          },
+          "room": 6
+        },
+        {
+          "addr": "/rn:zigbee/ad:1/ad:s24",
+          "devices": [
+            101
+          ],
+          "id": 76,
+          "name": "lumi.sensor_motion",
+          "props": {
+            "manufacturer_id": "LUMI",
+            "product_hash": "LUMI_lumi.sensor_motion",
+            "product_id": "lumi.sensor_motion",
+            "product_name": "lumi.sensor_motion"
+          },
+          "room": 3
+        },
+        {
+          "addr": "/rn:zigbee/ad:1/ad:l2",
+          "devices": [
+            102
+          ],
+          "id": 77,
+          "name": "ElkoDimmerZHA",
+          "props": {
+            "manufacturer_id": "Heiman",
+            "product_hash": "Heiman_ElkoDimmerZHA",
+            "product_id": "ElkoDimmerZHA",
+            "product_name": "ElkoDimmerZHA"
+          },
+          "room": 6
+        },
+        {
+          "addr": "/rn:zigbee/ad:1/ad:s6",
+          "devices": [
+            103
+          ],
+          "id": 78,
+          "name": "lumi.sensor_magnet",
+          "props": {
+            "manufacturer_id": "LUMI",
+            "product_hash": "LUMI_lumi.sensor_magnet",
+            "product_id": "lumi.sensor_magnet",
+            "product_name": "lumi.sensor_magnet"
+          },
+          "room": 6
+        },
+        {
+          "addr": "/rn:zigbee/ad:1/ad:s25",
+          "devices": [
+            104
+          ],
+          "id": 79,
+          "name": "lumi.sensor_ht",
+          "props": {
+            "manufacturer_id": "LUMI",
+            "product_hash": "LUMI_lumi.sensor_ht",
+            "product_id": "lumi.sensor_ht",
+            "product_name": "lumi.sensor_ht"
+          },
+          "room": 8
+        },
+        {
+          "addr": "/rn:zigbee/ad:1/ad:s26",
+          "devices": [
+            105
+          ],
+          "id": 80,
+          "name": "lumi.sensor_ht",
+          "props": {
+            "manufacturer_id": "LUMI",
+            "product_hash": "LUMI_lumi.sensor_ht",
+            "product_id": "lumi.sensor_ht",
+            "product_name": "lumi.sensor_ht"
+          },
+          "room": 8
+        },
+        {
+          "addr": "/rn:zigbee/ad:1/ad:s7",
+          "devices": [
+            106
+          ],
+          "id": 81,
+          "name": "lumi.sensor_motion",
+          "props": {
+            "manufacturer_id": "LUMI",
+            "product_hash": "LUMI_lumi.sensor_motion",
+            "product_id": "lumi.sensor_motion",
+            "product_name": "lumi.sensor_motion"
+          },
+          "room": 8
+        },
+        {
+          "addr": "/rn:zigbee/ad:1/ad:s27",
+          "devices": [
+            107
+          ],
+          "id": 82,
+          "name": "lumi.sensor_magnet",
+          "props": {
+            "manufacturer_id": "LUMI",
+            "product_hash": "LUMI_lumi.sensor_magnet",
+            "product_id": "lumi.sensor_magnet",
+            "product_name": "lumi.sensor_magnet"
+          },
+          "room": 3
+        },
+        {
+          "addr": "/rn:zigbee/ad:1/ad:s28",
+          "devices": [
+            108
+          ],
+          "id": 83,
+          "name": "lumi.sensor_ht",
+          "props": {
+            "manufacturer_id": "LUMI",
+            "product_hash": "LUMI_lumi.sensor_ht",
+            "product_id": "lumi.sensor_ht",
+            "product_name": "lumi.sensor_ht"
+          },
+          "room": 3
+        },
+        {
+          "addr": "/rn:zigbee/ad:1/ad:s29",
+          "devices": [
+            109
+          ],
+          "id": 84,
+          "name": "lumi.sensor_ht",
+          "props": {
+            "manufacturer_id": "LUMI",
+            "product_hash": "LUMI_lumi.sensor_ht",
+            "product_id": "lumi.sensor_ht",
+            "product_name": "lumi.sensor_ht"
+          },
+          "room": 3
+        },
+        {
+          "addr": "/rn:zigbee/ad:1/ad:s30",
+          "devices": [
+            110
+          ],
+          "id": 85,
+          "name": "lumi.sensor_motion",
+          "props": {
+            "manufacturer_id": "LUMI",
+            "product_hash": "LUMI_lumi.sensor_motion",
+            "product_id": "lumi.sensor_motion",
+            "product_name": "lumi.sensor_motion"
+          },
+          "room": 2
+        },
+        {
+          "addr": "/rn:zigbee/ad:1/ad:l3",
+          "devices": [
+            112
+          ],
+          "id": 87,
+          "name": "LTP003",
+          "props": {
+            "manufacturer_id": "Philips",
+            "product_hash": "Philips_LTP003",
+            "product_id": "LTP003",
+            "product_name": "LTP003"
+          },
+          "room": 2
+        },
+        {
+          "addr": "/rn:zigbee/ad:1/ad:s32",
+          "devices": [
+            113
+          ],
+          "id": 88,
+          "name": "RWL021",
+          "props": {
+            "manufacturer_id": "Philips",
+            "product_hash": "Philips_RWL021",
+            "product_id": "RWL021",
+            "product_name": "RWL021"
+          },
+          "room": 2
+        },
+        {
+          "addr": "/rn:zigbee/ad:1/ad:s33",
+          "devices": [
+            114
+          ],
+          "id": 89,
+          "name": "lumi.sensor_switch",
+          "props": {
+            "manufacturer_id": "LUMI",
+            "product_hash": "LUMI_lumi.sensor_switch",
+            "product_id": "lumi.sensor_switch",
+            "product_name": "lumi.sensor_switch"
+          },
+          "room": null
+        },
+        {
+          "addr": "/rn:tello/ad:1/ad:1",
+          "devices": [
+            115,
+            116,
+            117
+          ],
+          "id": 90,
+          "name": "TELLO",
+          "props": {
+            "manufacturer_id": "rezen",
+            "product_hash": "TELLO-DR-1",
+            "product_id": "T1",
+            "product_name": "TELLO"
+          },
+          "room": null
+        },
+        {
+          "addr": "/rn:zigbee/ad:1/ad:s34",
+          "devices": [
+            118
+          ],
+          "id": 91,
+          "name": "lumi.sensor_motion",
+          "props": {
+            "manufacturer_id": "LUMI",
+            "product_hash": "LUMI_lumi.sensor_motion",
+            "product_id": "lumi.sensor_motion",
+            "product_name": "lumi.sensor_motion"
+          },
+          "room": 1
+        },
+        {
+          "addr": "/rn:zigbee/ad:1/ad:s5",
+          "devices": [
+            119
+          ],
+          "id": 92,
+          "name": "lumi.sensor_switch",
+          "props": {
+            "manufacturer_id": "LUMI",
+            "product_hash": "LUMI_lumi.sensor_switch",
+            "product_id": "lumi.sensor_switch",
+            "product_name": "lumi.sensor_switch"
+          },
+          "room": null
+        },
+        {
+          "addr": "/rn:zigbee/ad:1/ad:s13",
+          "devices": [
+            120
+          ],
+          "id": 93,
+          "name": "lumi.sensor_switch",
+          "props": {
+            "manufacturer_id": "LUMI",
+            "product_hash": "LUMI_lumi.sensor_switch",
+            "product_id": "lumi.sensor_switch",
+            "product_name": "lumi.sensor_switch"
+          },
+          "room": null
+        }
+      ],
+      "timer": [
+        {
+          "action": {},
+          "client": {
+            "name": "Turn on good morning"
+          },
+          "enabled": false,
+          "id": 1,
+          "next": null,
+          "prev": "2018-02-16T06:50:00Z",
+          "time": {
+            "recurring": "weekdays",
+            "when": "07:50:00"
+          }
+        },
+        {
+          "action": {},
+          "client": {
+            "name": "Stop watering at 10:20"
+          },
+          "enabled": false,
+          "id": 7,
+          "next": null,
+          "prev": "2018-08-09T08:20:00Z",
+          "time": {
+            "recurring": {
+              "days": [
+                "su",
+                "mo",
+                "tu",
+                "we",
+                "th",
+                "fr",
+                "sa"
+              ],
+              "skipHolidays": false
+            },
+            "when": "10:20:00"
+          }
+        },
+        {
+          "action": {},
+          "client": {
+            "name": "Start watering at 10:00"
+          },
+          "enabled": false,
+          "id": 9,
+          "next": null,
+          "prev": "2018-08-09T08:00:00Z",
+          "time": {
+            "recurring": {
+              "days": [
+                "su",
+                "mo",
+                "tu",
+                "we",
+                "th",
+                "fr",
+                "sa"
+              ],
+              "skipHolidays": false
+            },
+            "when": "10:00:00"
+          }
+        }
+      ]
+    },
+    "requestId": null,
+    "success": true
+  },
+  "val_t": "object",
+  "ver": "1"
+}

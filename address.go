@@ -9,10 +9,12 @@ import (
 const (
 	MsgTypeCmd          = "cmd"
 	MsgTypeEvt          = "evt"
+	MsgTypeRsp          = "rsp"
 	ResourceTypeDevice  = "dev"
 	ResourceTypeApp     = "app"
 	ResourceTypeAdapter = "ad"
 	ResourceTypeCloud   = "cloud"
+	ResourceTypeDiscovery = "discovery"
 )
 
 type Address struct {
@@ -50,7 +52,11 @@ func (adr *Address) Serialize() string {
 			adr.prepComp("ad", adr.ResourceAddress),
 			adr.prepComp("sv", adr.ServiceName),
 			adr.prepComp("ad", adr.ServiceAddress))
-
+	case ResourceTypeDiscovery:
+		result = fmt.Sprintf("%s/%s/%s",
+			adr.prepComp("pt", adr.PayloadType),
+			adr.prepComp("mt", adr.MsgType),
+			adr.prepComp("rt", adr.ResourceType))
 	}
 	if adr.GlobalPrefix != "" {
 		result = adr.GlobalPrefix + "/" + result

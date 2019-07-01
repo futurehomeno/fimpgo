@@ -1,0 +1,69 @@
+{
+  "corid": "",
+  "ctime": "2019-06-01T20:17:02+0200",
+  "props": {},
+  "serv": "vinculum",
+  "tags": [],
+  "type": "evt.pd7.notify",
+  "uid": "822feb69-21e8-4b8c-8aaf-1964d85b57f2",
+  "val": {
+    "changes": {},
+    "cmd": "edit",
+    "component": "device",
+    "id": 2,
+    "mode": "home",
+    "param": {
+      "client": {
+        "name": "Table lamp"
+      },
+      "fimp": {
+        "adapter": "zwave-ad",
+        "address": "18",
+        "group": "ch_0"
+      },
+      "functionality": "lighting",
+      "id": 2,
+      "lrn": true,
+      "model": "zw_398_4_2",
+      "param": {
+        "power": "off",
+        "timestamp": "2019-06-01 19:58:25 +0200"
+      },
+      "problem": false,
+      "room": 6,
+      "services": {
+        "basic": {
+          "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:18_0",
+          "enabled": true,
+          "props": {
+            "is_secure": false,
+            "is_unsecure": true
+          }
+        },
+        "dev_sys": {
+          "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:18_0",
+          "enabled": true,
+          "props": {
+            "is_secure": false,
+            "is_unsecure": true
+          }
+        },
+        "out_bin_switch": {
+          "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:18_0",
+          "enabled": true,
+          "props": {
+            "is_secure": false,
+            "is_unsecure": true
+          }
+        }
+      },
+      "supports": [
+        "clear",
+        "poll"
+      ],
+      "thing": 2
+    }
+  },
+  "val_t": "object",
+  "ver": "1"
+}

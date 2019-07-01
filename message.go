@@ -40,6 +40,8 @@ type FimpMessage struct {
 	Properties    Props       `json:"props"`
 	Version       string      `json:"ver"`
 	CorrelationID string      `json:"corid"`
+	ResponseToTopic string    `json:"resp_to,omitempty"`
+	Source        string      `json:"src,omitempty"`
 	CreationTime  string      `json:"ctime"`
 	UID           string      `json:"uid"`
 }

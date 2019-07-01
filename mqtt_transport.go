@@ -45,6 +45,7 @@ type MqttTransport struct {
 	certDir             string
 	mqttOptions         *MQTT.ClientOptions
 	receiveChTimeout    int
+	syncPublishTimeout  time.Duration
 }
 
 func (mh *MqttTransport) SetReceiveChTimeout(receiveChTimeout int) {
@@ -80,6 +81,7 @@ func NewMqttTransport(serverURI string, clientID string, username string, passwo
 	mh.subFilterFuncs = make(map[string]FilterFunc)
 	mh.startFailRetryCount = 10
 	mh.receiveChTimeout = 10
+	mh.syncPublishTimeout = time.Second * 5
 	return &mh
 }
 
@@ -122,6 +124,10 @@ func (mh *MqttTransport) RegisterChannelWithFilter(channelId string, messageCh M
 func (mh *MqttTransport) RegisterChannelWithFilterFunc(channelId string, messageCh MessageCh, filterFunc FilterFunc) {
 	mh.subChannels[channelId] = messageCh
 	mh.subFilterFuncs[channelId] = filterFunc
+}
+
+func (mh *MqttTransport) Client() MQTT.Client {
+	return mh.client
 }
 
 // Start , starts adapter async.
@@ -272,9 +278,38 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 	return err
 }
 
+func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error {
+	bytm, err := fimpMsg.SerializeToJson()
+	topic := addr.Serialize()
+	if mh.globalTopicPrefix != "" {
+		topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
+	}
+	if err == nil {
+		log.Debug("<MqttAd> Publishing msg to topic:", topic)
+		token  := mh.client.Publish(topic, mh.pubQos, false, bytm)
+		if token.WaitTimeout(mh.syncPublishTimeout) && token.Error() == nil {
+			return nil
+		} else {
+			return token.Error()
+		}
+	}
+	return err
+}
+
 func (mh *MqttTransport) PublishRaw(topic string, bytem []byte) {
 	log.Debug("<MqttAd> Publishing msg to topic:", topic)
 	mh.client.Publish(topic, mh.pubQos, false, bytem)
+}
+
+func (mh *MqttTransport) PublishRawSync(topic string, bytem []byte) error {
+	log.Debug("<MqttAd> Publishing msg to topic:", topic)
+	token  := mh.client.Publish(topic, mh.pubQos, false, bytem)
+	if token.WaitTimeout(mh.syncPublishTimeout) && token.Error() == nil {
+		return nil
+	} else {
+		return token.Error()
+	}
+
 }
 
 // AddGlobalPrefixToTopic , adds prefix to topic .
