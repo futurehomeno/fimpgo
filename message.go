@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	TimeFormat      = "2006-01-02T15:04:05.999+01:00"
+	TimeFormat      = "2006-01-02T15:04:05.999Z07:00"
 	VTypeString     = "string"
 	VTypeInt        = "int"
 	VTypeFloat      = "float"
@@ -161,18 +161,16 @@ func (msg *FimpMessage) SerializeToJson() ([]byte, error) {
 
 }
 
-
-
 func NewMessage(type_ string, service string, valueType string, value interface{}, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
 	msg := FimpMessage{Type: type_,
-		Service:    service,
-		ValueType:  valueType,
-		Value:      value,
-		Tags:       tags,
-		Properties: props,
-		Version:    "1",
-		CreationTime:time.Now().Format(TimeFormat),
-		UID:uuid.NewV4().String(),
+		Service:      service,
+		ValueType:    valueType,
+		Value:        value,
+		Tags:         tags,
+		Properties:   props,
+		Version:      "1",
+		CreationTime: time.Now().Format(TimeFormat),
+		UID:          uuid.NewV4().String(),
 	}
 
 	if requestMessage != nil {
@@ -287,7 +285,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	case VTypeStrMap:
 		val := make(map[string]string)
 		jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
-			val[string(key)],err = jsonparser.ParseString(value)
+			val[string(key)], err = jsonparser.ParseString(value)
 			return nil
 		}, "val")
 		fimpmsg.Value = val
@@ -322,7 +320,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	}
 	fimpmsg.Properties = make(Props)
 	jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
-		fimpmsg.Properties[string(key)],err = jsonparser.ParseString(value)
+		fimpmsg.Properties[string(key)], err = jsonparser.ParseString(value)
 		return nil
 	}, "props")
 
