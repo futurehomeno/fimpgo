@@ -7,7 +7,7 @@ type Site struct {
 	Things    []Thing    `json:"thing,omitempty"`
 	Rooms     []Room     `json:"room,omitempty"`
 	House     *House     `json:"house,omitempty"`
-	Hub       *Hub       `json:"house,omitempty"`
+	Hub       *Hub       `json:"hub,omitempty"`
 	Areas     []Area     `json:"area,omitempty"`
 	Shortcuts []Shortcut `json:"shortcut,omitempty"`
 	Problem   bool       `json:"problem,omitempty"`
