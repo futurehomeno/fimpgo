@@ -22,7 +22,7 @@ const (
 // Top level element for commands
 type Request struct {
 	Cmd       string       `json:"cmd"`
-	Component interface{}       `json:"component"`
+	Component interface{}  `json:"component"`
 	Param     RequestParam `json:"param"`
 	RequestID interface{}  `json:"requestId",omitempty`
 	Id        interface{}  `json:"id,omitempty"`
@@ -32,7 +32,6 @@ type RequestParam struct {
 	Id         int      `json:"id,omitempty"`
 	Components []string `json:"components,omitempty"`
 }
-
 
 type Fimp struct {
 	Adapter string `json:"adapter"`
@@ -55,7 +54,8 @@ type Device struct {
 	Param         map[string]interface{} `json:"param"`
 	Problem       bool                   `json:"problem"`
 	Room          int                    `json:"room"`
-	Changes       map[string]interface{}
+	Changes       map[string]interface{} `json:"changes"`
+	ThingID       int                    `json:"thing"`
 }
 
 type Thing struct {
