@@ -148,3 +148,10 @@ type Mode struct {
 	Id     string     `json:"id"`
 	Action ModeAction `json:"action"`
 }
+
+type Timer struct {
+	Action  int                    `json:"action"`
+	Client  Client                 `json:"client"`
+	Enabled bool                   `json:"enabled"`
+	Time    map[string]interface{} `json:"time"`
+}
