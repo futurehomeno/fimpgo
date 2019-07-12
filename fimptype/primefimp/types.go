@@ -155,4 +155,5 @@ type Timer struct {
 	Client  Client                 `json:"client"`
 	Enabled bool                   `json:"enabled"`
 	Time    map[string]interface{} `json:"time"`
+	Id      int                    `json:"id"`
 }
