@@ -117,3 +117,16 @@ func (resp *Response) GetModes() []Mode {
 	}
 	return result
 }
+
+func (resp *Response) GetTimers() []Mode {
+	param, ok := resp.ParamRaw[ComponentTimer]
+	if !ok {
+		return nil
+	}
+	var result []Mode
+	err := json.Unmarshal(param, &result)
+	if err != nil {
+		return nil
+	}
+	return result
+}

@@ -10,12 +10,13 @@ type Site struct {
 	Areas     []Area     `json:"area,omitempty"`
 	Shortcuts []Shortcut `json:"shortcut,omitempty"`
 	Modes     []Mode     `json:"mode,omitempty"`
+	Timers    []Timer    `json:"timer,omitempty"`
 	Problem   bool       `json:"problem,omitempty"`
 }
 
 func SiteFromResponse(resp *Response) *Site {
 	site := Site{Devices: resp.GetDevices(), Things: resp.GetThings(), Rooms: resp.GetRooms(), Areas: resp.GetAreas(), House: resp.GetHouse(),
-		Shortcuts: resp.GetShortcuts(), Modes: resp.GetModes()}
+		Shortcuts: resp.GetShortcuts(), Modes: resp.GetModes(), Timers: resp.GetTimers()}
 	return &site
 
 }

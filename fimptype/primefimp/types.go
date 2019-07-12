@@ -13,6 +13,7 @@ const (
 	ComponentHub      = "hub"
 	ComponentShortcut = "shortcut"
 	ComponentMode     = "mode"
+	ComponentTimer    = "timer"
 
 	CmdGet    = "get"
 	CmdSet    = "set"
