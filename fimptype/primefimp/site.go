@@ -1,6 +1,5 @@
 package primefimp
 
-
 type Site struct {
 	Id        int        `json:"id,omitempty"`
 	Devices   []Device   `json:"device,omitempty"`
@@ -10,12 +9,13 @@ type Site struct {
 	Hub       *Hub       `json:"hub,omitempty"`
 	Areas     []Area     `json:"area,omitempty"`
 	Shortcuts []Shortcut `json:"shortcut,omitempty"`
+	Modes     []Mode     `json:"mode,omitempty"`
 	Problem   bool       `json:"problem,omitempty"`
 }
 
 func SiteFromResponse(resp *Response) *Site {
-	site := Site{Devices: resp.GetDevices(), Things:resp.GetThings(), Rooms:resp.GetRooms(), Areas:resp.GetAreas(),House:resp.GetHouse(),
-		Shortcuts: resp.GetShortcuts()}
+	site := Site{Devices: resp.GetDevices(), Things: resp.GetThings(), Rooms: resp.GetRooms(), Areas: resp.GetAreas(), House: resp.GetHouse(),
+		Shortcuts: resp.GetShortcuts(), Modes: resp.GetModes()}
 	return &site
 
 }

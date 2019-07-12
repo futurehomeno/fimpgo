@@ -15,16 +15,16 @@ type Response struct {
 	Id        interface{}                `json:"id,omitempty"`
 }
 
-func FimpToResponse(msg *fimpgo.FimpMessage) (*Response,error) {
+func FimpToResponse(msg *fimpgo.FimpMessage) (*Response, error) {
 	if msg.Type != "evt.pd7.response" {
-		return nil,errors.New("wrong fimp msg type")
+		return nil, errors.New("wrong fimp msg type")
 	}
-	response :=Response{}
-	err  := msg.GetObjectValue(&response)
-	if err !=nil {
-		return nil , err
+	response := Response{}
+	err := msg.GetObjectValue(&response)
+	if err != nil {
+		return nil, err
 	}
-	return &response,err
+	return &response, err
 }
 
 func (resp *Response) GetDevices() []Device {
@@ -33,7 +33,7 @@ func (resp *Response) GetDevices() []Device {
 		return nil
 	}
 	var result []Device
-	err := json.Unmarshal(param,&result)
+	err := json.Unmarshal(param, &result)
 	if err != nil {
 		return nil
 	}
@@ -46,7 +46,7 @@ func (resp *Response) GetRooms() []Room {
 		return nil
 	}
 	var result []Room
-	err := json.Unmarshal(param,&result)
+	err := json.Unmarshal(param, &result)
 	if err != nil {
 		return nil
 	}
@@ -59,7 +59,7 @@ func (resp *Response) GetThings() []Thing {
 		return nil
 	}
 	var result []Thing
-	err := json.Unmarshal(param,&result)
+	err := json.Unmarshal(param, &result)
 	if err != nil {
 		return nil
 	}
@@ -72,7 +72,7 @@ func (resp *Response) GetAreas() []Area {
 		return nil
 	}
 	var result []Area
-	err := json.Unmarshal(param,&result)
+	err := json.Unmarshal(param, &result)
 	if err != nil {
 		return nil
 	}
@@ -85,7 +85,7 @@ func (resp *Response) GetHouse() *House {
 		return nil
 	}
 	var result House
-	err := json.Unmarshal(param,&result)
+	err := json.Unmarshal(param, &result)
 	if err != nil {
 		return nil
 	}
@@ -98,7 +98,20 @@ func (resp *Response) GetShortcuts() []Shortcut {
 		return nil
 	}
 	var result []Shortcut
-	err := json.Unmarshal(param,&result)
+	err := json.Unmarshal(param, &result)
+	if err != nil {
+		return nil
+	}
+	return result
+}
+
+func (resp *Response) GetModes() []Mode {
+	param, ok := resp.ParamRaw[ComponentMode]
+	if !ok {
+		return nil
+	}
+	var result []Mode
+	err := json.Unmarshal(param, &result)
 	if err != nil {
 		return nil
 	}
