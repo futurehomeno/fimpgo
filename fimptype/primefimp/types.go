@@ -12,6 +12,8 @@ const (
 	ComponentHouse    = "house"
 	ComponentHub      = "hub"
 	ComponentShortcut = "shortcut"
+	ComponentMode     = "mode"
+	ComponentTimer    = "timer"
 
 	CmdGet    = "get"
 	CmdSet    = "set"
@@ -22,9 +24,9 @@ const (
 // Top level element for commands
 type Request struct {
 	Cmd       string       `json:"cmd"`
-	Component interface{}       `json:"component"`
+	Component interface{}  `json:"component"`
 	Param     RequestParam `json:"param"`
-	RequestID interface{}  `json:"requestId",omitempty`
+	RequestID interface{}  `json:"requestId,omitempty"`
 	Id        interface{}  `json:"id,omitempty"`
 }
 
@@ -32,7 +34,6 @@ type RequestParam struct {
 	Id         int      `json:"id,omitempty"`
 	Components []string `json:"components,omitempty"`
 }
-
 
 type Fimp struct {
 	Adapter string `json:"adapter"`
@@ -55,7 +56,8 @@ type Device struct {
 	Param         map[string]interface{} `json:"param"`
 	Problem       bool                   `json:"problem"`
 	Room          int                    `json:"room"`
-	Changes       map[string]interface{}
+	Changes       map[string]interface{} `json:"changes"`
+	ThingID       int                    `json:"thing"`
 }
 
 type Thing struct {
@@ -74,6 +76,7 @@ type House struct {
 }
 
 type Room struct {
+	Alias   string     `json:"alias"`
 	ID      int        `json:"id"`
 	Param   RoomParams `json:"param"`
 	Client  Client     `json:"client"`
@@ -113,16 +116,44 @@ type Area struct {
 	Type string `json:"type"`
 }
 
+type ActionDevice map[string]interface{}
+
+type ActionRoom map[string]interface{}
+
+type ShortcutAction struct {
+	Device map[int]ActionDevice `json:"device"`
+	Room   map[int]ActionRoom   `json:"room"`
+}
+
 type Shortcut struct {
-	ID     int    `json:"id"`
-	Client Client `json:"client"`
+	ID     int            `json:"id"`
+	Client Client         `json:"client"`
+	Action ShortcutAction `json:"action"`
+}
+
+type HubMode struct {
+	Current  string `json:"current"`
+	Previous string `json:"prev"`
 }
 
 type Hub struct {
-	Mode Mode `json:"mode"`
+	Mode HubMode `json:"mode"`
+}
+
+type ModeAction struct {
+	Device map[int]ActionDevice `json:"device"`
+	Room   map[int]ActionRoom   `json:"room"`
 }
 
 type Mode struct {
-	Current  string `json:"current"`
-	Previous string `json:"prev"`
+	Id     string     `json:"id"`
+	Action ModeAction `json:"action"`
+}
+
+type Timer struct {
+	Action  int                    `json:"action"`
+	Client  Client                 `json:"client"`
+	Enabled bool                   `json:"enabled"`
+	Time    map[string]interface{} `json:"time"`
+	Id      int                    `json:"id"`
 }

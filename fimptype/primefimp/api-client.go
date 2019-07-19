@@ -12,15 +12,15 @@ type NotifyFilter struct {
 }
 
 type ApiClient struct {
-	clientID          string
-	mqttTransport     *fimpgo.MqttTransport
-	sClient           *fimpgo.SyncClient
-	siteCache         Site
-	isCacheEnabled    bool
-	notifySubChannels map[string]chan Notify
-	subFilters        map[string]NotifyFilter
-	inMsgChan         fimpgo.MessageCh
-	stopFlag          bool
+	clientID              string
+	mqttTransport         *fimpgo.MqttTransport
+	sClient               *fimpgo.SyncClient
+	siteCache             Site
+	isCacheEnabled        bool
+	notifySubChannels     map[string]chan Notify
+	subFilters            map[string]NotifyFilter
+	inMsgChan             fimpgo.MessageCh
+	stopFlag              bool
 	isNotifyRouterStarted bool
 }
 
@@ -65,7 +65,6 @@ func (mh *ApiClient) StartNotifyRouter() {
 	}()
 }
 
-
 // This is destructor
 func (mh *ApiClient) Stop() {
 	mh.sClient.Stop()
@@ -76,7 +75,6 @@ func (mh *ApiClient) Stop() {
 
 }
 
-
 // Receives notify messages and forwards them using filtering
 func (mh *ApiClient) notifyRouter() {
 	defer func() {
@@ -85,24 +83,24 @@ func (mh *ApiClient) notifyRouter() {
 		}
 	}()
 
-	mh.inMsgChan = make(fimpgo.MessageCh,10)
-	mh.mqttTransport.RegisterChannel(mh.clientID,mh.inMsgChan)
+	mh.inMsgChan = make(fimpgo.MessageCh, 10)
+	mh.mqttTransport.RegisterChannel(mh.clientID, mh.inMsgChan)
 	mh.mqttTransport.Subscribe("pt:j1/mt:evt/rt:app/rn:vinculum/ad:1")
 
 	for msg := range mh.inMsgChan {
 		if mh.stopFlag {
 			break
 		}
-		notif , err := FimpToNotify(msg)
+		notif, err := FimpToNotify(msg)
 		if err != nil {
-			log.Debug("<PF-API> Can't cast to Notify . Err:",err)
+			log.Debug("<PF-API> Can't cast to Notify . Err:", err)
 			continue
 		}
-		for _,subCh := range mh.notifySubChannels {
+		for _, subCh := range mh.notifySubChannels {
 			select {
 			case subCh <- *notif:
 
-			case <- time.After(time.Second*10):
+			case <-time.After(time.Second * 10):
 				log.Warn("<PF-API> Message is blocked , message is dropped ")
 			}
 
@@ -110,114 +108,112 @@ func (mh *ApiClient) notifyRouter() {
 	}
 }
 
-func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage,error)  {
+func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, error) {
 	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
 	respAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeRsp, ResourceType: fimpgo.ResourceTypeApp, ResourceName: mh.clientID, ResourceAddress: "1"}
 	mh.sClient.AddSubscription(respAddr.Serialize())
 
 	param := RequestParam{Components: components}
-	req := Request{Cmd:CmdGet,Param:param }
+	req := Request{Cmd: CmdGet, Param: param}
 
-	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum",fimpgo.VTypeObject, req, nil, nil, nil)
+	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimpgo.VTypeObject, req, nil, nil, nil)
 	msg.ResponseToTopic = respAddr.Serialize()
 	msg.Source = mh.clientID
-	return mh.sClient.SendFimpWithTopicResponse(reqAddr.Serialize(),msg,respAddr.Serialize(),"","",5)
+	return mh.sClient.SendFimpWithTopicResponse(reqAddr.Serialize(), msg, respAddr.Serialize(), "", "", 5)
 }
 
-func (mh *ApiClient) GetDevices(fromCache bool)([]Device,error ){
+func (mh *ApiClient) GetDevices(fromCache bool) ([]Device, error) {
 	if !fromCache {
-		fimpResponse,err := mh.sendGetRequest([]string{ComponentDevice})
+		fimpResponse, err := mh.sendGetRequest([]string{ComponentDevice})
 		if err != nil {
 			return nil, err
 		}
-		response,err := FimpToResponse(fimpResponse)
+		response, err := FimpToResponse(fimpResponse)
 		if err != nil {
 			return nil, err
 		}
-		return response.GetDevices(),err
+		return response.GetDevices(), err
 	}
-	return nil ,nil
+	return nil, nil
 }
 
-func (mh *ApiClient) GetRooms(fromCache bool)([]Room,error ){
+func (mh *ApiClient) GetRooms(fromCache bool) ([]Room, error) {
 	if !fromCache {
-		fimpResponse,err := mh.sendGetRequest([]string{ComponentRoom})
+		fimpResponse, err := mh.sendGetRequest([]string{ComponentRoom})
 		if err != nil {
 			return nil, err
 		}
-		response,err := FimpToResponse(fimpResponse)
+		response, err := FimpToResponse(fimpResponse)
 		if err != nil {
 			return nil, err
 		}
-		return response.GetRooms(),err
+		return response.GetRooms(), err
 	}
-	return nil ,nil
+	return nil, nil
 }
 
-func (mh *ApiClient) GetAreas(fromCache bool)([]Area,error ){
+func (mh *ApiClient) GetAreas(fromCache bool) ([]Area, error) {
 	if !fromCache {
-		fimpResponse,err := mh.sendGetRequest([]string{ComponentArea})
+		fimpResponse, err := mh.sendGetRequest([]string{ComponentArea})
 		if err != nil {
 			return nil, err
 		}
-		response,err := FimpToResponse(fimpResponse)
+		response, err := FimpToResponse(fimpResponse)
 		if err != nil {
 			return nil, err
 		}
-		return response.GetAreas(),err
+		return response.GetAreas(), err
 	}
-	return nil ,nil
+	return nil, nil
 }
 
-func (mh *ApiClient) GetThings(fromCache bool)([]Thing,error ){
+func (mh *ApiClient) GetThings(fromCache bool) ([]Thing, error) {
 	if !fromCache {
-		fimpResponse,err := mh.sendGetRequest([]string{ComponentThing})
+		fimpResponse, err := mh.sendGetRequest([]string{ComponentThing})
 		if err != nil {
 			return nil, err
 		}
-		response,err := FimpToResponse(fimpResponse)
+		response, err := FimpToResponse(fimpResponse)
 		if err != nil {
 			return nil, err
 		}
-		return response.GetThings(),err
+		return response.GetThings(), err
 	}
-	return nil ,nil
+	return nil, nil
 }
 
-func (mh *ApiClient) GetShortcuts(fromCache bool)([]Shortcut,error ){
+func (mh *ApiClient) GetShortcuts(fromCache bool) ([]Shortcut, error) {
 	if !fromCache {
-		fimpResponse,err := mh.sendGetRequest([]string{ComponentArea})
+		fimpResponse, err := mh.sendGetRequest([]string{ComponentArea})
 		if err != nil {
 			return nil, err
 		}
-		response,err := FimpToResponse(fimpResponse)
+		response, err := FimpToResponse(fimpResponse)
 		if err != nil {
 			return nil, err
 		}
-		return response.GetShortcuts(),err
+		return response.GetShortcuts(), err
 	}
-	return nil ,nil
+	return nil, nil
 }
 
-func (mh *ApiClient) GetSite(fromCache bool)(*Site,error ){
+func (mh *ApiClient) GetSite(fromCache bool) (*Site, error) {
 	if !fromCache {
-		fimpResponse,err := mh.sendGetRequest([]string{ComponentThing,ComponentDevice,ComponentRoom,ComponentArea,ComponentShortcut,ComponentHouse})
+		fimpResponse, err := mh.sendGetRequest([]string{ComponentThing, ComponentDevice, ComponentRoom, ComponentArea, ComponentShortcut, ComponentHouse, ComponentMode})
 		if err != nil {
 			return nil, err
 		}
 
-		response,err := FimpToResponse(fimpResponse)
+		response, err := FimpToResponse(fimpResponse)
 		if err != nil {
 			return nil, err
 		}
 		if mh.isCacheEnabled {
 			mh.siteCache = *SiteFromResponse(response)
-			return &mh.siteCache,err
-		}else {
-			return SiteFromResponse(response),err
+			return &mh.siteCache, err
+		} else {
+			return SiteFromResponse(response), err
 		}
-
 	}
-	return &mh.siteCache ,nil
+	return &mh.siteCache, nil
 }
-
