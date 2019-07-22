@@ -184,7 +184,7 @@ func (mh *ApiClient) GetThings(fromCache bool) ([]Thing, error) {
 
 func (mh *ApiClient) GetShortcuts(fromCache bool) ([]Shortcut, error) {
 	if !fromCache {
-		fimpResponse, err := mh.sendGetRequest([]string{ComponentArea})
+		fimpResponse, err := mh.sendGetRequest([]string{ComponentShortcut})
 		if err != nil {
 			return nil, err
 		}
