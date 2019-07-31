@@ -144,8 +144,8 @@ type Hub struct {
 }
 
 type ModeAction struct {
-	Device ActionDevice `json:"device"`
-	Room   ActionRoom   `json:"room"`
+	Device map[int]ActionDevice `json:"device"`
+	Room   map[int]ActionRoom   `json:"room"`
 }
 
 type Mode struct {
