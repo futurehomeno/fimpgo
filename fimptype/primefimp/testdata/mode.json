@@ -1,0 +1,324 @@
+[
+  {
+    "action": {
+      "room": {
+        "1": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "10": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "11": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "2": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "3": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "4": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "5": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "6": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "7": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "8": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "9": {
+          "heating": {
+            "desired": 19
+          }
+        }
+      }
+    },
+    "id": "away"
+  },
+  {
+    "action": {
+      "room": {
+        "1": {
+          "heating": {
+            "desired": 23
+          }
+        },
+        "10": {
+          "heating": {
+            "desired": 23
+          }
+        },
+        "11": {
+          "heating": {
+            "desired": 23
+          }
+        },
+        "2": {
+          "heating": {
+            "desired": 23
+          }
+        },
+        "3": {
+          "heating": {
+            "desired": 23
+          }
+        },
+        "4": {
+          "heating": {
+            "desired": 23
+          }
+        },
+        "5": {
+          "heating": {
+            "desired": 23
+          }
+        },
+        "6": {
+          "heating": {
+            "desired": 23
+          }
+        },
+        "7": {
+          "heating": {
+            "desired": 23
+          }
+        },
+        "8": {
+          "heating": {
+            "desired": 23
+          }
+        },
+        "9": {
+          "heating": {
+            "desired": 23
+          }
+        }
+      }
+    },
+    "id": "home"
+  },
+  {
+    "action": {
+      "device": {
+        "1": {
+          "power": "off"
+        },
+        "10": {
+          "power": "off"
+        },
+        "13": {
+          "power": "off"
+        },
+        "16": {
+          "power": "off"
+        },
+        "19": {
+          "power": "off"
+        },
+        "22": {
+          "power": "on"
+        },
+        "25": {
+          "power": "on"
+        },
+        "28": {
+          "power": "off"
+        },
+        "31": {
+          "power": "off"
+        },
+        "34": {
+          "power": "off"
+        },
+        "37": {
+          "power": "off"
+        },
+        "4": {
+          "power": "off"
+        },
+        "40": {
+          "power": "off"
+        },
+        "43": {
+          "power": "off"
+        },
+        "46": {
+          "power": "off"
+        },
+        "51": {
+          "power": "off"
+        },
+        "58": {
+          "power": "off"
+        },
+        "64": {
+          "power": "on"
+        },
+        "67": {
+          "power": "off"
+        },
+        "7": {
+          "power": "off"
+        },
+        "70": {
+          "power": "on"
+        },
+        "73": {
+          "power": "on"
+        },
+        "76": {
+          "power": "off"
+        },
+        "79": {
+          "power": "off"
+        }
+      },
+      "room": {
+        "1": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "10": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "11": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "2": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "3": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "4": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "5": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "6": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "7": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "8": {
+          "heating": {
+            "desired": 19
+          }
+        },
+        "9": {
+          "heating": {
+            "desired": 19
+          }
+        }
+      }
+    },
+    "id": "sleep"
+  },
+  {
+    "action": {
+      "room": {
+        "1": {
+          "heating": {
+            "desired": 8
+          }
+        },
+        "10": {
+          "heating": {
+            "desired": 8
+          }
+        },
+        "11": {
+          "heating": {
+            "desired": 8
+          }
+        },
+        "2": {
+          "heating": {
+            "desired": 8
+          }
+        },
+        "3": {
+          "heating": {
+            "desired": 8
+          }
+        },
+        "4": {
+          "heating": {
+            "desired": 8
+          }
+        },
+        "5": {
+          "heating": {
+            "desired": 8
+          }
+        },
+        "6": {
+          "heating": {
+            "desired": 8
+          }
+        },
+        "7": {
+          "heating": {
+            "desired": 8
+          }
+        },
+        "8": {
+          "heating": {
+            "desired": 8
+          }
+        },
+        "9": {
+          "heating": {
+            "desired": 8
+          }
+        }
+      }
+    },
+    "id": "vacation"
+  }
+]

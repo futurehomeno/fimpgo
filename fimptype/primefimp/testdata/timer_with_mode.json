@@ -1,0 +1,23 @@
+{
+  "action": "vacation",
+  "client": {
+    "name": "Test Vacation"
+  },
+  "enabled": true,
+  "id": 3,
+  "next": "2019-07-31T13:00:00Z",
+  "prev": null,
+  "time": {
+    "recurring": {
+      "days": [
+        "mo",
+        "tu",
+        "we",
+        "th",
+        "fr"
+      ],
+      "skipHolidays": false
+    },
+    "when": "15:00:00"
+  }
+}

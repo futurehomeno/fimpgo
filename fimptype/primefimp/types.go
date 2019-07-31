@@ -1,6 +1,8 @@
 package primefimp
 
 import (
+	"encoding/json"
+	"errors"
 	"time"
 )
 
@@ -121,8 +123,8 @@ type ActionDevice map[string]interface{}
 type ActionRoom map[string]interface{}
 
 type ShortcutAction struct {
-	Device map[int]ActionDevice `json:"device"`
-	Room   map[int]ActionRoom   `json:"room"`
+	Device ActionDevice `json:"device"`
+	Room   ActionRoom   `json:"room"`
 }
 
 type Shortcut struct {
@@ -141,8 +143,8 @@ type Hub struct {
 }
 
 type ModeAction struct {
-	Device map[int]ActionDevice `json:"device"`
-	Room   map[int]ActionRoom   `json:"room"`
+	Device ActionDevice `json:"device"`
+	Room   ActionRoom   `json:"room"`
 }
 
 type Mode struct {
@@ -150,10 +152,68 @@ type Mode struct {
 	Action ModeAction `json:"action"`
 }
 
+type TimerAction struct {
+	Type     string
+	Shortcut int
+	Mode     string
+	Action   ShortcutAction
+}
+
 type Timer struct {
-	Action  int                    `json:"action"`
+	Action  TimerAction
 	Client  Client                 `json:"client"`
 	Enabled bool                   `json:"enabled"`
 	Time    map[string]interface{} `json:"time"`
 	Id      int                    `json:"id"`
+}
+
+func (t *Timer) UnmarshalJSON(b []byte) error {
+	temp := &struct {
+		Action  interface{}
+		Client  Client                 `json:"client"`
+		Enabled bool                   `json:"enabled"`
+		Time    map[string]interface{} `json:"time"`
+		Id      int                    `json:"id"`
+	}{}
+
+	err := json.Unmarshal(b, temp)
+	if err != nil {
+		return err
+	}
+	t.Client = temp.Client
+	t.Enabled = temp.Enabled
+	t.Time = temp.Time
+	t.Id = temp.Id
+
+	switch temp.Action.(type) {
+	case float64:
+		t.Action.Type = "shortcut"
+		t.Action.Shortcut = int(temp.Action.(float64))
+	case float32:
+		// If we are running on a 32 bit machine
+		t.Action.Type = "shortcut"
+		t.Action.Shortcut = int(temp.Action.(float32))
+	case string:
+		t.Action.Type = "mode"
+		t.Action.Mode = temp.Action.(string)
+	case map[string]interface{}:
+		t.Action.Type = "custom"
+		act := temp.Action.(map[string]interface{})
+		if actRoom, ok := act["room"]; ok {
+			t.Action.Action.Room = make(map[string]interface{})
+			for idRoom, act := range actRoom.(map[string]interface{}) {
+				t.Action.Action.Room[idRoom] = act
+			}
+		}
+		if actDevice, ok := act["device"]; ok {
+			t.Action.Action.Device = make(map[string]interface{})
+			for idDevice, act := range actDevice.(map[string]interface{}) {
+				t.Action.Action.Device[idDevice] = act
+			}
+		}
+	default:
+		return errors.New("invalid timer structure")
+	}
+
+	return nil
 }
