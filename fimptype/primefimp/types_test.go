@@ -30,7 +30,7 @@ func TestTimerWithActions(t *testing.T) {
 
 	json.Unmarshal(tb, &timer)
 
-	device37 := timer.Action.Action.Device["37"].(map[string]interface{})
+	device37 := timer.Action.Action.Device[37]
 
 	if device37["power"].(string) != "on" {
 		t.Errorf("Wrong power value for device 37. Expecting: on, Got: %s", device37["power"].(string))

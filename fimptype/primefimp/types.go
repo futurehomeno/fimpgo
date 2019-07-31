@@ -3,6 +3,7 @@ package primefimp
 import (
 	"encoding/json"
 	"errors"
+	"strconv"
 	"time"
 )
 
@@ -123,8 +124,8 @@ type ActionDevice map[string]interface{}
 type ActionRoom map[string]interface{}
 
 type ShortcutAction struct {
-	Device ActionDevice `json:"device"`
-	Room   ActionRoom   `json:"room"`
+	Device map[int]ActionDevice `json:"device"`
+	Room   map[int]ActionRoom   `json:"room"`
 }
 
 type Shortcut struct {
@@ -200,15 +201,31 @@ func (t *Timer) UnmarshalJSON(b []byte) error {
 		t.Action.Type = "custom"
 		act := temp.Action.(map[string]interface{})
 		if actRoom, ok := act["room"]; ok {
-			t.Action.Action.Room = make(map[string]interface{})
+			t.Action.Action.Room = make(map[int]ActionRoom)
 			for idRoom, act := range actRoom.(map[string]interface{}) {
-				t.Action.Action.Room[idRoom] = act
+				actTransposed, ok := act.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				idRoom, err := strconv.Atoi(idRoom)
+				if err != nil {
+					return err
+				}
+				t.Action.Action.Room[idRoom] = actTransposed
 			}
 		}
 		if actDevice, ok := act["device"]; ok {
-			t.Action.Action.Device = make(map[string]interface{})
+			t.Action.Action.Device = make(map[int]ActionDevice)
 			for idDevice, act := range actDevice.(map[string]interface{}) {
-				t.Action.Action.Device[idDevice] = act
+				actTransposed, ok := act.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				idDev, err := strconv.Atoi(idDevice)
+				if err != nil {
+					return err
+				}
+				t.Action.Action.Device[idDev] = actTransposed
 			}
 		}
 	default:
