@@ -241,6 +241,8 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	fimpmsg.UID, _ = jsonparser.GetString(msg, "uid")
 	fimpmsg.CorrelationID, _ = jsonparser.GetString(msg, "corid")
 	fimpmsg.CreationTime, _ = jsonparser.GetString(msg, "ctime")
+	fimpmsg.ResponseToTopic, _ = jsonparser.GetString(msg, "resp_to")
+	fimpmsg.Source, _ = jsonparser.GetString(msg, "src")
 
 	switch fimpmsg.ValueType {
 	case VTypeString:
