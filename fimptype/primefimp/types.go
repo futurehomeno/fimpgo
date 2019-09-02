@@ -45,7 +45,7 @@ type Fimp struct {
 }
 
 type Client struct {
-	Name          string  `json:"name"`
+	Name          *string `json:"name,omitempty"`
 	OpenStateType *string `json:"openStateType,omitempty"`
 }
 
