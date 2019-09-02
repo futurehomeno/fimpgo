@@ -45,13 +45,14 @@ type Fimp struct {
 }
 
 type Client struct {
-	Name string `json:"name"`
+	Name          string  `json:"name"`
+	OpenStateType *string `json:"openStateType,omitempty"`
 }
 
 type Device struct {
 	Fimp          Fimp                   `json:"fimp"`
 	Client        Client                 `json:"client"`
-	Functionality string                 `json:"functionality"`
+	Functionality *string                `json:"functionality"`
 	Service       map[string]Service     `json:"services"`
 	ID            int                    `json:"id"`
 	Lrn           bool                   `json:"lrn"`
