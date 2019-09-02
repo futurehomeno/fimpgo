@@ -60,9 +60,9 @@ type Device struct {
 	ModelAlias    string                 `json:"modelAlias"`
 	Param         map[string]interface{} `json:"param"`
 	Problem       bool                   `json:"problem"`
-	Room          int                    `json:"room"`
+	Room          *int                   `json:"room"`
 	Changes       map[string]interface{} `json:"changes"`
-	ThingID       int                    `json:"thing"`
+	ThingID       *int                   `json:"thing"`
 }
 
 type Thing struct {
