@@ -57,6 +57,7 @@ type Device struct {
 	ID            int                    `json:"id"`
 	Lrn           bool                   `json:"lrn"`
 	Model         string                 `json:"model"`
+	ModelAlias    string                 `json:"modelAlias"`
 	Param         map[string]interface{} `json:"param"`
 	Problem       bool                   `json:"problem"`
 	Room          int                    `json:"room"`
