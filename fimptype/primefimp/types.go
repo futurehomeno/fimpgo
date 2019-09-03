@@ -85,8 +85,8 @@ type Room struct {
 	ID      int        `json:"id"`
 	Param   RoomParams `json:"param"`
 	Client  Client     `json:"client"`
-	Type    string     `json:"type"`
-	Area    int        `json:"area,omitempty"`
+	Type    *string    `json:"type"`
+	Area    *int       `json:"area"`
 	Outside bool       `json:"outside"`
 }
 
