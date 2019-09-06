@@ -22,6 +22,7 @@ const (
 	CmdSet    = "set"
 	CmdEdit   = "edit"
 	CmdDelete = "delete"
+	CmdAdd    = "add"
 )
 
 // Top level element for commands
