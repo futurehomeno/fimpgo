@@ -16,12 +16,12 @@ type Notify struct {
 	Id         interface{}     `json:"id,omitempty"`
 }
 
-func FimpToNotify(msg *fimpgo.FimpMessage) (*Notify, error) {
-	if msg.Type != "evt.pd7.notify" {
+func FimpToNotify(msg *fimpgo.Message) (*Notify, error) {
+	if msg.Payload.Type != "evt.pd7.notify" {
 		return nil, errors.New("wrong fimp msg type")
 	}
 	notify := Notify{}
-	err := msg.GetObjectValue(&notify)
+	err := msg.Payload.GetObjectValue(&notify)
 	if err != nil {
 		return nil, err
 	}
