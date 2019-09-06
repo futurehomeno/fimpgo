@@ -6,7 +6,6 @@ import (
 	"github.com/futurehomeno/fimpgo"
 )
 
-
 type Notify struct {
 	Errors     interface{}     `json:"errors"`
 	Cmd        string          `json:"cmd"`
@@ -17,23 +16,23 @@ type Notify struct {
 	Id         interface{}     `json:"id,omitempty"`
 }
 
-func FimpToNotify(msg *fimpgo.Message) (*Notify,error) {
-	if msg.Payload.Type != "evt.pd7.notify" {
-		return nil,errors.New("wrong fimp msg type")
+func FimpToNotify(msg *fimpgo.FimpMessage) (*Notify, error) {
+	if msg.Type != "evt.pd7.notify" {
+		return nil, errors.New("wrong fimp msg type")
 	}
 	notify := Notify{}
-	err  := msg.Payload.GetObjectValue(&notify)
-	if err !=nil {
-		return nil , err
+	err := msg.GetObjectValue(&notify)
+	if err != nil {
+		return nil, err
 	}
 
-	return &notify,err
+	return &notify, err
 }
 
 func (ntf *Notify) GetDevice() *Device {
 	if ntf.Component == ComponentDevice {
 		var result Device
-		err := json.Unmarshal(ntf.ParamRaw,&result)
+		err := json.Unmarshal(ntf.ParamRaw, &result)
 		if err != nil {
 			return nil
 		}
@@ -45,7 +44,7 @@ func (ntf *Notify) GetDevice() *Device {
 func (ntf *Notify) GetThing() *Thing {
 	if ntf.Component == ComponentThing {
 		var result Thing
-		err := json.Unmarshal(ntf.ParamRaw,&result)
+		err := json.Unmarshal(ntf.ParamRaw, &result)
 		if err != nil {
 			return nil
 		}
@@ -57,7 +56,7 @@ func (ntf *Notify) GetThing() *Thing {
 func (ntf *Notify) GetRoom() *Room {
 	if ntf.Component == ComponentRoom {
 		var result Room
-		err := json.Unmarshal(ntf.ParamRaw,&result)
+		err := json.Unmarshal(ntf.ParamRaw, &result)
 		if err != nil {
 			return nil
 		}
@@ -69,7 +68,7 @@ func (ntf *Notify) GetRoom() *Room {
 func (ntf *Notify) GetArea() *Area {
 	if ntf.Component == ComponentArea {
 		var result Area
-		err := json.Unmarshal(ntf.ParamRaw,&result)
+		err := json.Unmarshal(ntf.ParamRaw, &result)
 		if err != nil {
 			return nil
 		}
@@ -81,7 +80,7 @@ func (ntf *Notify) GetArea() *Area {
 func (ntf *Notify) GetHouse() *House {
 	if ntf.Component == ComponentHouse {
 		var result House
-		err := json.Unmarshal(ntf.ParamRaw,&result)
+		err := json.Unmarshal(ntf.ParamRaw, &result)
 		if err != nil {
 			return nil
 		}
@@ -93,7 +92,7 @@ func (ntf *Notify) GetHouse() *House {
 func (ntf *Notify) GetShortcut() *Shortcut {
 	if ntf.Component == ComponentShortcut {
 		var result Shortcut
-		err := json.Unmarshal(ntf.ParamRaw,&result)
+		err := json.Unmarshal(ntf.ParamRaw, &result)
 		if err != nil {
 			return nil
 		}
@@ -105,7 +104,7 @@ func (ntf *Notify) GetShortcut() *Shortcut {
 func (ntf *Notify) GetHub() *Hub {
 	if ntf.Component == ComponentHub {
 		var result Hub
-		err := json.Unmarshal(ntf.ParamRaw,&result)
+		err := json.Unmarshal(ntf.ParamRaw, &result)
 		if err != nil {
 			return nil
 		}
