@@ -22,6 +22,7 @@ const (
 	CmdSet    = "set"
 	CmdEdit   = "edit"
 	CmdDelete = "delete"
+	CmdAdd    = "add"
 )
 
 // Top level element for commands
@@ -45,22 +46,24 @@ type Fimp struct {
 }
 
 type Client struct {
-	Name string `json:"name"`
+	Name          *string `json:"name,omitempty"`
+	OpenStateType *string `json:"openStateType,omitempty"`
 }
 
 type Device struct {
 	Fimp          Fimp                   `json:"fimp"`
 	Client        Client                 `json:"client"`
-	Functionality string                 `json:"functionality"`
+	Functionality *string                `json:"functionality"`
 	Service       map[string]Service     `json:"services"`
 	ID            int                    `json:"id"`
 	Lrn           bool                   `json:"lrn"`
 	Model         string                 `json:"model"`
+	ModelAlias    string                 `json:"modelAlias"`
 	Param         map[string]interface{} `json:"param"`
 	Problem       bool                   `json:"problem"`
-	Room          int                    `json:"room"`
+	Room          *int                   `json:"room"`
 	Changes       map[string]interface{} `json:"changes"`
-	ThingID       int                    `json:"thing"`
+	ThingID       *int                   `json:"thing"`
 }
 
 type Thing struct {
@@ -83,8 +86,8 @@ type Room struct {
 	ID      int        `json:"id"`
 	Param   RoomParams `json:"param"`
 	Client  Client     `json:"client"`
-	Type    string     `json:"type"`
-	Area    int        `json:"area,omitempty"`
+	Type    *string    `json:"type"`
+	Area    *int       `json:"area"`
 	Outside bool       `json:"outside"`
 }
 
