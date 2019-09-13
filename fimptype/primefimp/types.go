@@ -17,6 +17,7 @@ const (
 	ComponentShortcut = "shortcut"
 	ComponentMode     = "mode"
 	ComponentTimer    = "timer"
+	ComponentService  = "service"
 
 	CmdGet    = "get"
 	CmdSet    = "set"
