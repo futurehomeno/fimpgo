@@ -3,6 +3,7 @@ package fimpgo
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/futurehomeno/fimpgo/utils"
@@ -263,7 +264,7 @@ func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr
 	return false
 }
 
-// Publish iotMsg
+// Publish  to FIMP address
 func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 	bytm, err := fimpMsg.SerializeToJson()
 	topic := addr.Serialize()
@@ -277,6 +278,30 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 	}
 	return err
 }
+
+// Publish iotMsg to string topic
+func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) error {
+	bytm, err := fimpMsg.SerializeToJson()
+	if mh.globalTopicPrefix != "" {
+		topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
+	}
+	if err == nil {
+		log.Debug("<MqttAd> Publishing msg to topic:", topic)
+		mh.client.Publish(topic, mh.pubQos, false, bytm)
+		return nil
+	}
+	return err
+}
+
+//
+func (mh *MqttTransport) RespondToRequest(requestMsg *FimpMessage,responseMsg *FimpMessage) error {
+	if requestMsg.Source == "" {
+		return errors.New("src is not defined")
+	}
+	return mh.PublishToTopic(requestMsg.Source,responseMsg)
+}
+
+
 
 func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error {
 	bytm, err := fimpMsg.SerializeToJson()

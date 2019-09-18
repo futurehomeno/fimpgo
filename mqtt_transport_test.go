@@ -130,6 +130,62 @@ func TestMqttTransport_TestChannels(t *testing.T) {
 	}
 }
 
+func TestMqttTransport_TestResponder(t *testing.T) {
+
+	log.SetLevel(log.DebugLevel)
+	var isResponseReceived bool
+	mqtt := NewMqttTransport("tcp://localhost:1883","fimpgotest-1","","",true,1,1)
+	err := mqtt.Start()
+	t.Log("Connected")
+	time.Sleep(time.Second*1)
+	mqtt.Subscribe("#")
+
+	mqtt2 := NewMqttTransport("tcp://localhost:1883","fimpgotest-2","","",true,1,1)
+	err = mqtt2.Start()
+	t.Log("Connected")
+	time.Sleep(time.Second*1)
+	mqtt2.Subscribe("pt:j1/mt:rsp/rt:app/rn:response_tester/ad:1")
+
+
+	if err != nil {
+		t.Error("Error connecting to broker ",err)
+	}
+	chan1 := make(MessageCh)
+	chan2 := make(MessageCh)
+	mqtt.RegisterChannel("chan1",chan1)
+	mqtt2.RegisterChannel("chan2",chan2)
+	// responder
+	go func(msgChan MessageCh) {
+		newMsg :=<- chan1
+		if newMsg.Payload.Service == "tester" {
+			mqtt.RespondToRequest(newMsg.Payload,NewFloatMessage("evt.test.response", "test_responder", float64(35.5), nil, nil, nil))
+		}
+	}(chan1)
+
+	go func(msgChan MessageCh) {
+			newMsg :=<- chan2
+			t.Log("Service = "+newMsg.Payload.Service)
+			if newMsg.Payload.Service == "test_responder" && newMsg.Topic == "pt:j1/mt:rsp/rt:app/rn:response_tester/ad:1" {
+				isResponseReceived = true
+			}
+
+	}(chan2)
+
+	msg := NewFloatMessage("cmd.test.get_response", "tester", float64(35.5), nil, nil, nil)
+	msg.Source = "pt:j1/mt:rsp/rt:app/rn:response_tester/ad:1"
+	adr := Address{MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "test", ResourceAddress: "1"}
+	mqtt.Publish(&adr,msg)
+	time.Sleep(time.Second*2)
+	mqtt.UnregisterChannel("chan1")
+	mqtt.UnregisterChannel("chan2")
+	mqtt.Unsubscribe("#")
+	if isResponseReceived {
+		t.Log("Response received")
+	}else {
+		t.Error("Wrong result")
+		t.Fail()
+	}
+}
 
 func TestMqttTransport_TestChannelsWithFilters(t *testing.T) {
 
