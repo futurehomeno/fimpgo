@@ -295,10 +295,10 @@ func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) erro
 
 //
 func (mh *MqttTransport) RespondToRequest(requestMsg *FimpMessage,responseMsg *FimpMessage) error {
-	if requestMsg.Source == "" {
+	if requestMsg.ResponseToTopic == "" {
 		return errors.New("src is not defined")
 	}
-	return mh.PublishToTopic(requestMsg.Source,responseMsg)
+	return mh.PublishToTopic(requestMsg.ResponseToTopic,responseMsg)
 }
 
 

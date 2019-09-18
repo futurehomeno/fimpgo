@@ -172,7 +172,7 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 	}(chan2)
 
 	msg := NewFloatMessage("cmd.test.get_response", "tester", float64(35.5), nil, nil, nil)
-	msg.Source = "pt:j1/mt:rsp/rt:app/rn:response_tester/ad:1"
+	msg.ResponseToTopic = "pt:j1/mt:rsp/rt:app/rn:response_tester/ad:1"
 	adr := Address{MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "test", ResourceAddress: "1"}
 	mqtt.Publish(&adr,msg)
 	time.Sleep(time.Second*2)
