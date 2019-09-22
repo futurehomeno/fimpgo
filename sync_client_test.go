@@ -1,9 +1,9 @@
 package fimpgo
 
 import (
+	log "github.com/sirupsen/logrus"
 	"sync/atomic"
 	"testing"
-	log "github.com/sirupsen/logrus"
 	"time"
 )
 
@@ -73,8 +73,6 @@ func TestSyncClient_Connect(t *testing.T) {
 	t.Log("SyncClientConnect test - OK")
 
 }
-
-
 
 
 func TestSyncClient_SendFimp(t *testing.T) {
@@ -183,5 +181,66 @@ func TestSyncClient_SendFimpWithTopicResponse(t *testing.T) {
 		t.Fail()
 	}
 	t.Log("SyncClient test - OK")
+
+}
+
+func TestNewSyncClientV3(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+
+	connConfig := MqttConnectionConfigs{
+		ServerURI:           "tcp://localhost:1883",
+		CleanSession:        true,
+		SubQos:              1,
+		PubQos:              1,
+	}
+
+	connPool := NewMqttConnectionPool(0,2,10,connConfig,"pool_test_")
+
+	_ ,responderConn,_ := connPool.GetConnection()
+	responderConn.SetMessageHandler(func(topic string, addr *Address, iotMsg *FimpMessage, rawPayload []byte) {
+		log.Info("New mqtt msg ")
+		val,_ := iotMsg.GetStringValue()
+		response := NewStringMessage("evt.test.response","tester",val,nil,nil,iotMsg)
+		go responderConn.RespondToRequest(iotMsg,response)
+	})
+	responderConn.Subscribe("pt:j1/mt:cmd/rt:app/rn:conn_pool_tester/ad:1")
+
+    //-----------------------T-E-S-T----------------------------------------------------
+	syncC := NewSyncClientV3(connPool,0,0)
+
+	msg1 := NewStringMessage("cmd.test.get_response","tester","test-1",nil,nil,nil)
+	msg1.ResponseToTopic = "pt:j1/mt:rsp/rt:app/rn:goland/ad:1"
+
+	msg2 := NewStringMessage("cmd.test.get_response","tester","test-2",nil,nil,nil)
+	msg2.ResponseToTopic = "pt:j1/mt:rsp/rt:app/rn:goland/ad:2"
+
+	msg3 := NewStringMessage("cmd.test.get_response","tester","test-3",nil,nil,nil)
+	msg3.ResponseToTopic = "pt:j1/mt:rsp/rt:app/rn:goland/ad:1"
+    var response3 *FimpMessage
+	readyCh := make(chan bool)
+	go func() {
+		log.Info("----Response 3 Start ")
+		response3 , _ = syncC.SendReqRespFimp("pt:j1/mt:cmd/rt:app/rn:conn_pool_tester/ad:1","pt:j1/mt:rsp/rt:app/rn:goland/ad:1",msg3,5,true)
+		log.Info("----Response 3 End")
+		readyCh <- true
+	}()
+	log.Info("----Response 1 Start")
+	response , _ := syncC.SendReqRespFimp("pt:j1/mt:cmd/rt:app/rn:conn_pool_tester/ad:1","pt:j1/mt:rsp/rt:app/rn:goland/ad:1",msg1,5,true)
+	log.Info("----Response 1")
+	response2 , _ := syncC.SendReqRespFimp("pt:j1/mt:cmd/rt:app/rn:conn_pool_tester/ad:1","pt:j1/mt:rsp/rt:app/rn:goland/ad:2",msg2,5,true)
+	log.Info("----Response 2")
+    // waiting response from goroutine
+	<-readyCh
+	respVal , _ := response.GetStringValue()
+	respVal2 , _ := response2.GetStringValue()
+	respVal3 , _ := response3.GetStringValue()
+
+	if respVal == "test-1" && respVal2 == "test-2" && respVal3 == "test-3" {
+		t.Log("SUCCESS")
+	}else {
+		t.Error("Wrong response")
+		t.Fail()
+	}
+
 
 }

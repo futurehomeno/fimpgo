@@ -29,7 +29,6 @@ func TestMqttTransport_Publish(t *testing.T) {
 	}
 
 	mqtt.SetMessageHandler(onMsg)
-	time.Sleep(time.Second*1)
 	mqtt.Subscribe("#")
 	t.Log("Publishing message")
 

@@ -16,6 +16,20 @@ import (
 
 type MessageCh chan *Message
 
+type MqttConnectionConfigs struct {
+	ServerURI           string
+	ClientID            string
+	Username            string
+	Password            string
+	CleanSession        bool
+	SubQos              byte
+	PubQos              byte
+	GlobalTopicPrefix   string
+	StartFailRetryCount int
+	CertDir             string
+	ReceiveChTimeout    int
+}
+
 type Message struct {
 	Topic   string
 	Addr    *Address
@@ -61,7 +75,7 @@ type MessageHandler func(topic string, addr *Address, iotMsg *FimpMessage, rawPa
 
 // NewMqttAdapter constructor
 //serverUri="tcp://localhost:1883"
-func NewMqttTransport(serverURI string, clientID string, username string, password string, cleanSession bool, subQos byte, pubQos byte) *MqttTransport {
+func NewMqttTransport(serverURI , clientID , username , password string, cleanSession bool, subQos byte, pubQos byte) *MqttTransport {
 	mh := MqttTransport{}
 	mh.mqttOptions = MQTT.NewClientOptions().AddBroker(serverURI)
 	mh.mqttOptions.SetClientID(clientID)
@@ -85,6 +99,45 @@ func NewMqttTransport(serverURI string, clientID string, username string, passwo
 	mh.syncPublishTimeout = time.Second * 5
 	return &mh
 }
+
+func NewMqttTransportFromConfigs(configs MqttConnectionConfigs) *MqttTransport {
+	mh := MqttTransport{}
+	mh.mqttOptions = MQTT.NewClientOptions().AddBroker(configs.ServerURI)
+	mh.mqttOptions.SetClientID(configs.ClientID)
+	mh.mqttOptions.SetUsername(configs.Username)
+	mh.mqttOptions.SetPassword(configs.Password)
+	mh.mqttOptions.SetDefaultPublishHandler(mh.onMessage)
+	mh.mqttOptions.SetCleanSession(configs.CleanSession)
+	mh.mqttOptions.SetAutoReconnect(true)
+	mh.mqttOptions.SetConnectionLostHandler(mh.onConnectionLost)
+	mh.mqttOptions.SetOnConnectHandler(mh.onConnect)
+	//create and start a client using the above ClientOptions
+	mh.client = MQTT.NewClient(mh.mqttOptions)
+	mh.pubQos = configs.PubQos
+	mh.subQos = configs.SubQos
+	mh.subs = make(map[string]byte)
+	mh.subChannels = make(map[string]MessageCh)
+	mh.subFilters = make(map[string]FimpFilter)
+	mh.subFilterFuncs = make(map[string]FilterFunc)
+	mh.startFailRetryCount = 10
+	mh.receiveChTimeout = 10
+	mh.syncPublishTimeout = time.Second * 5
+	mh.certDir = configs.CertDir
+	mh.globalTopicPrefix = configs.GlobalTopicPrefix
+	if configs.StartFailRetryCount == 0 {
+		mh.startFailRetryCount = 10
+	}else {
+		mh.startFailRetryCount = configs.StartFailRetryCount
+	}
+	if configs.ReceiveChTimeout == 0 {
+		mh.receiveChTimeout = 10
+	}else {
+		mh.receiveChTimeout = configs.ReceiveChTimeout
+	}
+
+	return &mh
+}
+
 
 func (mh *MqttTransport) SetGlobalTopicPrefix(prefix string) {
 	mh.globalTopicPrefix = prefix
@@ -293,10 +346,10 @@ func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) erro
 	return err
 }
 
-//
+// RespondToRequest should be used by a service to respond to request
 func (mh *MqttTransport) RespondToRequest(requestMsg *FimpMessage,responseMsg *FimpMessage) error {
 	if requestMsg.ResponseToTopic == "" {
-		return errors.New("src is not defined")
+		return errors.New("response is not test is not defined")
 	}
 	return mh.PublishToTopic(requestMsg.ResponseToTopic,responseMsg)
 }
