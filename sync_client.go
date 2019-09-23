@@ -2,30 +2,17 @@ package fimpgo
 
 import (
 	"errors"
-	"fmt"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
-	"sync"
 	"time"
 )
 
-type transaction struct {
-	respTopic     string
-	respService   string
-	respMsgType   string
-	requestUid    string
-	isActive      bool
-	respChannel   chan *FimpMessage
-	autoSubscribe bool
-}
 
 // SyncClient allows sync interaction over async channel.
 type SyncClient struct {
 	mqttTransport         *MqttTransport
 	mqttConnPool          *MqttConnectionPool
 	isConnPoolEnabled     bool
-	transactions          []transaction
-	mux                   sync.Mutex
 	transactionPoolSize   int // Max transaction pool size
 	inboundBufferSize     int // Inbound message channel buffer size
 	inboundMsgChannel     MessageCh
@@ -53,30 +40,27 @@ func NewSyncClientV2(mqttTransport *MqttTransport, transactionPoolSize int, inbo
 	sc.init()
 	return &sc
 }
-
-func NewSyncClientV3(connPool *MqttConnectionPool, transactionPoolSize int, inboundBuffSize int) *SyncClient {
+// NewSyncClientV3 Creates new sync client either using connections pool internal connection
+func NewSyncClientV3(connPool *MqttConnectionPool) *SyncClient {
 	sc := SyncClient{mqttConnPool: connPool, isConnPoolEnabled:true}
+	//TODO : Add current pool size
+	sc.transactionPoolSize = 20
+	sc.inboundBufferSize = 10
+	sc.init()
+	return &sc
+}
+
+func (sc *SyncClient) SetConfigs(transactionPoolSize int, inboundBuffSize int) {
 	if transactionPoolSize == 0 {
 		transactionPoolSize = 20
 	}
 	if inboundBuffSize == 0 {
 		inboundBuffSize = 10
 	}
-	sc.transactionPoolSize = transactionPoolSize
-	sc.inboundBufferSize = inboundBuffSize
-	sc.init()
-	return &sc
 }
 
 func (sc *SyncClient) init() {
 	sc.stopSignalCh = make(chan bool)
-	sc.inboundMsgChannel = make(MessageCh, sc.inboundBufferSize)
-	sc.inboundChannelName = uuid.NewV4().String()
-	sc.transactions = []transaction{}
-	if sc.mqttTransport != nil {
-		sc.mqttTransport.RegisterChannel(sc.inboundChannelName, sc.inboundMsgChannel)
-	}
-	go sc.messageListener()
 }
 
 // Connect establishes internal connection to mqtt broker and initializes mqtt
@@ -91,7 +75,6 @@ func (sc *SyncClient) Connect(serverURI string, clientID string, username string
 			return err
 		}
 		sc.isStartedUsingConnect = true
-		sc.mqttTransport.RegisterChannel(sc.inboundChannelName, sc.inboundMsgChannel)
 	} else {
 		log.Info("<SyncClient> Already connected")
 	}
@@ -101,8 +84,6 @@ func (sc *SyncClient) Connect(serverURI string, clientID string, username string
 
 // Stop has to be invoked to stop message listener
 func (sc *SyncClient) Stop() {
-	sc.mqttTransport.UnregisterChannel(sc.inboundChannelName)
-	close(sc.inboundMsgChannel)
 	if sc.isStartedUsingConnect {
 		sc.mqttTransport.Stop()
 	}
@@ -123,31 +104,34 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	//log.Debug("Registering request uid = ",fimpMsg.UID)
 	var conId int
 	var conn *MqttTransport
+	var inboundCh = make (MessageCh,10)
+	var responseChannel chan *FimpMessage
+	var err error
+	var chanName  = uuid.NewV4().String()
 
 	defer func() {
 		if autoSubscribe && responseTopic != "" && conn != nil {
 			conn.Unsubscribe(responseTopic)
 		}
-		if sc.isConnPoolEnabled {
-			sc.mqttConnPool.ReturnConnection(conId)
-			if conn != nil {
-				conn.UnregisterChannel(fmt.Sprintf("ch-%d",conId))
+		if conn != nil {
+			conn.UnregisterChannel(chanName)
+			close(inboundCh)
+			if sc.isConnPoolEnabled {
+				sc.mqttConnPool.ReturnConnection(conId)
 			}
 		}
 	}()
 
-	var responseChannel chan *FimpMessage
-	var err error
 	if sc.isConnPoolEnabled {
 		conId ,conn , err = sc.mqttConnPool.GetConnection()
 		if err != nil {
 			return nil,err
 		}
-		conn.RegisterChannel(fmt.Sprintf("ch-%d",conId), sc.inboundMsgChannel)
 	}else {
 		conn = sc.mqttTransport
 	}
-	responseChannel = sc.registerRequest(fimpMsg.UID, responseTopic, responseService, responseMsgType, autoSubscribe)
+	conn.RegisterChannel(chanName, inboundCh)
+	responseChannel = sc.startResponseListener(fimpMsg,responseMsgType,responseService,responseTopic,inboundCh,timeout)
 	if autoSubscribe && responseTopic != "" {
 		conn.Subscribe(responseTopic)
 	}
@@ -155,12 +139,10 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 
 	select {
 	case fimpResponse := <-responseChannel:
-		sc.unregisterRequest(fimpMsg.UID, responseTopic, responseService, responseMsgType)
 		return fimpResponse, nil
 	case <-time.After(time.Second * time.Duration(timeout)):
 		log.Info("<SyncClient> No response from queue for ", timeout)
 	}
-	sc.unregisterRequest(fimpMsg.UID, responseTopic, responseService, responseMsgType)
 	return nil, errors.New("request timed out")
 }
 
@@ -180,88 +162,21 @@ func (sc *SyncClient) SendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	return sc.sendFimpWithTopicResponse(topic, fimpMsg, responseTopic, responseService, responseMsgType, timeout, false)
 }
 
-func (sc *SyncClient) registerRequest(responseUid string, responseTopic string, responseService string, responseMsgType string, autoSubscribe bool) chan *FimpMessage {
-	sc.mux.Lock()
-	defer sc.mux.Unlock()
-	// searching for non-active transaction in pool
-	for i := range sc.transactions {
-		if sc.transactions[i].isActive == false {
-			sc.transactions[i].isActive = true
-			sc.transactions[i].requestUid = responseUid
-			sc.transactions[i].respService = responseService
-			sc.transactions[i].respMsgType = responseMsgType
-			sc.transactions[i].respTopic = responseTopic
-			sc.transactions[i].autoSubscribe = autoSubscribe
-
-			//log.Info("<SyncClient> Transaction from pool")
-			return sc.transactions[i].respChannel
-		}
-	}
-	// no active transactions , let's create one
-	respChan := make(chan *FimpMessage)
-	runReq := transaction{respTopic: responseTopic, respService: responseService, respMsgType: responseMsgType, respChannel: respChan, requestUid: responseUid, isActive: true}
-	sc.transactions = append(sc.transactions, runReq)
-	//log.Info("<SyncClient> Transaction was added")
-	return respChan
-}
-
-func (sc *SyncClient) unregisterRequest(responseUid string, responseTopic string, responseService string, responseMsgType string) {
-	sc.mux.Lock()
-	defer sc.mux.Unlock()
-	var result []transaction
-	if responseTopic == "" {
-		responseTopic = "null"
-	}
-	for i := range sc.transactions {
-		if (sc.transactions[i].respTopic == responseTopic &&
-			sc.transactions[i].respMsgType == responseMsgType &&
-			sc.transactions[i].respService == responseService) || sc.transactions[i].requestUid == responseUid {
-			if len(sc.transactions) > sc.transactionPoolSize {
-				log.Debugf("<SyncClient> Removing transaction from pool")
-				result = append(sc.transactions[:i], sc.transactions[i+1:]...)
-				break
-			}
-			sc.transactions[i].respTopic = ""
-			sc.transactions[i].respMsgType = ""
-			sc.transactions[i].respService = ""
-			sc.transactions[i].requestUid = ""
-			sc.transactions[i].isActive = false
-		} else {
-			//log.Debug("<SyncClient> Nothing to unregister")
-		}
-	}
-	if result != nil {
-		sc.transactions = result
-	}
-
-	//log.Info("Unregister .Number of in flight transactions = ",len(pr.RunningRequest))
-}
-
-// OnMessage is invoked by an adapter on every new message
-// The code is executed in callers goroutine
-func (sc *SyncClient) messageListener() {
+func (sc *SyncClient) startResponseListener(requestMsg *FimpMessage ,respMsgType,respService,respTopic string, inboundCh MessageCh,timeout int64) chan *FimpMessage {
 	log.Debug("<SyncClient> Msg listener is started")
-	for msg := range sc.inboundMsgChannel {
-		sc.mux.Lock()
-		for i := range sc.transactions {
-			if !sc.transactions[i].isActive {
-				continue
-			}
-			if (sc.transactions[i].respMsgType == msg.Payload.Type && sc.transactions[i].respService == msg.Payload.Service && sc.transactions[i].respTopic == msg.Topic) ||
-				sc.transactions[i].requestUid == msg.Payload.CorrelationID {
-				//log.Debug("<SyncClient> Transaction match , transaction size = ",len(sc.transactions))
-				//sending message to coresponding channel
+	respChan := make(chan *FimpMessage)
+	go func() {
+		for msg := range inboundCh {
+			//log.Debug(msg.Payload.Value)
+			if (respMsgType == msg.Payload.Type && respService == msg.Payload.Service && respTopic == msg.Topic) || requestMsg.UID == msg.Payload.CorrelationID {
+				//log.Debug("Match")
 				select {
-				case sc.transactions[i].respChannel <- msg.Payload:
-				default:
-					log.Error("<SyncClient> No channel to send the message.")
-
+				case respChan <- msg.Payload:
+				case <-time.After(time.Second * time.Duration(timeout)):
+					respChan <- nil
 				}
 			}
-			//log.Debugf("request uid = %s , resp cor_id = %s ",sc.transactions[i].requestUid,msg.Payload.CorrelationID)
 		}
-		sc.mux.Unlock()
-	}
-	log.Debug("Stopping Message listener")
-
+	}()
+	return respChan
 }

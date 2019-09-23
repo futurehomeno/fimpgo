@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -24,10 +25,13 @@ type MqttConnectionConfigs struct {
 	CleanSession        bool
 	SubQos              byte
 	PubQos              byte
-	GlobalTopicPrefix   string
+	GlobalTopicPrefix   string  // Should be set for communicating one single hub via cloud
 	StartFailRetryCount int
-	CertDir             string
+	CertDir             string  // full path to directory where all certificates are stored. Cert dir should contains all CA root certificates .
+	PrivateKeyFileName  string  //
+	CertFileName		string  //
 	ReceiveChTimeout    int
+	isAws               bool    // Should be set to true if cloud broker is AwS IoT platform .
 }
 
 type Message struct {
@@ -61,6 +65,7 @@ type MqttTransport struct {
 	mqttOptions         *MQTT.ClientOptions
 	receiveChTimeout    int
 	syncPublishTimeout  time.Duration
+	channelRegMux       sync.Mutex
 }
 
 func (mh *MqttTransport) SetReceiveChTimeout(receiveChTimeout int) {
@@ -135,6 +140,12 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs) *MqttTransport {
 		mh.receiveChTimeout = configs.ReceiveChTimeout
 	}
 
+	if configs.PrivateKeyFileName != "" && configs.CertFileName != "" {
+		err := mh.ConfigureTls(configs.PrivateKeyFileName,configs.CertFileName,configs.CertDir,configs.isAws)
+		if err != nil {
+			log.Error("Certificate loading error :",err.Error())
+		}
+	}
 	return &mh
 }
 
@@ -156,14 +167,18 @@ func (mh *MqttTransport) SetMessageHandler(msgHandler MessageHandler) {
 // RegisterChannel should be used if new message has to be sent to channel instead of callback.
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannel(channelId string, messageCh MessageCh) {
+	mh.channelRegMux.Lock()
 	mh.subChannels[channelId] = messageCh
+	mh.channelRegMux.Unlock()
 }
 
 // UnregisterChannel shold be used to unregiter channel
 func (mh *MqttTransport) UnregisterChannel(channelId string) {
+	mh.channelRegMux.Lock()
 	delete(mh.subChannels, channelId)
 	delete(mh.subFilters, channelId)
 	delete(mh.subFilterFuncs, channelId)
+	mh.channelRegMux.Unlock()
 }
 
 // RegisterChannel should be used if new message has to be sent to channel instead of callback.
@@ -271,9 +286,8 @@ func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
 			log.Error("<MqttAd> Error processing payload :", err)
 		}
 	}
-
+	mh.channelRegMux.Lock()
 	for i := range mh.subChannels {
-
 		if !mh.isChannelInterested(i, topic, addr, fimpMsg) {
 			continue
 		}
@@ -285,9 +299,8 @@ func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
 			case <- time.After(time.Second* time.Duration(mh.receiveChTimeout)):
 				log.Info("<MqttAd> Channel is not read for ",mh.receiveChTimeout)
 		}
-
-
 	}
+	mh.channelRegMux.Unlock()
 }
 
 // isChannelInterested validates if channel is interested in message. Filtering is executed against either static filters or filter function

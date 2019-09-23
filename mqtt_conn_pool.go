@@ -52,14 +52,15 @@ func (cp *MqttConnectionPool) createConnection() (int, error) {
 		return 0, errors.New("too many connections")
 	}
 	conf := cp.connTemplate
-	conf.ClientID = fmt.Sprintf("%s-%d", cp.clientIdPrefix, connId)
+	conf.ClientID = fmt.Sprintf("%s_%d", cp.clientIdPrefix, connId)
 	newConnection := NewMqttTransportFromConfigs(conf)
+	err := newConnection.Start()
 	cp.connPool[connId] = &connection{
 		mqConnection: newConnection,
 		isInUse:      true,
 		startTime:    time.Now(),
 	}
-	err := cp.connPool[connId].mqConnection.Start()
+	log.Debugf("New connection %d created . Pool size = %d",connId,len(cp.connPool))
 	return connId, err
 }
 
@@ -91,7 +92,7 @@ func (cp *MqttConnectionPool) ReturnConnection(connId int) {
 	cp.mux.Lock()
 	con ,ok := cp.connPool[connId]
 	if ok {
-		log.Debugf("Connection %d returned to pool",connId)
+		log.Debugf("Connection %d returned to pool.",connId)
 		con.isInUse = false
 	}
 }

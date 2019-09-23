@@ -1,6 +1,7 @@
 package fimpgo
 
 import (
+	"github.com/futurehomeno/fimpgo/utils"
 	log "github.com/sirupsen/logrus"
 	"sync/atomic"
 	"testing"
@@ -21,15 +22,13 @@ func TestSyncClient_Connect(t *testing.T) {
 		for msg := range msgChanS {
 			if msg.Payload.Type == "cmd.sensor.get_report"{
 				t.Log("Responde . New message. uid = ",msg.Payload.UID)
-				adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
 				responseMsg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(40.0), nil, nil, msg.Payload)
 				t.Log("Correlation id = ",responseMsg.CorrelationID)
-				mqtt.Publish(&adr,responseMsg)
+				mqtt.PublishToTopic("pt:j1/mt:evt/rt:app/rn:testapp/ad:1",responseMsg)
 			}
-
 		}
-
 	}(inboundChan)
+
 	mqtt.Subscribe("pt:j1/mt:cmd/rt:app/rn:testapp/ad:1")
 	mqtt.RegisterChannel("test",inboundChan)
 
@@ -42,10 +41,9 @@ func TestSyncClient_Connect(t *testing.T) {
 	for it:=0 ;it<iterations;it++ {
 		i := it
 		go func() {
-			t.Log("Iteration = ",i)
-			adr := Address{MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
+			log.Debug("Iteration = ",i)
 			msg := NewFloatMessage("cmd.sensor.get_report", "temp_sensor", float64(35.5), nil, nil, nil)
-			response,err := syncClient.SendFimp(adr.Serialize(),msg,10)
+			response,err := syncClient.SendFimp("pt:j1/mt:cmd/rt:app/rn:testapp/ad:1",msg,10)
 			if err != nil {
 				t.Error("Error",err)
 				t.Fail()
@@ -56,7 +54,7 @@ func TestSyncClient_Connect(t *testing.T) {
 				t.Fail()
 			}
 			atomic.AddInt32(&counter,1)
-			t.Log("Iteration Done = ",i)
+			log.Debug("Iteration Done = ",i)
 		}()
 	}
 
@@ -194,19 +192,19 @@ func TestNewSyncClientV3(t *testing.T) {
 		PubQos:              1,
 	}
 
-	connPool := NewMqttConnectionPool(0,2,10,connConfig,"pool_test_")
+	connPool := NewMqttConnectionPool(0,2,100,connConfig,"fimpgo_")
 
 	_ ,responderConn,_ := connPool.GetConnection()
 	responderConn.SetMessageHandler(func(topic string, addr *Address, iotMsg *FimpMessage, rawPayload []byte) {
 		log.Info("New mqtt msg ")
 		val,_ := iotMsg.GetStringValue()
 		response := NewStringMessage("evt.test.response","tester",val,nil,nil,iotMsg)
-		go responderConn.RespondToRequest(iotMsg,response)
+		responderConn.RespondToRequest(iotMsg,response)
 	})
 	responderConn.Subscribe("pt:j1/mt:cmd/rt:app/rn:conn_pool_tester/ad:1")
 
     //-----------------------T-E-S-T----------------------------------------------------
-	syncC := NewSyncClientV3(connPool,0,0)
+	syncC := NewSyncClientV3(connPool)
 
 	msg1 := NewStringMessage("cmd.test.get_response","tester","test-1",nil,nil,nil)
 	msg1.ResponseToTopic = "pt:j1/mt:rsp/rt:app/rn:goland/ad:1"
@@ -217,7 +215,7 @@ func TestNewSyncClientV3(t *testing.T) {
 	msg3 := NewStringMessage("cmd.test.get_response","tester","test-3",nil,nil,nil)
 	msg3.ResponseToTopic = "pt:j1/mt:rsp/rt:app/rn:goland/ad:1"
     var response3 *FimpMessage
-	readyCh := make(chan bool)
+	readyCh := make(chan bool,5)
 	go func() {
 		log.Info("----Response 3 Start ")
 		response3 , _ = syncC.SendReqRespFimp("pt:j1/mt:cmd/rt:app/rn:conn_pool_tester/ad:1","pt:j1/mt:rsp/rt:app/rn:goland/ad:1",msg3,5,true)
@@ -242,5 +240,42 @@ func TestNewSyncClientV3(t *testing.T) {
 		t.Fail()
 	}
 
+}
+
+func TestNewSyncClientV3_FhButlerAPI(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+    conf := utils.GetTestConfig("./testdata/awsiot/cloud-test.json")
+	connConfig := MqttConnectionConfigs{
+		ServerURI:           conf.BrokerURI,
+		CleanSession:        true,
+		SubQos:              1,
+		PubQos:              1,
+		CertDir:             "./testdata/awsiot/full-access-policy",
+		PrivateKeyFileName:  "awsiot.private.key",
+		CertFileName:        "awsiot.crt",
+		isAws:                true,
+	}
+
+	connPool := NewMqttConnectionPool(0,2,10,connConfig,"fimpgo")
+
+	syncC := NewSyncClientV3(connPool)
+
+	msg := NewStringMessage("cmd.vinc.get_alarm_service","fhbutler","all",nil,nil,nil)
+	msg.ResponseToTopic = "pt:j1/mt:rsp/rt:cloud/rn:backend-service/ad:fimpgotest"
+
+	siteId := conf.SiteId
+	response , _ := syncC.SendReqRespFimp(siteId+"/pt:j1/mt:cmd/rt:app/rn:fhbutler/ad:1",siteId+"/pt:j1/mt:rsp/rt:cloud/rn:backend-service/ad:fimpgotest",msg,5,true)
+
+	if response == nil {
+		t.FailNow()
+	}
+
+	var respObj interface{}
+	response.GetObjectValue(&respObj)
+
+	log.Info(respObj)
+
 
 }
+
+
