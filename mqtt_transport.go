@@ -66,6 +66,7 @@ type MqttTransport struct {
 	receiveChTimeout    int
 	syncPublishTimeout  time.Duration
 	channelRegMux       sync.Mutex
+	subMutex            sync.Mutex
 }
 
 func (mh *MqttTransport) SetReceiveChTimeout(receiveChTimeout int) {
@@ -93,6 +94,21 @@ func NewMqttTransport(serverURI , clientID , username , password string, cleanSe
 	mh.mqttOptions.SetOnConnectHandler(mh.onConnect)
 	//create and start a client using the above ClientOptions
 	mh.client = MQTT.NewClient(mh.mqttOptions)
+	mh.pubQos = pubQos
+	mh.subQos = subQos
+	mh.subs = make(map[string]byte)
+	mh.subChannels = make(map[string]MessageCh)
+	mh.subFilters = make(map[string]FimpFilter)
+	mh.subFilterFuncs = make(map[string]FilterFunc)
+	mh.startFailRetryCount = 10
+	mh.receiveChTimeout = 10
+	mh.syncPublishTimeout = time.Second * 5
+	return &mh
+}
+
+func NewMqttTransportFromConnection(client MQTT.Client,subQos byte, pubQos byte) *MqttTransport {
+	mh := MqttTransport{}
+	mh.client = client
 	mh.pubQos = pubQos
 	mh.subQos = subQos
 	mh.subs = make(map[string]byte)
@@ -150,6 +166,8 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs) *MqttTransport {
 }
 
 
+
+
 func (mh *MqttTransport) SetGlobalTopicPrefix(prefix string) {
 	mh.globalTopicPrefix = prefix
 }
@@ -184,15 +202,19 @@ func (mh *MqttTransport) UnregisterChannel(channelId string) {
 // RegisterChannel should be used if new message has to be sent to channel instead of callback.
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannelWithFilter(channelId string, messageCh MessageCh, filter FimpFilter) {
+	mh.channelRegMux.Lock()
 	mh.subChannels[channelId] = messageCh
 	mh.subFilters[channelId] = filter
+	mh.channelRegMux.Unlock()
 }
 
 // RegisterChannel should be used if new message has to be sent to channel instead of callback.
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannelWithFilterFunc(channelId string, messageCh MessageCh, filterFunc FilterFunc) {
+	mh.channelRegMux.Lock()
 	mh.subChannels[channelId] = messageCh
 	mh.subFilterFuncs[channelId] = filterFunc
+	mh.channelRegMux.Unlock()
 }
 
 func (mh *MqttTransport) Client() MQTT.Client {
@@ -232,7 +254,9 @@ func (mh *MqttTransport) Subscribe(topic string) error {
 		log.Error("<MqttAd> Can't subscribe. Error :", token.Error())
 		return token.Error()
 	}
+	mh.subMutex.Lock()
 	mh.subs[topic] = mh.subQos
+	mh.subMutex.Unlock()
 	return nil
 }
 
@@ -243,7 +267,9 @@ func (mh *MqttTransport) Unsubscribe(topic string) error {
 	if token := mh.client.Unsubscribe(topic); token.Wait() && token.Error() != nil {
 		return token.Error()
 	}
+	mh.subMutex.Lock()
 	delete(mh.subs, topic)
+	mh.subMutex.Unlock()
 	return nil
 }
 
