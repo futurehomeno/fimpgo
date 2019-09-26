@@ -93,7 +93,8 @@ type Room struct {
 }
 
 type RoomParams struct {
-	Heating RoomHeating `json:"heating"`
+	Heating  RoomHeating `json:"heating"`
+	Triggers interface{} `json:"triggers"`
 }
 
 type RoomHeating struct {
