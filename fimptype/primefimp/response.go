@@ -130,3 +130,16 @@ func (resp *Response) GetTimers() []Timer {
 	}
 	return result
 }
+
+func (resp *Response) GetServices() Services {
+	param, ok := resp.ParamRaw[ComponentService]
+	if !ok {
+		return Services{}
+	}
+	var result Services
+	err := json.Unmarshal(param, &result)
+	if err != nil {
+		return Services{}
+	}
+	return result
+}

@@ -17,6 +17,7 @@ const (
 	ComponentShortcut = "shortcut"
 	ComponentMode     = "mode"
 	ComponentTimer    = "timer"
+	ComponentService  = "service"
 
 	CmdGet    = "get"
 	CmdSet    = "set"
@@ -169,6 +170,10 @@ type Timer struct {
 	Enabled bool                   `json:"enabled"`
 	Time    map[string]interface{} `json:"time"`
 	Id      int                    `json:"id"`
+}
+
+type Services struct {
+	FireAlarm map[string]interface{} `json:"fireAlarm"`
 }
 
 func (t *Timer) UnmarshalJSON(b []byte) error {
