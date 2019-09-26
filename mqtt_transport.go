@@ -3,6 +3,7 @@ package fimpgo
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/futurehomeno/fimpgo/utils"
@@ -10,10 +11,28 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
 type MessageCh chan *Message
+
+type MqttConnectionConfigs struct {
+	ServerURI           string
+	ClientID            string
+	Username            string
+	Password            string
+	CleanSession        bool
+	SubQos              byte
+	PubQos              byte
+	GlobalTopicPrefix   string  // Should be set for communicating one single hub via cloud
+	StartFailRetryCount int
+	CertDir             string  // full path to directory where all certificates are stored. Cert dir should contains all CA root certificates .
+	PrivateKeyFileName  string  //
+	CertFileName		string  //
+	ReceiveChTimeout    int
+	isAws               bool    // Should be set to true if cloud broker is AwS IoT platform .
+}
 
 type Message struct {
 	Topic   string
@@ -46,6 +65,7 @@ type MqttTransport struct {
 	mqttOptions         *MQTT.ClientOptions
 	receiveChTimeout    int
 	syncPublishTimeout  time.Duration
+	channelRegMux       sync.Mutex
 }
 
 func (mh *MqttTransport) SetReceiveChTimeout(receiveChTimeout int) {
@@ -60,7 +80,7 @@ type MessageHandler func(topic string, addr *Address, iotMsg *FimpMessage, rawPa
 
 // NewMqttAdapter constructor
 //serverUri="tcp://localhost:1883"
-func NewMqttTransport(serverURI string, clientID string, username string, password string, cleanSession bool, subQos byte, pubQos byte) *MqttTransport {
+func NewMqttTransport(serverURI , clientID , username , password string, cleanSession bool, subQos byte, pubQos byte) *MqttTransport {
 	mh := MqttTransport{}
 	mh.mqttOptions = MQTT.NewClientOptions().AddBroker(serverURI)
 	mh.mqttOptions.SetClientID(clientID)
@@ -85,6 +105,51 @@ func NewMqttTransport(serverURI string, clientID string, username string, passwo
 	return &mh
 }
 
+func NewMqttTransportFromConfigs(configs MqttConnectionConfigs) *MqttTransport {
+	mh := MqttTransport{}
+	mh.mqttOptions = MQTT.NewClientOptions().AddBroker(configs.ServerURI)
+	mh.mqttOptions.SetClientID(configs.ClientID)
+	mh.mqttOptions.SetUsername(configs.Username)
+	mh.mqttOptions.SetPassword(configs.Password)
+	mh.mqttOptions.SetDefaultPublishHandler(mh.onMessage)
+	mh.mqttOptions.SetCleanSession(configs.CleanSession)
+	mh.mqttOptions.SetAutoReconnect(true)
+	mh.mqttOptions.SetConnectionLostHandler(mh.onConnectionLost)
+	mh.mqttOptions.SetOnConnectHandler(mh.onConnect)
+	//create and start a client using the above ClientOptions
+	mh.client = MQTT.NewClient(mh.mqttOptions)
+	mh.pubQos = configs.PubQos
+	mh.subQos = configs.SubQos
+	mh.subs = make(map[string]byte)
+	mh.subChannels = make(map[string]MessageCh)
+	mh.subFilters = make(map[string]FimpFilter)
+	mh.subFilterFuncs = make(map[string]FilterFunc)
+	mh.startFailRetryCount = 10
+	mh.receiveChTimeout = 10
+	mh.syncPublishTimeout = time.Second * 5
+	mh.certDir = configs.CertDir
+	mh.globalTopicPrefix = configs.GlobalTopicPrefix
+	if configs.StartFailRetryCount == 0 {
+		mh.startFailRetryCount = 10
+	}else {
+		mh.startFailRetryCount = configs.StartFailRetryCount
+	}
+	if configs.ReceiveChTimeout == 0 {
+		mh.receiveChTimeout = 10
+	}else {
+		mh.receiveChTimeout = configs.ReceiveChTimeout
+	}
+
+	if configs.PrivateKeyFileName != "" && configs.CertFileName != "" {
+		err := mh.ConfigureTls(configs.PrivateKeyFileName,configs.CertFileName,configs.CertDir,configs.isAws)
+		if err != nil {
+			log.Error("Certificate loading error :",err.Error())
+		}
+	}
+	return &mh
+}
+
+
 func (mh *MqttTransport) SetGlobalTopicPrefix(prefix string) {
 	mh.globalTopicPrefix = prefix
 }
@@ -102,14 +167,18 @@ func (mh *MqttTransport) SetMessageHandler(msgHandler MessageHandler) {
 // RegisterChannel should be used if new message has to be sent to channel instead of callback.
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannel(channelId string, messageCh MessageCh) {
+	mh.channelRegMux.Lock()
 	mh.subChannels[channelId] = messageCh
+	mh.channelRegMux.Unlock()
 }
 
 // UnregisterChannel shold be used to unregiter channel
 func (mh *MqttTransport) UnregisterChannel(channelId string) {
+	mh.channelRegMux.Lock()
 	delete(mh.subChannels, channelId)
 	delete(mh.subFilters, channelId)
 	delete(mh.subFilterFuncs, channelId)
+	mh.channelRegMux.Unlock()
 }
 
 // RegisterChannel should be used if new message has to be sent to channel instead of callback.
@@ -217,9 +286,8 @@ func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
 			log.Error("<MqttAd> Error processing payload :", err)
 		}
 	}
-
+	mh.channelRegMux.Lock()
 	for i := range mh.subChannels {
-
 		if !mh.isChannelInterested(i, topic, addr, fimpMsg) {
 			continue
 		}
@@ -231,9 +299,8 @@ func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
 			case <- time.After(time.Second* time.Duration(mh.receiveChTimeout)):
 				log.Info("<MqttAd> Channel is not read for ",mh.receiveChTimeout)
 		}
-
-
 	}
+	mh.channelRegMux.Unlock()
 }
 
 // isChannelInterested validates if channel is interested in message. Filtering is executed against either static filters or filter function
@@ -263,7 +330,7 @@ func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr
 	return false
 }
 
-// Publish iotMsg
+// Publish  to FIMP address
 func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 	bytm, err := fimpMsg.SerializeToJson()
 	topic := addr.Serialize()
@@ -277,6 +344,30 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 	}
 	return err
 }
+
+// Publish iotMsg to string topic
+func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) error {
+	bytm, err := fimpMsg.SerializeToJson()
+	if mh.globalTopicPrefix != "" {
+		topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
+	}
+	if err == nil {
+		log.Debug("<MqttAd> Publishing msg to topic:", topic)
+		mh.client.Publish(topic, mh.pubQos, false, bytm)
+		return nil
+	}
+	return err
+}
+
+// RespondToRequest should be used by a service to respond to request
+func (mh *MqttTransport) RespondToRequest(requestMsg *FimpMessage,responseMsg *FimpMessage) error {
+	if requestMsg.ResponseToTopic == "" {
+		return errors.New("response is not test is not defined")
+	}
+	return mh.PublishToTopic(requestMsg.ResponseToTopic,responseMsg)
+}
+
+
 
 func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error {
 	bytm, err := fimpMsg.SerializeToJson()

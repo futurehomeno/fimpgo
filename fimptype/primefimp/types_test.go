@@ -8,6 +8,10 @@ import (
 	"testing"
 )
 
+var brokerUrl  =  "tcp://aleks.local:1884"
+var brokerUser = "aleks"
+var brokerPass = "api-admin-1793"
+
 func TestMode(t *testing.T) {
 	tb, _ := ioutil.ReadFile("testdata/mode.json")
 
@@ -63,7 +67,7 @@ func TestTimerWithShortcut(t *testing.T) {
 
 func TestPrimeFimp_SendFimpWithTopicResponse(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := fimpgo.NewMqttTransport("tcp://cube.local:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, "fimpgotest", "", "", true, 1, 1)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
@@ -107,7 +111,7 @@ func TestPrimeFimp_SendFimpWithTopicResponse(t *testing.T) {
 
 func TestPrimeFimp_ClientApi_GetDevices(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := fimpgo.NewMqttTransport("tcp://cube.local:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, "fimpgotest", "", "", true, 1, 1)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
@@ -128,9 +132,33 @@ func TestPrimeFimp_ClientApi_GetDevices(t *testing.T) {
 	client.Stop()
 }
 
+func TestPrimeFimp_ClientApi_GetVincServices(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, "fimpgotest", brokerUser, brokerPass, true, 1, 1)
+	err := mqtt.Start()
+	t.Log("Connected")
+	if err != nil {
+		t.Error("Error connecting to broker ", err)
+	}
+
+	client := NewApiClient("test-1", mqtt, false)
+	services, err := client.GetVincServices(false)
+	if err != nil {
+		t.Error("Error", err)
+		t.Fail()
+	}
+
+
+	_,ok := services["fireAlarm"]
+	if !ok {
+		t.Error("Fire alarm service not found")
+	}
+	client.Stop()
+}
+
 func TestPrimeFimp_ClientApi_GetSite(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := fimpgo.NewMqttTransport("tcp://cube.local:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, "fimpgotest", "", "", true, 1, 1)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
@@ -153,7 +181,7 @@ func TestPrimeFimp_ClientApi_GetSite(t *testing.T) {
 
 func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := fimpgo.NewMqttTransport("tcp://cube.local:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, "fimpgotest", "", "", true, 1, 1)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
@@ -170,7 +198,7 @@ func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
 	i := 0
 	for msg := range notifyCh {
 		if msg.Component == ComponentDevice {
-			log.Infof("New notify from device %s", msg.GetDevice().Client.Name)
+			log.Infof("New notify from device %s", *msg.GetDevice().Client.Name)
 		}
 		log.Infof("New notify message of cmd = %s,comp = %s", msg.Cmd, msg.Component)
 		i++

@@ -29,7 +29,6 @@ func TestMqttTransport_Publish(t *testing.T) {
 	}
 
 	mqtt.SetMessageHandler(onMsg)
-	time.Sleep(time.Second*1)
 	mqtt.Subscribe("#")
 	t.Log("Publishing message")
 
@@ -50,10 +49,10 @@ func TestMqttTransport_Publish(t *testing.T) {
 func TestMqttTransport_PublishTls(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	// for test replace XYZ with actual AWS IoT core address and ABC with actual clientid
-	mqtt := NewMqttTransport("ssl://XYZ.amazonaws.com:443","ABC","","",true,1,1)
+	mqtt := NewMqttTransport("ssl://a1ds8ixdqbiw53-ats.iot.eu-central-1.amazonaws.com:443","00000000alexdevtest","","",true,1,1)
 
 	// for test enter valid site-id
-	mqtt.SetGlobalTopicPrefix("XXX")
+	mqtt.SetGlobalTopicPrefix("331D092F-4685-4CC9-8337-2598E6F5D8D5")
 	// for test place certificate and key into certs folder
 	err := mqtt.ConfigureTls("awsiot.private.key","awsiot.crt","./certs",true)
 
@@ -85,6 +84,58 @@ func TestMqttTransport_PublishTls(t *testing.T) {
 	}
 
 }
+
+func TestMqttTransport_PublishTls_2(t *testing.T) {
+
+	connConfig := MqttConnectionConfigs{
+		ServerURI:           "ssl://a1ds8ixdqbiw53-ats.iot.eu-central-1.amazonaws.com:443",
+		ClientID:            "00000000alexdevtest",
+		CleanSession:        true,
+		SubQos:              1,
+		PubQos:              1,
+		CertDir:             "./certs",
+		PrivateKeyFileName:  "awsiot.private.key",
+		CertFileName:        "awsiot.crt",
+	}
+
+	log.SetLevel(log.DebugLevel)
+	// for test replace XYZ with actual AWS IoT core address and ABC with actual clientid
+	mqtt := NewMqttTransportFromConfigs(connConfig)
+
+	// for test enter valid site-id
+	mqtt.SetGlobalTopicPrefix("331D092F-4685-4CC9-8337-2598E6F5D8D5")
+	// for test place certificate and key into certs folder
+	err := mqtt.ConfigureTls("awsiot.private.key","awsiot.crt","./certs",true)
+
+	if err != nil {
+		t.Error("Certificate error :",err)
+	}
+
+	err = mqtt.Start()
+	t.Log("Connected")
+	if err != nil {
+		t.Error("Error connecting to broker ",err)
+	}
+
+	mqtt.SetMessageHandler(onMsg)
+	time.Sleep(time.Second*1)
+	mqtt.Subscribe("#")
+	t.Log("Publishing message")
+
+	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
+	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
+	mqtt.Publish(&adr,msg)
+
+	t.Log("Waiting for new message")
+	result := <- msgChan
+	t.Log("Got new message")
+	mqtt.Stop()
+	if result != 1 {
+		t.Error("Wrong message")
+	}
+
+}
+
 
 func TestMqttTransport_TestChannels(t *testing.T) {
 
@@ -130,6 +181,62 @@ func TestMqttTransport_TestChannels(t *testing.T) {
 	}
 }
 
+func TestMqttTransport_TestResponder(t *testing.T) {
+
+	log.SetLevel(log.DebugLevel)
+	var isResponseReceived bool
+	mqtt := NewMqttTransport("tcp://localhost:1883","fimpgotest-1","","",true,1,1)
+	err := mqtt.Start()
+	t.Log("Connected")
+	time.Sleep(time.Second*1)
+	mqtt.Subscribe("#")
+
+	mqtt2 := NewMqttTransport("tcp://localhost:1883","fimpgotest-2","","",true,1,1)
+	err = mqtt2.Start()
+	t.Log("Connected")
+	time.Sleep(time.Second*1)
+	mqtt2.Subscribe("pt:j1/mt:rsp/rt:app/rn:response_tester/ad:1")
+
+
+	if err != nil {
+		t.Error("Error connecting to broker ",err)
+	}
+	chan1 := make(MessageCh)
+	chan2 := make(MessageCh)
+	mqtt.RegisterChannel("chan1",chan1)
+	mqtt2.RegisterChannel("chan2",chan2)
+	// responder
+	go func(msgChan MessageCh) {
+		newMsg :=<- chan1
+		if newMsg.Payload.Service == "tester" {
+			mqtt.RespondToRequest(newMsg.Payload,NewFloatMessage("evt.test.response", "test_responder", float64(35.5), nil, nil, nil))
+		}
+	}(chan1)
+
+	go func(msgChan MessageCh) {
+			newMsg :=<- chan2
+			t.Log("Service = "+newMsg.Payload.Service)
+			if newMsg.Payload.Service == "test_responder" && newMsg.Topic == "pt:j1/mt:rsp/rt:app/rn:response_tester/ad:1" {
+				isResponseReceived = true
+			}
+
+	}(chan2)
+
+	msg := NewFloatMessage("cmd.test.get_response", "tester", float64(35.5), nil, nil, nil)
+	msg.ResponseToTopic = "pt:j1/mt:rsp/rt:app/rn:response_tester/ad:1"
+	adr := Address{MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "test", ResourceAddress: "1"}
+	mqtt.Publish(&adr,msg)
+	time.Sleep(time.Second*2)
+	mqtt.UnregisterChannel("chan1")
+	mqtt.UnregisterChannel("chan2")
+	mqtt.Unsubscribe("#")
+	if isResponseReceived {
+		t.Log("Response received")
+	}else {
+		t.Error("Wrong result")
+		t.Fail()
+	}
+}
 
 func TestMqttTransport_TestChannelsWithFilters(t *testing.T) {
 
