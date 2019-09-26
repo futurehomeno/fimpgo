@@ -173,7 +173,7 @@ type Timer struct {
 	Id      int                    `json:"id"`
 }
 
-type Services struct {
+type VincServices struct {
 	FireAlarm map[string]interface{} `json:"fireAlarm"`
 }
 
