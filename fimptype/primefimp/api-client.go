@@ -215,7 +215,7 @@ func (mh *ApiClient) GetVincServices(fromCache bool) (map[string]interface{}, er
 
 func (mh *ApiClient) GetSite(fromCache bool) (*Site, error) {
 	if !fromCache {
-		fimpResponse, err := mh.sendGetRequest([]string{ComponentThing, ComponentDevice, ComponentRoom, ComponentArea, ComponentShortcut, ComponentHouse, ComponentMode})
+		fimpResponse, err := mh.sendGetRequest([]string{ComponentThing, ComponentDevice, ComponentRoom, ComponentArea, ComponentShortcut, ComponentHouse, ComponentMode, ComponentService})
 		if err != nil {
 			return nil, err
 		}

@@ -9,6 +9,7 @@ type Site struct {
 	Hub       *Hub       `json:"hub,omitempty"`
 	Areas     []Area     `json:"area,omitempty"`
 	Shortcuts []Shortcut `json:"shortcut,omitempty"`
+	Services  Services   `json:"service,omitempty"`
 	Modes     []Mode     `json:"mode,omitempty"`
 	Timers    []Timer    `json:"timer,omitempty"`
 	Problem   bool       `json:"problem,omitempty"`
@@ -16,7 +17,7 @@ type Site struct {
 
 func SiteFromResponse(resp *Response) *Site {
 	site := Site{Devices: resp.GetDevices(), Things: resp.GetThings(), Rooms: resp.GetRooms(), Areas: resp.GetAreas(), House: resp.GetHouse(),
-		Shortcuts: resp.GetShortcuts(), Modes: resp.GetModes(), Timers: resp.GetTimers()}
+		Shortcuts: resp.GetShortcuts(), Modes: resp.GetModes(), Timers: resp.GetTimers(), Services: resp.GetServices()}
 	return &site
 
 }
