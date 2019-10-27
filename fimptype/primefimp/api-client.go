@@ -197,25 +197,24 @@ func (mh *ApiClient) GetShortcuts(fromCache bool) ([]Shortcut, error) {
 	return nil, nil
 }
 
-func (mh *ApiClient) GetVincServices(fromCache bool) (map[string]interface{}, error) {
+func (mh *ApiClient) GetVincServices(fromCache bool) (VincServices, error) {
 	if !fromCache {
 		fimpResponse, err := mh.sendGetRequest([]string{ComponentService})
 		if err != nil {
-			return nil, err
+			return VincServices{}, err
 		}
 		response, err := FimpToResponse(fimpResponse)
 		if err != nil {
-			return nil, err
+			return VincServices{}, err
 		}
 		return response.GetVincServices(), err
 	}
-	return nil, nil
+	return VincServices{}, nil
 }
-
 
 func (mh *ApiClient) GetSite(fromCache bool) (*Site, error) {
 	if !fromCache {
-		fimpResponse, err := mh.sendGetRequest([]string{ComponentThing, ComponentDevice, ComponentRoom, ComponentArea, ComponentShortcut, ComponentHouse, ComponentMode})
+		fimpResponse, err := mh.sendGetRequest([]string{ComponentThing, ComponentDevice, ComponentRoom, ComponentArea, ComponentShortcut, ComponentHouse, ComponentMode, ComponentService})
 		if err != nil {
 			return nil, err
 		}

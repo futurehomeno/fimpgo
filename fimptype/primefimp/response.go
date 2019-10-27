@@ -131,15 +131,15 @@ func (resp *Response) GetTimers() []Timer {
 	return result
 }
 
-func (resp *Response) GetVincServices() map[string]interface{} {
+func (resp *Response) GetVincServices() VincServices {
 	param, ok := resp.ParamRaw[ComponentService]
 	if !ok {
-		return nil
+		return VincServices{}
 	}
-	var result map[string]interface{}
+	var result VincServices
 	err := json.Unmarshal(param, &result)
 	if err != nil {
-		return nil
+		return VincServices{}
 	}
 	return result
 }

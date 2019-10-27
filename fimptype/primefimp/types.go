@@ -93,7 +93,8 @@ type Room struct {
 }
 
 type RoomParams struct {
-	Heating RoomHeating `json:"heating"`
+	Heating  RoomHeating `json:"heating"`
+	Triggers interface{} `json:"triggers"`
 }
 
 type RoomHeating struct {
@@ -170,6 +171,10 @@ type Timer struct {
 	Enabled bool                   `json:"enabled"`
 	Time    map[string]interface{} `json:"time"`
 	Id      int                    `json:"id"`
+}
+
+type VincServices struct {
+	FireAlarm map[string]interface{} `json:"fireAlarm"`
 }
 
 func (t *Timer) UnmarshalJSON(b []byte) error {
