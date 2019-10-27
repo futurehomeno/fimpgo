@@ -166,8 +166,6 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs) *MqttTransport {
 }
 
 
-
-
 func (mh *MqttTransport) SetGlobalTopicPrefix(prefix string) {
 	mh.globalTopicPrefix = prefix
 }
@@ -250,9 +248,14 @@ func (mh *MqttTransport) Subscribe(topic string) error {
 	//at a maximum qos of zero, wait for the receipt to confirm the subscription
 	topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
 	log.Debug("<MqttAd> Subscribing to topic:", topic)
-	if token := mh.client.Subscribe(topic, mh.subQos, nil); token.Wait() && token.Error() != nil {
+	token := mh.client.Subscribe(topic, mh.subQos, nil)
+	isInTime := token.WaitTimeout(time.Second*20)
+	if token.Error() != nil {
 		log.Error("<MqttAd> Can't subscribe. Error :", token.Error())
 		return token.Error()
+	}else if !isInTime {
+		log.Error("<MqttAd> Subscribe operation timed out")
+		return errors.New("subscribe timed out")
 	}
 	mh.subMutex.Lock()
 	mh.subs[topic] = mh.subQos
@@ -264,8 +267,13 @@ func (mh *MqttTransport) Subscribe(topic string) error {
 func (mh *MqttTransport) Unsubscribe(topic string) error {
 	topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
 	log.Debug("<MqttAd> Unsubscribing from topic:", topic)
-	if token := mh.client.Unsubscribe(topic); token.Wait() && token.Error() != nil {
+	token := mh.client.Unsubscribe(topic)
+	isInTime := token.WaitTimeout(time.Second*20)
+	if token.Error() != nil {
 		return token.Error()
+	}else if !isInTime {
+		log.Error("<MqttAd> Unsubscribe operation timed out")
+		return errors.New("unsubscribe timed out")
 	}
 	mh.subMutex.Lock()
 	delete(mh.subs, topic)
@@ -388,7 +396,7 @@ func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) erro
 // RespondToRequest should be used by a service to respond to request
 func (mh *MqttTransport) RespondToRequest(requestMsg *FimpMessage,responseMsg *FimpMessage) error {
 	if requestMsg.ResponseToTopic == "" {
-		return errors.New("response is not test is not defined")
+		return errors.New("empty response topic")
 	}
 	return mh.PublishToTopic(requestMsg.ResponseToTopic,responseMsg)
 }

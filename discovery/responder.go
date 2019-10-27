@@ -9,6 +9,11 @@ import (
 const (
 	ResourceTypeApp = "app"
 	ResourceTypeAd  = "ad"
+
+	AppCurrentStateNotConfigured = "NOT_CONFIGURED"
+	AppCurrentStateRunning       = "RUNNING"
+	AppCurrentStateERROR         = "ERROR"
+
 )
 
 type Resource struct {
@@ -18,6 +23,7 @@ type Resource struct {
 	Description            string            `json:"description"`
 	Author                 string            `json:"author"`
 	Version                string            `json:"version"`
+	State                  string            `json:"state"`    // Current application state
 	AppInfo                AppInfo           `json:"app_info"` // Either App or Adapter , it's defined by ResourceType
 	AdapterInfo            AdapterInfo       `json:"adapter_info"`
 	ConfigRequired         bool              `json:"config_required"` // if true , the adapter should be configured before it can be used
