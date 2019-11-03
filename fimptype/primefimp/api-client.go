@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+const VincEventTopic = "pt:j1/mt:evt/rt:app/rn:vinculum/ad:1"
+
 type NotifyFilter struct {
 	Cmd       string
 	Component string
@@ -85,11 +87,14 @@ func (mh *ApiClient) notifyRouter() {
 
 	mh.inMsgChan = make(fimpgo.MessageCh, 10)
 	mh.mqttTransport.RegisterChannel(mh.clientID, mh.inMsgChan)
-	mh.mqttTransport.Subscribe("pt:j1/mt:evt/rt:app/rn:vinculum/ad:1")
+	mh.mqttTransport.Subscribe(VincEventTopic)
 
 	for msg := range mh.inMsgChan {
 		if mh.stopFlag {
 			break
+		}
+		if msg.Topic != VincEventTopic {
+			continue
 		}
 		notif, err := FimpToNotify(msg)
 		if err != nil {
