@@ -3,6 +3,7 @@ package primefimp
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/futurehomeno/fimpgo"
 )
 
@@ -14,6 +15,10 @@ type Notify struct {
 	ChangesRaw json.RawMessage `json:"changes"`
 	Success    bool            `json:"success"`
 	Id         interface{}     `json:"id,omitempty"`
+}
+
+type DeleteChange struct {
+	ID int `json:"id"`
 }
 
 func FimpToNotify(msg *fimpgo.Message) (*Notify, error) {
@@ -101,6 +106,18 @@ func (ntf *Notify) GetShortcut() *Shortcut {
 	return nil
 }
 
+func (ntf *Notify) GetTimer() *Timer {
+	if ntf.Component == ComponentTimer {
+		var result Timer
+		err := json.Unmarshal(ntf.ParamRaw, &result)
+		if err != nil {
+			return nil
+		}
+		return &result
+	}
+	return nil
+}
+
 func (ntf *Notify) GetHub() *Hub {
 	if ntf.Component == ComponentHub {
 		var result Hub
@@ -111,4 +128,13 @@ func (ntf *Notify) GetHub() *Hub {
 		return &result
 	}
 	return nil
+}
+
+func (ntf *Notify) GetDeleteChange() *DeleteChange {
+	var result DeleteChange
+	err := json.Unmarshal(ntf.ChangesRaw, &result)
+	if err != nil {
+		return nil
+	}
+	return &result
 }

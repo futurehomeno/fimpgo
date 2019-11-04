@@ -170,11 +170,50 @@ type Timer struct {
 	Client  Client                 `json:"client"`
 	Enabled bool                   `json:"enabled"`
 	Time    map[string]interface{} `json:"time"`
-	Id      int                    `json:"id"`
+	ID      int                    `json:"id"`
 }
 
 type VincServices struct {
 	FireAlarm map[string]interface{} `json:"fireAlarm"`
+}
+
+func (a *Area) UnmarshalJSON(b []byte) error {
+	temp := &struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+		Type string `json:"type"`
+	}{}
+
+	err := json.Unmarshal(b, temp)
+	if err != nil {
+		return err
+	}
+
+	a.ID = temp.ID
+	a.Name = temp.Name
+	a.Type = temp.Type
+	return nil
+}
+
+func (r *Room) UnmarshalJSON(b []byte) error {
+	temp := &struct {
+		Alias   string     `json:"alias"`
+		ID      int        `json:"id"`
+		Param   RoomParams `json:"param"`
+		Client  Client     `json:"client"`
+		Type    *string    `json:"type"`
+		Area    *int       `json:"area"`
+		Outside bool       `json:"outside"`
+	}{}
+
+	err := json.Unmarshal(b, temp)
+	if err != nil {
+		return err
+	}
+
+	r.Alias = temp.Alias
+	r.ID = temp.ID
+	return nil
 }
 
 func (t *Timer) UnmarshalJSON(b []byte) error {
@@ -183,7 +222,7 @@ func (t *Timer) UnmarshalJSON(b []byte) error {
 		Client  Client                 `json:"client"`
 		Enabled bool                   `json:"enabled"`
 		Time    map[string]interface{} `json:"time"`
-		Id      int                    `json:"id"`
+		ID      int                    `json:"id"`
 	}{}
 
 	err := json.Unmarshal(b, temp)
@@ -193,7 +232,7 @@ func (t *Timer) UnmarshalJSON(b []byte) error {
 	t.Client = temp.Client
 	t.Enabled = temp.Enabled
 	t.Time = temp.Time
-	t.Id = temp.Id
+	t.ID = temp.ID
 
 	switch temp.Action.(type) {
 	case float64:

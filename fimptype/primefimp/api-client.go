@@ -1,9 +1,10 @@
 package primefimp
 
 import (
+	"time"
+
 	"github.com/futurehomeno/fimpgo"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 type NotifyFilter struct {
@@ -24,6 +25,7 @@ type ApiClient struct {
 	isNotifyRouterStarted bool
 }
 
+// NewApiClient Creates a new api client.
 func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, isCacheEnabled bool) *ApiClient {
 	api := &ApiClient{clientID: clientID, mqttTransport: mqttTransport, isCacheEnabled: isCacheEnabled}
 	api.notifySubChannels = make(map[string]chan Notify)
@@ -38,7 +40,7 @@ func (mh *ApiClient) RegisterChannel(channelId string, ch chan Notify) {
 	mh.notifySubChannels[channelId] = ch
 }
 
-// RegisterChannel should be used if new message has to be sent to channel instead of callback.
+// RegisterChannelWithFilter should be used if new message has to be sent to channel instead of callback.
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *ApiClient) RegisterChannelWithFilter(channelId string, ch chan Notify, filter NotifyFilter) {
 	mh.notifySubChannels[channelId] = ch
@@ -65,7 +67,7 @@ func (mh *ApiClient) StartNotifyRouter() {
 	}()
 }
 
-// This is destructor
+// Stop : This is destructor
 func (mh *ApiClient) Stop() {
 	mh.sClient.Stop()
 	if mh.isNotifyRouterStarted {
@@ -73,6 +75,77 @@ func (mh *ApiClient) Stop() {
 		mh.inMsgChan <- &fimpgo.Message{}
 	}
 
+}
+
+func remove(s []int, i int) []int {
+	s[i] = s[len(s)-1]
+	// We do not need to put s[i] at the end, as it will be discarded anyway
+	return s[:len(s)-1]
+}
+
+// UpdateSite : Updates the site according to notification message.
+func (mh *ApiClient) UpdateSite(notif *Notify) {
+	switch notif.Cmd {
+	case CmdAdd:
+		switch notif.Component {
+		case ComponentArea:
+			mh.siteCache.AddArea(notif.GetArea())
+		case ComponentDevice:
+			mh.siteCache.AddDevice(notif.GetDevice())
+		case ComponentRoom:
+			mh.siteCache.AddRoom(notif.GetRoom())
+		case ComponentTimer:
+			mh.siteCache.AddTimer(notif.GetTimer())
+		case ComponentThing:
+			mh.siteCache.AddThing(notif.GetThing())
+		case ComponentShortcut:
+			mh.siteCache.AddShortcut(notif.GetShortcut())
+		}
+	case CmdDelete:
+		err := mh.siteCache.RemoveWithID(notif.Component, notif.GetDeleteChange().ID)
+		if err != nil {
+			log.Error(err)
+		}
+	case CmdEdit:
+		switch notif.Component {
+		case ComponentArea:
+		case ComponentDevice:
+		case ComponentRoom:
+		case ComponentTimer:
+		case ComponentHub:
+		case ComponentMode:
+		case ComponentHouse:
+		case ComponentThing:
+		case ComponentShortcut:
+		case ComponentService:
+		}
+	case CmdGet:
+		switch notif.Component {
+		case ComponentArea:
+		case ComponentDevice:
+		case ComponentRoom:
+		case ComponentTimer:
+		case ComponentHub:
+		case ComponentMode:
+		case ComponentHouse:
+		case ComponentThing:
+		case ComponentShortcut:
+		case ComponentService:
+		}
+	case CmdSet:
+		switch notif.Component {
+		case ComponentArea:
+		case ComponentDevice:
+		case ComponentRoom:
+		case ComponentTimer:
+		case ComponentHub:
+		case ComponentMode:
+		case ComponentHouse:
+		case ComponentThing:
+		case ComponentShortcut:
+		case ComponentService:
+		}
+	}
 }
 
 // Receives notify messages and forwards them using filtering
@@ -93,17 +166,18 @@ func (mh *ApiClient) notifyRouter() {
 		}
 		notif, err := FimpToNotify(msg)
 		if err != nil {
-			log.Debug("<PF-API> Can't cast to Notify . Err:", err)
+			log.Debug("<PF-API> Can't cast to Notify. Err:", err)
 			continue
+		} else {
+			mh.UpdateSite(notif)
 		}
 		for _, subCh := range mh.notifySubChannels {
 			select {
 			case subCh <- *notif:
-
+				log.Debug("<PF_API> New message received.")
 			case <-time.After(time.Second * 10):
-				log.Warn("<PF-API> Message is blocked , message is dropped ")
+				log.Warn("<PF-API> Message is blocked, message is dropped")
 			}
-
 		}
 	}
 }
@@ -122,6 +196,7 @@ func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, e
 	return mh.sClient.SendFimpWithTopicResponse(reqAddr.Serialize(), msg, respAddr.Serialize(), "", "", 5)
 }
 
+// GetDevices Gets the devices
 func (mh *ApiClient) GetDevices(fromCache bool) ([]Device, error) {
 	if !fromCache {
 		fimpResponse, err := mh.sendGetRequest([]string{ComponentDevice})
@@ -137,6 +212,7 @@ func (mh *ApiClient) GetDevices(fromCache bool) ([]Device, error) {
 	return nil, nil
 }
 
+// GetRooms Gets the rooms
 func (mh *ApiClient) GetRooms(fromCache bool) ([]Room, error) {
 	if !fromCache {
 		fimpResponse, err := mh.sendGetRequest([]string{ComponentRoom})
@@ -152,6 +228,7 @@ func (mh *ApiClient) GetRooms(fromCache bool) ([]Room, error) {
 	return nil, nil
 }
 
+// GetAreas Gets the areas
 func (mh *ApiClient) GetAreas(fromCache bool) ([]Area, error) {
 	if !fromCache {
 		fimpResponse, err := mh.sendGetRequest([]string{ComponentArea})
@@ -167,6 +244,7 @@ func (mh *ApiClient) GetAreas(fromCache bool) ([]Area, error) {
 	return nil, nil
 }
 
+// GetThings Gets the things
 func (mh *ApiClient) GetThings(fromCache bool) ([]Thing, error) {
 	if !fromCache {
 		fimpResponse, err := mh.sendGetRequest([]string{ComponentThing})
@@ -182,6 +260,7 @@ func (mh *ApiClient) GetThings(fromCache bool) ([]Thing, error) {
 	return nil, nil
 }
 
+// GetShortcuts Gets the shortcuts
 func (mh *ApiClient) GetShortcuts(fromCache bool) ([]Shortcut, error) {
 	if !fromCache {
 		fimpResponse, err := mh.sendGetRequest([]string{ComponentShortcut})
@@ -197,6 +276,7 @@ func (mh *ApiClient) GetShortcuts(fromCache bool) ([]Shortcut, error) {
 	return nil, nil
 }
 
+// GetVincServices Gets vinculum services
 func (mh *ApiClient) GetVincServices(fromCache bool) (VincServices, error) {
 	if !fromCache {
 		fimpResponse, err := mh.sendGetRequest([]string{ComponentService})
@@ -212,6 +292,7 @@ func (mh *ApiClient) GetVincServices(fromCache bool) (VincServices, error) {
 	return VincServices{}, nil
 }
 
+// GetSite Gets the whole site information
 func (mh *ApiClient) GetSite(fromCache bool) (*Site, error) {
 	if !fromCache {
 		fimpResponse, err := mh.sendGetRequest([]string{ComponentThing, ComponentDevice, ComponentRoom, ComponentArea, ComponentShortcut, ComponentHouse, ComponentMode, ComponentService})

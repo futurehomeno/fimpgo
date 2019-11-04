@@ -2,15 +2,14 @@ package primefimp
 
 import (
 	"encoding/json"
-	"github.com/futurehomeno/fimpgo"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
+	"strings"
 	"testing"
-)
 
-var brokerUrl  =  "tcp://aleks.local:1884"
-var brokerUser = "aleks"
-var brokerPass = "api-admin-1793"
+	"github.com/futurehomeno/fimpgo"
+	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
+)
 
 func TestMode(t *testing.T) {
 	tb, _ := ioutil.ReadFile("testdata/mode.json")
@@ -67,7 +66,7 @@ func TestTimerWithShortcut(t *testing.T) {
 
 func TestPrimeFimp_SendFimpWithTopicResponse(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, "fimpgotest", "", "", true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, "fimpgotest", brokerUser, brokerPass, true, 1, 1)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
@@ -111,7 +110,11 @@ func TestPrimeFimp_SendFimpWithTopicResponse(t *testing.T) {
 
 func TestPrimeFimp_ClientApi_GetDevices(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, "fimpgotest", "", "", true, 1, 1)
+
+	uuid := uuid.New().String()
+	validClientID := strings.ReplaceAll(uuid, "-", "")[0:22]
+
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
@@ -128,13 +131,17 @@ func TestPrimeFimp_ClientApi_GetDevices(t *testing.T) {
 	if len(devices) == 0 {
 		t.Error("Site should have more then 0 devices ")
 	}
-	log.Infof("SIte contains %d devices", len(devices))
+	log.Infof("Site contains %d devices", len(devices))
 	client.Stop()
 }
 
 func TestPrimeFimp_ClientApi_GetVincServices(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, "fimpgotest", brokerUser, brokerPass, true, 1, 1)
+
+	uuid := uuid.New().String()
+	validClientID := strings.ReplaceAll(uuid, "-", "")[0:22]
+
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
@@ -148,9 +155,7 @@ func TestPrimeFimp_ClientApi_GetVincServices(t *testing.T) {
 		t.Fail()
 	}
 
-
-	_,ok := services["fireAlarm"]
-	if !ok {
+	if len(services.FireAlarm) == 0 {
 		t.Error("Fire alarm service not found")
 	}
 	client.Stop()
@@ -158,7 +163,11 @@ func TestPrimeFimp_ClientApi_GetVincServices(t *testing.T) {
 
 func TestPrimeFimp_ClientApi_GetSite(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, "fimpgotest", "", "", true, 1, 1)
+
+	uuid := uuid.New().String()
+	validClientID := strings.ReplaceAll(uuid, "-", "")[0:22]
+
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
@@ -177,35 +186,4 @@ func TestPrimeFimp_ClientApi_GetSite(t *testing.T) {
 	}
 	log.Infof("SIte contains %d devices", len(site.Devices))
 	client.Stop()
-}
-
-func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, "fimpgotest", "", "", true, 1, 1)
-	err := mqtt.Start()
-	t.Log("Connected")
-	if err != nil {
-		t.Error("Error connecting to broker ", err)
-	}
-
-	// Actual test
-	notifyCh := make(chan Notify, 10)
-
-	client := NewApiClient("test-1", mqtt, false)
-	client.RegisterChannel("test-1-ch", notifyCh)
-
-	client.StartNotifyRouter()
-	i := 0
-	for msg := range notifyCh {
-		if msg.Component == ComponentDevice {
-			log.Infof("New notify from device %s", *msg.GetDevice().Client.Name)
-		}
-		log.Infof("New notify message of cmd = %s,comp = %s", msg.Cmd, msg.Component)
-		i++
-		if i > 3 {
-			break
-		}
-	}
-	client.Stop()
-
 }
