@@ -216,6 +216,44 @@ func (r *Room) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+func (d *Device) UnmarshalJSON(b []byte) error {
+	temp := &struct {
+		Fimp          Fimp                   `json:"fimp"`
+		Client        Client                 `json:"client"`
+		Functionality *string                `json:"functionality"`
+		Service       map[string]Service     `json:"services"`
+		ID            int                    `json:"id"`
+		Lrn           bool                   `json:"lrn"`
+		Model         string                 `json:"model"`
+		ModelAlias    string                 `json:"modelAlias"`
+		Param         map[string]interface{} `json:"param"`
+		Problem       bool                   `json:"problem"`
+		Room          *int                   `json:"room"`
+		Changes       map[string]interface{} `json:"changes"`
+		ThingID       *int                   `json:"thing"`
+	}{}
+
+	err := json.Unmarshal(b, temp)
+	if err != nil {
+		return err
+	}
+
+	d.Fimp = temp.Fimp
+	d.Client = temp.Client
+	d.Functionality = temp.Functionality
+	d.Service = temp.Service
+	d.ID = temp.ID
+	d.Lrn = temp.Lrn
+	d.Model = temp.Model
+	d.ModelAlias = temp.ModelAlias
+	d.Param = temp.Param
+	d.Problem = temp.Problem
+	d.Room = temp.Room
+	d.Changes = temp.Changes
+	d.ThingID = temp.ThingID
+	return nil
+}
+
 func (t *Timer) UnmarshalJSON(b []byte) error {
 	temp := &struct {
 		Action  interface{}
