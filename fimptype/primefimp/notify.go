@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/futurehomeno/fimpgo"
+	log "github.com/sirupsen/logrus"
 )
 
 type Notify struct {
@@ -19,6 +20,11 @@ type Notify struct {
 
 type DeleteChange struct {
 	ID int `json:"id"`
+}
+
+type ModeChange struct {
+	Current string `json:"current"`
+	Prev    string `json:"prev"`
 }
 
 func FimpToNotify(msg *fimpgo.Message) (*Notify, error) {
@@ -131,8 +137,19 @@ func (ntf *Notify) GetHub() *Hub {
 }
 
 func (ntf *Notify) GetDeleteChange() *DeleteChange {
+	log.Debug("Delete change requested")
 	var result DeleteChange
 	err := json.Unmarshal(ntf.ChangesRaw, &result)
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+	return &result
+}
+
+func (ntf *Notify) GetModeChange() *ModeChange {
+	var result ModeChange
+	err := json.Unmarshal(ntf.ParamRaw, &result)
 	if err != nil {
 		return nil
 	}

@@ -31,6 +31,14 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, isCacheE
 	api.notifySubChannels = make(map[string]chan Notify)
 	api.subFilters = make(map[string]NotifyFilter)
 	api.sClient = fimpgo.NewSyncClient(mqttTransport)
+	if isCacheEnabled {
+		site, err := api.GetSite(false)
+		if err != nil {
+			log.Errorf("Error: %s", err)
+		} else {
+			api.siteCache = *site
+		}
+	}
 	return api
 }
 
@@ -85,6 +93,7 @@ func remove(s []int, i int) []int {
 
 // UpdateSite : Updates the site according to notification message.
 func (mh *ApiClient) UpdateSite(notif *Notify) {
+	log.Debugf("Command: %s & Component:%s", notif.Cmd, notif.Component)
 	switch notif.Cmd {
 	case CmdAdd:
 		switch notif.Component {
@@ -100,50 +109,62 @@ func (mh *ApiClient) UpdateSite(notif *Notify) {
 			mh.siteCache.AddThing(notif.GetThing())
 		case ComponentShortcut:
 			mh.siteCache.AddShortcut(notif.GetShortcut())
+		default:
+			log.Errorf("Unknown Component:%s cannot be added.", notif.Component)
 		}
 	case CmdDelete:
-		err := mh.siteCache.RemoveWithID(notif.Component, notif.GetDeleteChange().ID)
+		err := mh.siteCache.RemoveWithID(notif.Component, int(notif.Id.(float64)))
 		if err != nil {
 			log.Error(err)
+		} else {
+			log.Infof("%s with ID:%d is deleted", notif.Component, int(notif.Id.(float64)))
 		}
 	case CmdEdit:
 		switch notif.Component {
 		case ComponentArea:
+			mh.siteCache.UpdateArea(notif.GetArea())
 		case ComponentDevice:
+			mh.siteCache.UpdateDevice(notif.GetDevice())
 		case ComponentRoom:
+			mh.siteCache.UpdateRoom(notif.GetRoom())
 		case ComponentTimer:
-		case ComponentHub:
-		case ComponentMode:
-		case ComponentHouse:
+			mh.siteCache.UpdateTimer(notif.GetTimer())
+		//case ComponentHub:  //  TODO: Is this possible?
+		//	mh.siteCache.UpdateHub(notif.GetHub())
+		//case ComponentMode: //  TODO: Is this possible?
+		//	mh.siteCache.UpdateMode(notif.GetMode())
 		case ComponentThing:
+			mh.siteCache.UpdateThing(notif.GetThing())
 		case ComponentShortcut:
-		case ComponentService:
-		}
-	case CmdGet:
-		switch notif.Component {
-		case ComponentArea:
-		case ComponentDevice:
-		case ComponentRoom:
-		case ComponentTimer:
-		case ComponentHub:
-		case ComponentMode:
-		case ComponentHouse:
-		case ComponentThing:
-		case ComponentShortcut:
-		case ComponentService:
+			mh.siteCache.UpdateShortcut(notif.GetShortcut())
+		default:
+			log.Error("Unknown component update occured. Report this as issue please")
 		}
 	case CmdSet:
 		switch notif.Component {
-		case ComponentArea:
-		case ComponentDevice:
 		case ComponentRoom:
-		case ComponentTimer:
+			roomIdx := mh.siteCache.FindIndex(ComponentRoom, int(notif.Id.(float64)))
+			if roomIdx != -1 {
+				log.Infof("Change in room id:%d", int(notif.Id.(float64)))
+			} else {
+				log.Errorf("Room with ID:%d not found. Adding", int(notif.Id.(float64)))
+			}
 		case ComponentHub:
-		case ComponentMode:
-		case ComponentHouse:
-		case ComponentThing:
-		case ComponentShortcut:
-		case ComponentService:
+			if notif.Id == "mode" {
+				modeChange := notif.GetModeChange()
+				if modeChange.Current != modeChange.Prev {
+					log.Infof("Mode is changed from %s to %s", modeChange.Prev, modeChange.Current)
+				} else {
+					log.Infof("Mode is same again as %s", modeChange.Current)
+				}
+			}
+		}
+	}
+	if mh.isNotifyRouterStarted { // make sure notify router is started
+		for cid, nf := range mh.subFilters { // check all subfilters
+			if nf.Cmd == notif.Cmd && nf.Component == notif.Component {
+				mh.notifySubChannels[cid] <- *notif // send notification to corresponding subchannel if there is match
+			}
 		}
 	}
 }
@@ -170,14 +191,6 @@ func (mh *ApiClient) notifyRouter() {
 			continue
 		} else {
 			mh.UpdateSite(notif)
-		}
-		for _, subCh := range mh.notifySubChannels {
-			select {
-			case subCh <- *notif:
-				log.Debug("<PF_API> New message received.")
-			case <-time.After(time.Second * 10):
-				log.Warn("<PF-API> Message is blocked, message is dropped")
-			}
 		}
 	}
 }
@@ -299,7 +312,6 @@ func (mh *ApiClient) GetSite(fromCache bool) (*Site, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		response, err := FimpToResponse(fimpResponse)
 		if err != nil {
 			return nil, err

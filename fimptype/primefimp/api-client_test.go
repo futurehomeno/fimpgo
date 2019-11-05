@@ -1,7 +1,6 @@
 package primefimp
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -57,25 +56,29 @@ func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
 	// Actual test
 	notifyCh := make(chan Notify, 10)
 
-	client := NewApiClient("test-1", mqtt, false)
-	client.RegisterChannel("test-1-ch", notifyCh)
+	client := NewApiClient("test-1", mqtt, true) // (clientID string, mqttTransport *fimpgo.MqttTransport, isCacheEnabled bool)
+	client.RegisterChannel("test-1-ch", notifyCh) // (channelId string, ch chan Notify)
 
 	client.StartNotifyRouter()
 	i := 0
-	for msg := range notifyCh {
-		if msg.Component == ComponentDevice {
-			log.Infof("New notify from device %s", *msg.GetDevice().Client.Name)
-			fmt.Printf("New notify from device %s", *msg.GetDevice().Client.Name)
-		}
-		if msg.Component == ComponentArea {
-			log.Infof("New notify from area %s", msg.GetArea().Name)
-			fmt.Printf("New notify from area %s", msg.GetArea().Name)
-		}
-		log.Infof("New notify message of cmd = %s,comp = %s", msg.Cmd, msg.Component)
-		i++
-		if i > 1 {
-			break
+	//TODO : FIX HERE
+	for {
+		select {
+			case 
+				log.Debug("<PF_API> New message received.")
+			case <-time.After(time.Second * 10):
+				log.Warn("<PF-API> Message is blocked, message is dropped")
 		}
 	}
-	client.Stop()
+	for {
+		select {
+		case msg := <-notifyCh:
+			log.Infof("New notify message of cmd = %s,comp = %s", msg.Cmd, msg.Component)
+			i++
+			if i > 1 {
+				client.Stop()
+				break
+			}
+		}
+	}
 }
