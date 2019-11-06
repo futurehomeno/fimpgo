@@ -1,8 +1,6 @@
 package primefimp
 
 import (
-	"time"
-
 	"github.com/futurehomeno/fimpgo"
 	log "github.com/sirupsen/logrus"
 )

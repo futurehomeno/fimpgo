@@ -105,7 +105,6 @@ func TestPrimeFimp_SendFimpWithTopicResponse(t *testing.T) {
 		t.Fail()
 	}
 	t.Log("Response test - OK , total number of devices = ", len(resp.GetDevices()))
-
 }
 
 func TestPrimeFimp_ClientApi_GetDevices(t *testing.T) {

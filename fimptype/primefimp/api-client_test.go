@@ -43,8 +43,7 @@ func TestPrimeFimp_ClientApi_Update(t *testing.T) {
 func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
-	uuid := uuid.New().String()
-	validClientID := strings.ReplaceAll(uuid, "-", "")[0:22]
+	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
 
 	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
 	err := mqtt.Start()
@@ -55,30 +54,97 @@ func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
 
 	// Actual test
 	notifyCh := make(chan Notify, 10)
-
-	client := NewApiClient("test-1", mqtt, true) // (clientID string, mqttTransport *fimpgo.MqttTransport, isCacheEnabled bool)
-	client.RegisterChannel("test-1-ch", notifyCh) // (channelId string, ch chan Notify)
-
+	apiclientid := uuid.New().String()[0:12]
+	client := NewApiClient(apiclientid, mqtt, true) // (clientID string, mqttTransport *fimpgo.MqttTransport, isCacheEnabled bool)
+	channelID := uuid.New().String()[0:12]
+	// Using "RegisterChannel" will send a message to our notify channel for all messages
+	// If you want to use filters, check "RegisterChannelWithFilter"
+	client.RegisterChannel(channelID, notifyCh) // (channelId string, ch chan Notify)
 	client.StartNotifyRouter()
+	// Notify router is started. Now please, make 3 "add", "edit" or "delete" actions to finalize the test.
 	i := 0
-	//TODO : FIX HERE
-	for {
-		select {
-			case 
-				log.Debug("<PF_API> New message received.")
-			case <-time.After(time.Second * 10):
-				log.Warn("<PF-API> Message is blocked, message is dropped")
-		}
-	}
+	limit := 3
 	for {
 		select {
 		case msg := <-notifyCh:
-			log.Infof("New notify message of cmd = %s,comp = %s", msg.Cmd, msg.Component)
+			log.Infof("Check %d/%d: New notify message of cmd = %s,comp = %s", i, limit, msg.Cmd, msg.Component)
 			i++
-			if i > 1 {
+			if i > limit {
 				client.Stop()
 				break
 			}
 		}
 	}
+}
+
+func TestPrimeFimp_ClientApi_Notify_With_Filter(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+
+	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
+
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
+	err := mqtt.Start()
+	t.Log("Connected")
+	if err != nil {
+		t.Error("Error connecting to broker ", err)
+	}
+
+	// Actual test
+	channelIDAdd := uuid.New().String()[0:12]
+	notifyAreaAdd := make(chan Notify, 10)
+	notifyfilterAreaAdd := NotifyFilter{Cmd: CmdAdd, Component: ComponentArea}
+
+	channelIDDelete := uuid.New().String()[0:12]
+	notifyAreaDelete := make(chan Notify, 10)
+	notifyfilterAreaDelete := NotifyFilter{Cmd: CmdDelete, Component: ComponentArea}
+
+	channelIDEdit := uuid.New().String()[0:12]
+	notifyAreaEdit := make(chan Notify, 10)
+	notifyfilterAreaEdit := NotifyFilter{Cmd: CmdEdit, Component: ComponentArea}
+
+	apiclientid := uuid.New().String()[0:12]
+	client := NewApiClient(apiclientid, mqtt, true)                                             // (clientID string, mqttTransport *fimpgo.MqttTransport, isCacheEnabled bool)
+	client.RegisterChannelWithFilter(channelIDAdd, notifyAreaAdd, notifyfilterAreaAdd)          // (channelId string, ch chan Notify, filter NotifyFilter)
+	client.RegisterChannelWithFilter(channelIDDelete, notifyAreaDelete, notifyfilterAreaDelete) // (channelId string, ch chan Notify, filter NotifyFilter)
+	client.RegisterChannelWithFilter(channelIDEdit, notifyAreaEdit, notifyfilterAreaEdit)       // (channelId string, ch chan Notify, filter NotifyFilter)
+	client.StartNotifyRouter()
+	// We started the channel with filter now let's add an area, edit the name and then delete it to finalize the test.
+	addarea := 0
+	deletearea := 0
+	editarea := 0
+
+	closeChan := make(chan string)
+	go func() {
+		for {
+			select {
+			case msg := <-notifyAreaAdd:
+				addarea++
+				log.Infof("Check %s: New notify message of cmd = %s,comp = %s", msg.Cmd, msg.Cmd, msg.Component)
+				if addarea > 0 && deletearea > 0 && editarea > 0 {
+					client.Stop()
+					closeChan <- "shit"
+					break
+				}
+			case msg := <-notifyAreaDelete:
+				deletearea++
+				log.Infof("Check %s: New notify message of cmd = %s,comp = %s", msg.Cmd, msg.Cmd, msg.Component)
+				if addarea > 0 && deletearea > 0 && editarea > 0 {
+					client.Stop()
+					closeChan <- "shit"
+					break
+				}
+			case msg := <-notifyAreaEdit:
+				editarea++
+				log.Infof("Check %s: New notify message of cmd = %s,comp = %s", msg.Cmd, msg.Cmd, msg.Component)
+				if addarea > 0 && deletearea > 0 && editarea > 0 {
+					client.Stop()
+					closeChan <- "shit"
+					break
+				}
+			}
+		}
+	}()
+
+	<-closeChan
+	t.Log("Tadaaa")
 }
