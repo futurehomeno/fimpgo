@@ -122,6 +122,12 @@ type Area struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 	Type string `json:"type"`
+	Props AreaProps `json:"props"`
+}
+
+type AreaProps struct {
+	HNumber string `json:"hNumber"`
+	TransNr string `json:"transNr"`
 }
 
 type ActionDevice map[string]interface{}
