@@ -3,6 +3,7 @@ package primefimp
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/futurehomeno/fimpgo"
 )
 
