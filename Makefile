@@ -8,7 +8,6 @@ build-arm:
 build-amd:
 	GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o fimpcli cmd/client.go
 
-
 run :
 	go run cmd/main.go -c testdata/var/config.json
 
