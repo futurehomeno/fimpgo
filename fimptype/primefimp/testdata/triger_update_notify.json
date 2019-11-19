@@ -1,0 +1,97 @@
+{
+  "corid": "",
+  "ctime": "2019-11-18T20:34:09+0100",
+  "props": {},
+  "serv": "vinculum",
+  "tags": [],
+  "type": "evt.pd7.notify",
+  "uid": "37cbc537-1244-48e4-aa44-f4bb7e649250",
+  "val": {
+    "changes": {
+      "triggers": {
+        "motionLight": {
+          "all": {
+            "devices": {
+              "31": null,
+              "37": null
+            },
+            "enabled": true,
+            "timeout": 300000
+          },
+          "sleep": {
+            "devices": {
+              "31": 20,
+              "37": 20
+            },
+            "enabled": true,
+            "timeout": 300000
+          }
+        }
+      }
+    },
+    "cmd": "edit",
+    "component": "room",
+    "id": 10,
+    "mode": "home",
+    "param": {
+      "alias": "office",
+      "area": 1,
+      "client": {
+        "name": "office"
+      },
+      "id": 10,
+      "outside": false,
+      "param": {
+        "heating": {
+          "actuator": false,
+          "desired": 23,
+          "humidity": 40,
+          "power": "off",
+          "target": 23,
+          "temperature": 23.3999996185303,
+          "thermostat": false
+        },
+        "lighting": {
+          "illuminance": 42
+        },
+        "security": {
+          "mode": null,
+          "openState": "closed",
+          "presence": true
+        },
+        "sensors": [
+          "temperature",
+          "presence",
+          "openState",
+          "illuminance",
+          "humidity"
+        ],
+        "shading": {},
+        "triggers": {
+          "magnetHeat": 19,
+          "motionLight": {
+            "all": {
+              "devices": {
+                "31": null,
+                "37": null
+              },
+              "enabled": true,
+              "timeout": 300000
+            },
+            "sleep": {
+              "devices": {
+                "31": 20,
+                "37": 20
+              },
+              "enabled": true,
+              "timeout": 300000
+            }
+          }
+        }
+      },
+      "type": "office"
+    }
+  },
+  "val_t": "object",
+  "ver": "1"
+}

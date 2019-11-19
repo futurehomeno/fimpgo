@@ -224,7 +224,10 @@ func (mh *ApiClient) GetDevices(fromCache bool) ([]Device, error) {
 			return nil, err
 		}
 		return response.GetDevices(), err
+	}else if mh.isCacheEnabled {
+		return mh.siteCache.Devices,nil
 	}
+
 	return nil, nil
 }
 
@@ -240,6 +243,8 @@ func (mh *ApiClient) GetRooms(fromCache bool) ([]Room, error) {
 			return nil, err
 		}
 		return response.GetRooms(), err
+	}else if mh.isCacheEnabled {
+		return mh.siteCache.Rooms,nil
 	}
 	return nil, nil
 }
@@ -256,6 +261,8 @@ func (mh *ApiClient) GetAreas(fromCache bool) ([]Area, error) {
 			return nil, err
 		}
 		return response.GetAreas(), err
+	}else if mh.isCacheEnabled {
+		return mh.siteCache.Areas,nil
 	}
 	return nil, nil
 }
@@ -272,6 +279,8 @@ func (mh *ApiClient) GetThings(fromCache bool) ([]Thing, error) {
 			return nil, err
 		}
 		return response.GetThings(), err
+	}else if mh.isCacheEnabled {
+		return mh.siteCache.Things,nil
 	}
 	return nil, nil
 }
@@ -288,6 +297,44 @@ func (mh *ApiClient) GetShortcuts(fromCache bool) ([]Shortcut, error) {
 			return nil, err
 		}
 		return response.GetShortcuts(), err
+	}else if mh.isCacheEnabled {
+		return mh.siteCache.Shortcuts,nil
+	}
+	return nil, nil
+}
+
+// GetShortcuts Gets the modes
+func (mh *ApiClient) GetModes(fromCache bool) ([]Mode, error) {
+	if !fromCache {
+		fimpResponse, err := mh.sendGetRequest([]string{ComponentMode})
+		if err != nil {
+			return nil, err
+		}
+		response, err := FimpToResponse(fimpResponse)
+		if err != nil {
+			return nil, err
+		}
+		return response.GetModes(), err
+	}else if mh.isCacheEnabled {
+		return mh.siteCache.Modes,nil
+	}
+	return nil, nil
+}
+
+// GetShortcuts Gets the modes
+func (mh *ApiClient) GetTimers(fromCache bool) ([]Timer, error) {
+	if !fromCache {
+		fimpResponse, err := mh.sendGetRequest([]string{ComponentTimer})
+		if err != nil {
+			return nil, err
+		}
+		response, err := FimpToResponse(fimpResponse)
+		if err != nil {
+			return nil, err
+		}
+		return response.GetTimers(), err
+	}else if mh.isCacheEnabled {
+		return mh.siteCache.Timers,nil
 	}
 	return nil, nil
 }
@@ -304,6 +351,8 @@ func (mh *ApiClient) GetVincServices(fromCache bool) (VincServices, error) {
 			return VincServices{}, err
 		}
 		return response.GetVincServices(), err
+	}else if mh.isCacheEnabled {
+		return mh.siteCache.Services,nil
 	}
 	return VincServices{}, nil
 }

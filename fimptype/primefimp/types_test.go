@@ -134,6 +134,36 @@ func TestPrimeFimp_ClientApi_GetDevices(t *testing.T) {
 	client.Stop()
 }
 
+func TestPrimeFimp_ClientApi_GetShortcuts(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+
+	uuid := uuid.New().String()
+	validClientID := strings.ReplaceAll(uuid, "-", "")[0:22]
+
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
+	mqtt.SetMessageHandler(func(topic string, addr *fimpgo.Address, iotMsg *fimpgo.FimpMessage, rawPayload []byte) {
+
+
+	})
+	client := NewApiClient("test-1", mqtt, false)
+	err := mqtt.Start()
+	t.Log("Connected")
+	if err != nil {
+		t.Error("Error connecting to broker ", err)
+	}
+	devices, err := client.GetShortcuts(false)
+	if err != nil {
+		t.Error("Error", err)
+		t.Fail()
+	}
+
+	if len(devices) == 0 {
+		t.Error("Site should have more then 0 devices ")
+	}
+	log.Infof("Site contains %d shortcuts", len(devices))
+	client.Stop()
+}
+
 func TestPrimeFimp_ClientApi_GetVincServices(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
