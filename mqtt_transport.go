@@ -244,6 +244,9 @@ func (mh *MqttTransport) Stop() {
 
 // Subscribe - subscribing for topic
 func (mh *MqttTransport) Subscribe(topic string) error {
+	if topic == "" {
+		return nil
+	}
 	//subscribe to the topic /go-mqtt/sample and request messages to be delivered
 	//at a maximum qos of zero, wait for the receipt to confirm the subscription
 	topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
