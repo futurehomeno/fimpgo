@@ -23,10 +23,13 @@ func TestMqttConnectionPool_GetConnection(t *testing.T) {
 		PubQos:              1,
 	}
 
-	pool := NewMqttConnectionPool(0,2,10,template,"pool_test_")
-	id1 ,conn1,_ := pool.GetConnection()
-	id2 ,conn2,_ := pool.GetConnection()
-	id3 ,responderConn,_ := pool.GetConnection()
+	pool := NewMqttConnectionPool(0,1,10,5,template,"pool_test_")
+	pool.Start()
+	idt ,_,_ := pool.BorrowConnection()
+	pool.ReturnConnection(idt)
+	id1 ,conn1,_ := pool.BorrowConnection()
+	id2 ,conn2,_ := pool.BorrowConnection()
+	id3 ,responderConn,_ := pool.BorrowConnection()
 	log.Infof("Connection ids %d %d %d",id1,id2,id3)
 	msg1 := NewStringMessage("cmd.test.get_response","tester","test-1",nil,nil,nil)
 	msg1.ResponseToTopic = "pt:j1/mt:rsp/rt:app/rn:goland/ad:1"
@@ -60,7 +63,7 @@ func TestMqttConnectionPool_GetConnection(t *testing.T) {
 	conn2.PublishToTopic("pt:j1/mt:cmd/rt:app/rn:conn_pool_tester/ad:1",msg2)
 	time.Sleep(time.Second*1)
     pool.ReturnConnection(id1)
-	id1_1 ,con1_1,_ := pool.GetConnection()
+	id1_1 ,con1_1,_ := pool.BorrowConnection()
 	con1_1.PublishToTopic("pt:j1/mt:cmd/rt:app/rn:conn_pool_tester/ad:1",msg1_1)
 	log.Infof("Connection ids %d ",id1_1)
 
@@ -78,13 +81,18 @@ func TestMqttConnectionPool_GetConnection(t *testing.T) {
     	i++
 
 	}
-	time.Sleep(time.Second*20)
-    conn1.Stop()
-    conn2.Stop()
-    responderConn.Stop()
+	log.Infof("Total connections %d",pool.TotalConnections())
+	log.Infof("Idle  connections %d",pool.IdleConnections())
     pool.ReturnConnection(id1)
-    pool.ReturnConnection(id2)
-    pool.ReturnConnection(id3)
+   	log.Infof("Total connections %d",pool.TotalConnections())
+	log.Infof("Idle  connections %d",pool.IdleConnections())
+	pool.ReturnConnection(id2)
+	pool.ReturnConnection(id3)
+	time.Sleep(time.Second*11)
+	log.Infof("Total connections %d",pool.TotalConnections())
+	log.Infof("Idle  connections %d",pool.IdleConnections())
+	pool.Stop()
+
 	t.Log("All good . Test passed ")
 
 }

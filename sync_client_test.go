@@ -192,9 +192,9 @@ func TestNewSyncClientV3(t *testing.T) {
 		PubQos:              1,
 	}
 
-	connPool := NewMqttConnectionPool(0,2,100,connConfig,"fimpgo_")
+	connPool := NewMqttConnectionPool(0,2,100,20,connConfig,"fimpgo_")
 
-	_ ,responderConn,_ := connPool.GetConnection()
+	_ ,responderConn,_ := connPool.BorrowConnection()
 	responderConn.SetMessageHandler(func(topic string, addr *Address, iotMsg *FimpMessage, rawPayload []byte) {
 		log.Info("New mqtt msg ")
 		val,_ := iotMsg.GetStringValue()
@@ -256,7 +256,7 @@ func TestNewSyncClientV3_FhButlerAPI(t *testing.T) {
 		isAws:                true,
 	}
 
-	connPool := NewMqttConnectionPool(0,2,10,connConfig,"fimpgo")
+	connPool := NewMqttConnectionPool(0,2,10,20,connConfig,"fimpgo")
 
 	syncC := NewSyncClientV3(connPool)
 

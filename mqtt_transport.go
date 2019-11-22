@@ -247,6 +247,10 @@ func (mh *MqttTransport) Subscribe(topic string) error {
 	if topic == "" {
 		return nil
 	}
+
+	mh.subMutex.Lock()
+	defer mh.subMutex.Unlock()
+
 	//subscribe to the topic /go-mqtt/sample and request messages to be delivered
 	//at a maximum qos of zero, wait for the receipt to confirm the subscription
 	topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
@@ -260,14 +264,16 @@ func (mh *MqttTransport) Subscribe(topic string) error {
 		log.Error("<MqttAd> Subscribe operation timed out")
 		return errors.New("subscribe timed out")
 	}
-	mh.subMutex.Lock()
+
 	mh.subs[topic] = mh.subQos
-	mh.subMutex.Unlock()
+
 	return nil
 }
 
 // Unsubscribe , unsubscribing from topic
 func (mh *MqttTransport) Unsubscribe(topic string) error {
+	mh.subMutex.Lock()
+	defer mh.subMutex.Unlock()
 	topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
 	log.Debug("<MqttAd> Unsubscribing from topic:", topic)
 	token := mh.client.Unsubscribe(topic)
@@ -278,11 +284,21 @@ func (mh *MqttTransport) Unsubscribe(topic string) error {
 		log.Error("<MqttAd> Unsubscribe operation timed out")
 		return errors.New("unsubscribe timed out")
 	}
-	mh.subMutex.Lock()
 	delete(mh.subs, topic)
-	mh.subMutex.Unlock()
 	return nil
 }
+func (mh *MqttTransport) UnsubscribeAll() {
+	var topics []string
+	mh.subMutex.Lock()
+	for i := range mh.subs {
+		topics = append(topics,i)
+	}
+	mh.subMutex.Unlock()
+	for _,t := range topics {
+		mh.Unsubscribe(t)
+	}
+}
+
 
 func (mh *MqttTransport) onConnectionLost(client MQTT.Client, err error) {
 	log.Errorf("<MqttAd> Connection lost with MQTT broker . Error : %v", err)

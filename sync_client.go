@@ -123,7 +123,7 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	}()
 
 	if sc.isConnPoolEnabled {
-		conId ,conn , err = sc.mqttConnPool.GetConnection()
+		conId ,conn , err = sc.mqttConnPool.BorrowConnection()
 		if err != nil {
 			return nil,err
 		}
@@ -173,7 +173,6 @@ func (sc *SyncClient) startResponseListener(requestMsg *FimpMessage ,respMsgType
 				select {
 				case respChan <- msg.Payload:
 				case <-time.After(time.Second * time.Duration(timeout)):
-					respChan <- nil
 				}
 			}
 		}
