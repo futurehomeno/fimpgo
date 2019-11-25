@@ -23,7 +23,7 @@ func TestMqttConnectionPool_GetConnection(t *testing.T) {
 		PubQos:              1,
 	}
 
-	pool := NewMqttConnectionPool(0,1,10,5,template,"pool_test_")
+	pool := NewMqttConnectionPool(0,1,10,5*time.Second,template,"pool_test_")
 	pool.Start()
 	idt ,_,_ := pool.BorrowConnection()
 	pool.ReturnConnection(idt)

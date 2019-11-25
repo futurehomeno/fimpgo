@@ -16,7 +16,7 @@ type connection struct {
 
 }
 
-// Connection pool starts at initSize connections and can grow up to maxSize , the pool can shrink back to size defines in size variable
+// Connection pool starts at initSize connections and can grow up to maxSize , the pool can shrink back to size defined in "size" variable
 
 type MqttConnectionPool struct {
 	mux            sync.RWMutex
@@ -26,14 +26,14 @@ type MqttConnectionPool struct {
 	initSize       int // init size
 	size           int // normal size
 	maxSize        int // max size
-	maxIdleAge     time.Duration // Max time idle connection can stay in the pool before it is destroyed
+	maxIdleAge     time.Duration // Defines how long idle connection can stay in the pool before it gets destroyed
 	poolCheckTick  *time.Ticker
 	isActive       bool
 }
 
 func NewMqttConnectionPool(initSize, size, maxSize int,maxAge time.Duration, connTemplate MqttConnectionConfigs, clientIdPrefix string) *MqttConnectionPool {
 	if maxAge == 0 {
-		maxAge = 30  // age in seconds
+		maxAge = 30*time.Second  // age in seconds
 	}
 	if maxSize == 0 {
 		maxSize = 20
@@ -154,8 +154,8 @@ func (cp *MqttConnectionPool) cleanupProcess() {
 		if len(cp.connPool)>cp.size {
 			for i := range cp.connPool {
 				if cp.connPool[i].isIdle {
-					if (time.Since(cp.connPool[i].idleSince)	> (time.Second * cp.maxIdleAge)) && (len(cp.connPool)>cp.size) {
-						//log.Debugf("<conn-pool> Destroying old connection")
+					if (time.Since(cp.connPool[i].idleSince) > (cp.maxIdleAge)) && (len(cp.connPool)>cp.size) {
+						log.Debugf("<conn-pool> Destroying old connection")
 						conn := cp.getConnectionById(i)
 						conn.Stop()
 						delete(cp.connPool,i) // it is safe to delete map element in the loop
