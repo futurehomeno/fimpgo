@@ -29,9 +29,9 @@ type MqttConnectionConfigs struct {
 	StartFailRetryCount int
 	CertDir             string  // full path to directory where all certificates are stored. Cert dir should contains all CA root certificates .
 	PrivateKeyFileName  string  //
-	CertFileName		string  //
+	CertFileName        string  //
 	ReceiveChTimeout    int
-	isAws               bool    // Should be set to true if cloud broker is AwS IoT platform .
+	IsAws               bool // Should be set to true if cloud broker is AwS IoT platform .
 }
 
 type Message struct {
@@ -157,7 +157,7 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs) *MqttTransport {
 	}
 
 	if configs.PrivateKeyFileName != "" && configs.CertFileName != "" {
-		err := mh.ConfigureTls(configs.PrivateKeyFileName,configs.CertFileName,configs.CertDir,configs.isAws)
+		err := mh.ConfigureTls(configs.PrivateKeyFileName,configs.CertFileName,configs.CertDir,configs.IsAws)
 		if err != nil {
 			log.Error("Certificate loading error :",err.Error())
 		}
@@ -487,7 +487,7 @@ func DetachGlobalPrefixFromTopic(topic string) (string, string) {
 }
 // The method should be used to configure mutual TLS , like AwS IoT core is using . Also it configures TLS protocol switch .
 // Cert dir should contains all CA root certificates .
-// isAws flag controls AWS specific TLS protocol switch.
+// IsAws flag controls AWS specific TLS protocol switch.
 func (mh *MqttTransport) ConfigureTls(privateKeyFileName, certFileName, certDir string, isAws bool) error {
 	mh.certDir = certDir
 	privateKeyFileName = filepath.Join(certDir,privateKeyFileName)

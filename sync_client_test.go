@@ -246,14 +246,14 @@ func TestNewSyncClientV3_FhButlerAPI(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
     conf := utils.GetTestConfig("./testdata/awsiot/cloud-test.json")
 	connConfig := MqttConnectionConfigs{
-		ServerURI:           conf.BrokerURI,
-		CleanSession:        true,
-		SubQos:              1,
-		PubQos:              1,
-		CertDir:             "./testdata/awsiot/full-access-policy",
-		PrivateKeyFileName:  "awsiot.private.key",
-		CertFileName:        "awsiot.crt",
-		isAws:                true,
+		ServerURI:          conf.BrokerURI,
+		CleanSession:       true,
+		SubQos:             1,
+		PubQos:             1,
+		CertDir:            "./testdata/awsiot/full-access-policy",
+		PrivateKeyFileName: "awsiot.private.key",
+		CertFileName:       "awsiot.crt",
+		IsAws:              true,
 	}
 
 	connPool := NewMqttConnectionPool(0,2,10,20,connConfig,"fimpgo")
