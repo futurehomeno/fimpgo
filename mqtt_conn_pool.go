@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"math/rand"
 	"sync"
 	"time"
 )
@@ -141,7 +142,13 @@ func (cp *MqttConnectionPool) getConnectionById(connId int) *MqttTransport {
 
 
 func (cp *MqttConnectionPool) genConnId() int {
-	return len(cp.connPool) + 1
+	rand.Seed(int64(time.Now().Nanosecond()))
+	for {
+		id := rand.Int()
+		if _,ok:=cp.connPool[id];!ok {
+			return id
+		}
+	}
 }
 
 func (cp *MqttConnectionPool) cleanupProcess() {
