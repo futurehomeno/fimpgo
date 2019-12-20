@@ -82,9 +82,14 @@ func (mh *MqttTransport) SetCertDir(certDir string) {
 type MessageHandler func(topic string, addr *Address, iotMsg *FimpMessage, rawPayload []byte)
 type RawMessageHandler func(topic string, rawPayload []byte)
 
-// SetRawDefaultPublishHandler Override default lib message handler
+// SetRawPublishHandler Override default lib message handler
 func (mh *MqttTransport) SetRawPublishHandler(handler RawMessageHandler) {
 	mh.rawHandler = handler
+}
+
+// SetKeepAlive Set the keepalive time in sec
+func (mh *MqttTransport) SetKeepAlive(sec int) {
+	mh.mqttOptions.SetKeepAlive(30)
 }
 
 // NewMqttAdapter constructor
