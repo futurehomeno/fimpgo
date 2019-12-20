@@ -5,14 +5,15 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	MQTT "github.com/eclipse/paho.mqtt.golang"
-	"github.com/futurehomeno/fimpgo/utils"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	MQTT "github.com/eclipse/paho.mqtt.golang"
+	"github.com/futurehomeno/fimpgo/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 type MessageCh chan *Message
@@ -25,11 +26,11 @@ type MqttConnectionConfigs struct {
 	CleanSession        bool
 	SubQos              byte
 	PubQos              byte
-	GlobalTopicPrefix   string  // Should be set for communicating one single hub via cloud
+	GlobalTopicPrefix   string // Should be set for communicating one single hub via cloud
 	StartFailRetryCount int
-	CertDir             string  // full path to directory where all certificates are stored. Cert dir should contains all CA root certificates .
-	PrivateKeyFileName  string  //
-	CertFileName        string  //
+	CertDir             string // full path to directory where all certificates are stored. Cert dir should contains all CA root certificates .
+	PrivateKeyFileName  string //
+	CertFileName        string //
 	ReceiveChTimeout    int
 	IsAws               bool // Should be set to true if cloud broker is AwS IoT platform .
 }
@@ -53,6 +54,7 @@ type FilterFunc func(topic string, addr *Address, iotMsg *FimpMessage) bool
 type MqttTransport struct {
 	client              MQTT.Client
 	msgHandler          MessageHandler
+	rawHandler          RawMessageHandler
 	subQos              byte
 	pubQos              byte
 	subs                map[string]byte
@@ -78,10 +80,16 @@ func (mh *MqttTransport) SetCertDir(certDir string) {
 }
 
 type MessageHandler func(topic string, addr *Address, iotMsg *FimpMessage, rawPayload []byte)
+type RawMessageHandler func(topic string, rawPayload []byte)
+
+// SetRawDefaultPublishHandler Override default lib message handler
+func (mh *MqttTransport) SetRawPublishHandler(handler RawMessageHandler) {
+	mh.rawHandler = handler
+}
 
 // NewMqttAdapter constructor
 //serverUri="tcp://localhost:1883"
-func NewMqttTransport(serverURI , clientID , username , password string, cleanSession bool, subQos byte, pubQos byte) *MqttTransport {
+func NewMqttTransport(serverURI, clientID, username, password string, cleanSession bool, subQos byte, pubQos byte) *MqttTransport {
 	mh := MqttTransport{}
 	mh.mqttOptions = MQTT.NewClientOptions().AddBroker(serverURI)
 	mh.mqttOptions.SetClientID(clientID)
@@ -106,7 +114,7 @@ func NewMqttTransport(serverURI , clientID , username , password string, cleanSe
 	return &mh
 }
 
-func NewMqttTransportFromConnection(client MQTT.Client,subQos byte, pubQos byte) *MqttTransport {
+func NewMqttTransportFromConnection(client MQTT.Client, subQos byte, pubQos byte) *MqttTransport {
 	mh := MqttTransport{}
 	mh.client = client
 	mh.pubQos = pubQos
@@ -147,24 +155,23 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs) *MqttTransport {
 	mh.globalTopicPrefix = configs.GlobalTopicPrefix
 	if configs.StartFailRetryCount == 0 {
 		mh.startFailRetryCount = 10
-	}else {
+	} else {
 		mh.startFailRetryCount = configs.StartFailRetryCount
 	}
 	if configs.ReceiveChTimeout == 0 {
 		mh.receiveChTimeout = 10
-	}else {
+	} else {
 		mh.receiveChTimeout = configs.ReceiveChTimeout
 	}
 
 	if configs.PrivateKeyFileName != "" && configs.CertFileName != "" {
-		err := mh.ConfigureTls(configs.PrivateKeyFileName,configs.CertFileName,configs.CertDir,configs.IsAws)
+		err := mh.ConfigureTls(configs.PrivateKeyFileName, configs.CertFileName, configs.CertDir, configs.IsAws)
 		if err != nil {
-			log.Error("Certificate loading error :",err.Error())
+			log.Error("Certificate loading error :", err.Error())
 		}
 	}
 	return &mh
 }
-
 
 func (mh *MqttTransport) SetGlobalTopicPrefix(prefix string) {
 	mh.globalTopicPrefix = prefix
@@ -256,11 +263,11 @@ func (mh *MqttTransport) Subscribe(topic string) error {
 	topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
 	log.Debug("<MqttAd> Subscribing to topic:", topic)
 	token := mh.client.Subscribe(topic, mh.subQos, nil)
-	isInTime := token.WaitTimeout(time.Second*20)
+	isInTime := token.WaitTimeout(time.Second * 20)
 	if token.Error() != nil {
 		log.Error("<MqttAd> Can't subscribe. Error :", token.Error())
 		return token.Error()
-	}else if !isInTime {
+	} else if !isInTime {
 		log.Error("<MqttAd> Subscribe operation timed out")
 		return errors.New("subscribe timed out")
 	}
@@ -277,10 +284,10 @@ func (mh *MqttTransport) Unsubscribe(topic string) error {
 	topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
 	log.Debug("<MqttAd> Unsubscribing from topic:", topic)
 	token := mh.client.Unsubscribe(topic)
-	isInTime := token.WaitTimeout(time.Second*20)
+	isInTime := token.WaitTimeout(time.Second * 20)
 	if token.Error() != nil {
 		return token.Error()
-	}else if !isInTime {
+	} else if !isInTime {
 		log.Error("<MqttAd> Unsubscribe operation timed out")
 		return errors.New("unsubscribe timed out")
 	}
@@ -291,14 +298,13 @@ func (mh *MqttTransport) UnsubscribeAll() {
 	var topics []string
 	mh.subMutex.Lock()
 	for i := range mh.subs {
-		topics = append(topics,i)
+		topics = append(topics, i)
 	}
 	mh.subMutex.Unlock()
-	for _,t := range topics {
+	for _, t := range topics {
 		mh.Unsubscribe(t)
 	}
 }
-
 
 func (mh *MqttTransport) onConnectionLost(client MQTT.Client, err error) {
 	log.Errorf("<MqttAd> Connection lost with MQTT broker . Error : %v", err)
@@ -322,7 +328,10 @@ func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
 	} else {
 		topic = msg.Topic()
 	}
-
+	if mh.rawHandler != nil {
+		mh.rawHandler(topic, msg.Payload())
+		return
+	}
 	// log.Debug("MSG: %s\n", msg.Payload())
 	addr, err := NewAddressFromString(topic)
 	if err != nil {
@@ -347,10 +356,10 @@ func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
 
 		msg := Message{Topic: topic, Addr: addr, Payload: fimpMsg}
 		select {
-			case mh.subChannels[i] <- &msg:
-				// send to channel
-			case <- time.After(time.Second* time.Duration(mh.receiveChTimeout)):
-				log.Info("<MqttAd> Channel is not read for ",mh.receiveChTimeout)
+		case mh.subChannels[i] <- &msg:
+			// send to channel
+		case <-time.After(time.Second * time.Duration(mh.receiveChTimeout)):
+			log.Info("<MqttAd> Channel is not read for ", mh.receiveChTimeout)
 		}
 	}
 	mh.channelRegMux.Unlock()
@@ -413,14 +422,12 @@ func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) erro
 }
 
 // RespondToRequest should be used by a service to respond to request
-func (mh *MqttTransport) RespondToRequest(requestMsg *FimpMessage,responseMsg *FimpMessage) error {
+func (mh *MqttTransport) RespondToRequest(requestMsg *FimpMessage, responseMsg *FimpMessage) error {
 	if requestMsg.ResponseToTopic == "" {
 		return errors.New("empty response topic")
 	}
-	return mh.PublishToTopic(requestMsg.ResponseToTopic,responseMsg)
+	return mh.PublishToTopic(requestMsg.ResponseToTopic, responseMsg)
 }
-
-
 
 func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error {
 	bytm, err := fimpMsg.SerializeToJson()
@@ -430,7 +437,7 @@ func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error 
 	}
 	if err == nil {
 		log.Debug("<MqttAd> Publishing msg to topic:", topic)
-		token  := mh.client.Publish(topic, mh.pubQos, false, bytm)
+		token := mh.client.Publish(topic, mh.pubQos, false, bytm)
 		if token.WaitTimeout(mh.syncPublishTimeout) && token.Error() == nil {
 			return nil
 		} else {
@@ -447,7 +454,7 @@ func (mh *MqttTransport) PublishRaw(topic string, bytem []byte) {
 
 func (mh *MqttTransport) PublishRawSync(topic string, bytem []byte) error {
 	log.Debug("<MqttAd> Publishing msg to topic:", topic)
-	token  := mh.client.Publish(topic, mh.pubQos, false, bytem)
+	token := mh.client.Publish(topic, mh.pubQos, false, bytem)
 	if token.WaitTimeout(mh.syncPublishTimeout) && token.Error() == nil {
 		return nil
 	} else {
@@ -485,24 +492,25 @@ func DetachGlobalPrefixFromTopic(topic string) (string, string) {
 	// returns domain , topic
 	return globalPrefix, resultTopic
 }
+
 // The method should be used to configure mutual TLS , like AwS IoT core is using . Also it configures TLS protocol switch .
 // Cert dir should contains all CA root certificates .
 // IsAws flag controls AWS specific TLS protocol switch.
 func (mh *MqttTransport) ConfigureTls(privateKeyFileName, certFileName, certDir string, isAws bool) error {
 	mh.certDir = certDir
-	privateKeyFileName = filepath.Join(certDir,privateKeyFileName)
-	certFileName = filepath.Join(certDir,certFileName)
+	privateKeyFileName = filepath.Join(certDir, privateKeyFileName)
+	certFileName = filepath.Join(certDir, certFileName)
 	TLSConfig := &tls.Config{InsecureSkipVerify: false}
 	if isAws {
 		TLSConfig.NextProtos = []string{"x-amzn-mqtt-ca"}
 	}
-
-	certPool, err := mh.getCACertPool()
-	if err != nil {
-		return err
+	if mh.certDir != "" {
+		certPool, err := mh.getCACertPool()
+		if err != nil {
+			return err
+		}
+		TLSConfig.RootCAs = certPool
 	}
-	TLSConfig.RootCAs = certPool
-
 	if certFileName != "" {
 		certPool, err := mh.getCertPool(certFileName)
 		if err != nil {
