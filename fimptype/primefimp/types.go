@@ -62,6 +62,7 @@ type Device struct {
 	Room          *int                   `json:"room"`
 	Changes       map[string]interface{} `json:"changes"`
 	ThingID       *int                   `json:"thing"`
+	Type          map[string]interface{} `json:"type"`
 }
 
 type Thing struct {
@@ -116,9 +117,9 @@ type UserName struct {
 }
 
 type Area struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-	Type string `json:"type"`
+	ID    int       `json:"id"`
+	Name  string    `json:"name"`
+	Type  string    `json:"type"`
 	Props AreaProps `json:"props"`
 }
 
