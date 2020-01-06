@@ -3,6 +3,8 @@ github.com/buger/jsonparser
 # github.com/eclipse/paho.mqtt.golang v1.2.0
 github.com/eclipse/paho.mqtt.golang
 github.com/eclipse/paho.mqtt.golang/packets
+# github.com/google/uuid v1.1.1
+github.com/google/uuid
 # github.com/konsorten/go-windows-terminal-sequences v1.0.1
 github.com/konsorten/go-windows-terminal-sequences
 # github.com/pkg/errors v0.0.0-20161029093637-248dadf4e906
