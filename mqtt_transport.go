@@ -237,7 +237,7 @@ func (mh *MqttTransport) Start() error {
 	return err
 }
 
-// Stop , stops adapter.
+// Stops adapter . Adapter can't be started again using Start . In order to start adapter it has to be re-initialized
 func (mh *MqttTransport) Stop() {
 	mh.client.Disconnect(250)
 }
@@ -315,7 +315,7 @@ func (mh *MqttTransport) onConnect(client MQTT.Client) {
 
 //define a function for the default message handler
 func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
-	log.Debugf("<MqttAd> New msg from TOPIC: %s", msg.Topic())
+	log.Tracef("<MqttAd> New msg from TOPIC: %s", msg.Topic())
 	var topic string
 	if mh.globalTopicPrefix != "" {
 		_, topic = DetachGlobalPrefixFromTopic(msg.Topic())
@@ -391,7 +391,7 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 		topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
 	}
 	if err == nil {
-		log.Debug("<MqttAd> Publishing msg to topic:", topic)
+		log.Trace("<MqttAd> Publishing msg to topic:", topic)
 		mh.client.Publish(topic, mh.pubQos, false, bytm)
 		return nil
 	}
@@ -405,7 +405,7 @@ func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) erro
 		topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
 	}
 	if err == nil {
-		log.Debug("<MqttAd> Publishing msg to topic:", topic)
+		log.Trace("<MqttAd> Publishing msg to topic:", topic)
 		mh.client.Publish(topic, mh.pubQos, false, bytm)
 		return nil
 	}
@@ -429,7 +429,7 @@ func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error 
 		topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
 	}
 	if err == nil {
-		log.Debug("<MqttAd> Publishing msg to topic:", topic)
+		log.Trace("<MqttAd> Publishing msg to topic:", topic)
 		token  := mh.client.Publish(topic, mh.pubQos, false, bytm)
 		if token.WaitTimeout(mh.syncPublishTimeout) && token.Error() == nil {
 			return nil
@@ -441,12 +441,12 @@ func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error 
 }
 
 func (mh *MqttTransport) PublishRaw(topic string, bytem []byte) {
-	log.Debug("<MqttAd> Publishing msg to topic:", topic)
+	log.Trace("<MqttAd> Publishing msg to topic:", topic)
 	mh.client.Publish(topic, mh.pubQos, false, bytem)
 }
 
 func (mh *MqttTransport) PublishRawSync(topic string, bytem []byte) error {
-	log.Debug("<MqttAd> Publishing msg to topic:", topic)
+	log.Trace("<MqttAd> Publishing msg to topic:", topic)
 	token  := mh.client.Publish(topic, mh.pubQos, false, bytem)
 	if token.WaitTimeout(mh.syncPublishTimeout) && token.Error() == nil {
 		return nil

@@ -33,6 +33,11 @@ func TestPrimeFimp_ClientApi_Update(t *testing.T) {
 		t.Fail()
 	}
 
+	for _,r := range site.Rooms {
+		t.Logf("Room %s , area = %d ", r.Alias,r.Area)
+
+	}
+
 	if len(site.Devices) == 0 {
 		t.Error("Site should have more then 0 devices ")
 	}
