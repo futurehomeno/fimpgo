@@ -1,0 +1,244 @@
+{
+  "corid": "09936904-8ec8-4280-9285-945d77bd0a74",
+  "ctime": "2019-09-13T16:17:05+0200",
+  "props": {},
+  "serv": "vinculum",
+  "tags": [],
+  "type": "evt.pd7.response",
+  "uid": "d2cc0cbb-47d0-4123-9995-3b53c72006af",
+  "val": {
+    "errors": null,
+    "param": {
+      "service": {
+        "fireAlarm": {
+          "alarmState": "ready",
+          "appliances": {},
+          "areas": {},
+          "blacklist": {
+            "9": {
+              "events": null
+            },
+            "13": {
+              "events": null
+            },
+            "15": {
+              "events": null
+            },
+            "17": {
+              "events": null
+            },
+            "18": {
+              "events": null
+            },
+            "19": {
+              "events": null
+            },
+            "20": {
+              "events": null
+            },
+            "21": {
+              "events": null
+            },
+            "22": {
+              "events": null
+            },
+            "23": {
+              "events": null
+            },
+            "24": {
+              "events": null
+            },
+            "25": {
+              "events": null
+            },
+            "26": {
+              "events": null
+            },
+            "27": {
+              "events": null
+            },
+            "28": {
+              "events": null
+            },
+            "29": {
+              "events": null
+            },
+            "30": {
+              "events": null
+            },
+            "45": {
+              "events": null
+            },
+            "53": {
+              "events": null
+            },
+            "54": {
+              "events": null
+            },
+            "55": {
+              "events": null
+            },
+            "56": {
+              "events": null
+            },
+            "57": {
+              "events": null
+            },
+            "58": {
+              "events": null
+            },
+            "59": {
+              "events": null
+            },
+            "60": {
+              "events": null
+            },
+            "61": {
+              "events": null
+            },
+            "62": {
+              "events": null
+            },
+            "63": {
+              "events": null
+            },
+            "64": {
+              "events": null
+            },
+            "65": {
+              "events": null
+            },
+            "66": {
+              "events": null
+            },
+            "67": {
+              "events": null
+            },
+            "69": {
+              "events": null
+            }
+          },
+          "commonAreaDelay": 0,
+          "confirmed": false,
+          "delay": 90,
+          "enabled": true,
+          "lastTested": "2018-11-27T13:51:58Z",
+          "lastTriggered": "2019-07-29T12:50:48Z",
+          "lights": {},
+          "locks": {},
+          "sirens": {
+            "9": {
+              "siren": null
+            },
+            "13": {
+              "siren": null
+            },
+            "15": {
+              "siren": null
+            },
+            "17": {
+              "siren": null
+            },
+            "18": {
+              "siren": null
+            },
+            "19": {
+              "siren": "sounding"
+            },
+            "20": {
+              "siren": null
+            },
+            "21": {
+              "siren": null
+            },
+            "22": {
+              "siren": null
+            },
+            "23": {
+              "siren": null
+            },
+            "24": {
+              "siren": null
+            },
+            "25": {
+              "siren": null
+            },
+            "26": {
+              "siren": null
+            },
+            "27": {
+              "siren": null
+            },
+            "28": {
+              "siren": null
+            },
+            "29": {
+              "siren": null
+            },
+            "30": {
+              "siren": null
+            },
+            "45": {
+              "siren": null
+            },
+            "53": {
+              "siren": null
+            },
+            "54": {
+              "siren": null
+            },
+            "55": {
+              "siren": null
+            },
+            "56": {
+              "siren": null
+            },
+            "57": {
+              "siren": null
+            },
+            "58": {
+              "siren": null
+            },
+            "59": {
+              "siren": null
+            },
+            "60": {
+              "siren": null
+            },
+            "61": {
+              "siren": null
+            },
+            "62": {
+              "siren": null
+            },
+            "63": {
+              "siren": null
+            },
+            "64": {
+              "siren": null
+            },
+            "65": {
+              "siren": null
+            },
+            "66": {
+              "siren": null
+            },
+            "67": {
+              "siren": null
+            },
+            "69": {
+              "siren": "sounding"
+            }
+          },
+          "supported": true,
+          "triggeredDevices": [],
+          "triggeredRooms": []
+        }
+      }
+    },
+    "requestId": 7294000000007,
+    "success": true
+  },
+  "val_t": "object",
+  "ver": "1"
+}

@@ -272,3 +272,61 @@ func (s *Site) UpdateShortcut(d *Shortcut) {
 		}
 	}
 }
+
+func (s *Site) GetRoomById(ID int)*Room {
+	for i := range s.Rooms {
+		if s.Rooms[i].ID == ID {
+			return &s.Rooms[i]
+		}
+	}
+	return nil
+}
+
+func (s *Site) GetAreaById(ID int)*Area {
+	for i := range s.Areas {
+		if s.Areas[i].ID == ID {
+			return &s.Areas[i]
+		}
+	}
+	return nil
+}
+
+func (s *Site) GetThingById(ID int)*Thing {
+	for i := range s.Things {
+		if s.Things[i].ID == ID {
+			return &s.Things[i]
+		}
+	}
+	return nil
+}
+
+func (s *Site) GetDeviceById(ID int)*Device {
+	for i := range s.Devices {
+		if s.Devices[i].ID == ID {
+			return &s.Devices[i]
+		}
+	}
+	return nil
+}
+
+func (s *Site) GetDeviceByServiceAddress(addr string)*Device {
+	for i := range s.Devices {
+		for _,v := range s.Devices[i].Service {
+			if v.Addr == addr {
+				return &s.Devices[i]
+			}
+		}
+	}
+	return nil
+}
+
+func (s *Site) GetServiceByAddress(addr string) *Service {
+	for i := range s.Devices {
+		for _,v := range s.Devices[i].Service {
+			if v.Addr == addr {
+				return &v
+			}
+		}
+	}
+	return nil
+}

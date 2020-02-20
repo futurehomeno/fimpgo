@@ -3,6 +3,7 @@ package primefimp
 import (
 	"github.com/futurehomeno/fimpgo"
 	log "github.com/sirupsen/logrus"
+	"io/ioutil"
 )
 
 const VincEventTopic = "pt:j1/mt:evt/rt:app/rn:vinculum/ad:1"
@@ -40,6 +41,24 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, isCacheE
 		}
 	}
 	return api
+}
+
+// Loads site from file . File should be in exactly the same format as vinculum response
+func (mh *ApiClient) LoadVincResponseFromFile(fileName string)error {
+	bSite , err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return err
+	}
+	fimpMsg,err:= fimpgo.NewMessageFromBytes(bSite)
+	if err != nil {
+		return err
+	}
+	response, err := FimpToResponse(fimpMsg)
+	if err != nil {
+		return err
+	}
+	mh.siteCache = *SiteFromResponse(response)
+	return nil
 }
 
 // RegisterChannel should be used if new message has to be sent to channel instead of callback.

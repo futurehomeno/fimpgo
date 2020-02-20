@@ -9,9 +9,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var brokerUrl = "tcp://dev-sdu-sm-beta.local:1884"
-var brokerUser = "simsek"
-var brokerPass = "SivErAmEtOnyRIDIci"
+var brokerUrl = "tcp://cube.local:1883"
+var brokerUser = "aleks"
+var brokerPass = ""
+
 
 func TestPrimeFimp_ClientApi_Update(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
@@ -44,6 +45,8 @@ func TestPrimeFimp_ClientApi_Update(t *testing.T) {
 	log.Infof("Site contains %d devices", len(site.Devices))
 	client.Stop()
 }
+
+
 
 func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
@@ -152,4 +155,40 @@ func TestPrimeFimp_ClientApi_Notify_With_Filter(t *testing.T) {
 
 	<-closeChan
 	t.Log("Tadaaa")
+}
+
+
+func TestPrimeFimp_LoadSiteFromFile(t *testing.T) {
+	fApi := NewApiClient("pf-test", nil, false)
+	err := fApi.LoadVincResponseFromFile("testdata/site-info-response.json")
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	site , err := fApi.GetSite(true)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	thing := site.GetThingById(9)
+	if thing.Name != "YR temperature report" {
+		t.Error("name doesn't match")
+		t.FailNow()
+	}
+	t.Log(thing.Name)
+
+	device := site.GetDeviceByServiceAddress("/rt:dev/rn:flow/ad:1/sv:out_bin_switch/ad:7zfeSQx3Q8")
+	if device.ID != 12 {
+		t.Error("device id doesn't match")
+		t.FailNow()
+	}
+	t.Log(*device.Client.Name)
+
+	room := site.GetRoomById(4)
+	if room.ID != 4 {
+		t.Error("room id doesn't match")
+		t.FailNow()
+	}
+	t.Log(room.Alias)
 }
