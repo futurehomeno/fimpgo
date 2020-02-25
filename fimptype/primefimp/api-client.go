@@ -1,9 +1,12 @@
 package primefimp
 
 import (
+	"errors"
 	"github.com/futurehomeno/fimpgo"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
+	"sync"
+	"time"
 )
 
 const VincEventTopic = "pt:j1/mt:evt/rt:app/rn:vinculum/ad:1"
@@ -24,23 +27,54 @@ type ApiClient struct {
 	inMsgChan             fimpgo.MessageCh
 	stopFlag              bool
 	isNotifyRouterStarted bool
+	notifChMux            sync.RWMutex
+	isVincAppsSyncEnabled bool
 }
 
-// NewApiClient Creates a new api client.
+func (mh *ApiClient) IsCacheEnabled() bool {
+	return mh.isCacheEnabled
+}
+
+func (mh *ApiClient) SetIsCacheEnabled(isCacheEnabled bool) {
+	mh.isCacheEnabled = isCacheEnabled
+}
+// if not enabled only rooms,areas,things and devices are synced
+func (mh *ApiClient) EnableVincAppsSync(flag bool) {
+	mh.isVincAppsSyncEnabled = flag
+}
+
+// NewApiClient Creates a new api client. If isCacheEnabled it set to true , it will try to sync entire site on startup.
 func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, isCacheEnabled bool) *ApiClient {
 	api := &ApiClient{clientID: clientID, mqttTransport: mqttTransport, isCacheEnabled: isCacheEnabled}
 	api.notifySubChannels = make(map[string]chan Notify)
 	api.subFilters = make(map[string]NotifyFilter)
 	api.sClient = fimpgo.NewSyncClient(mqttTransport)
+	api.notifChMux = sync.RWMutex{}
 	if isCacheEnabled {
-		site, err := api.GetSite(false)
-		if err != nil {
-			log.Errorf("Error: %s", err)
-		} else {
-			api.siteCache = *site
-		}
+		api.ReloadSiteToCache(1)
 	}
 	return api
+}
+
+func (mh *ApiClient) ReloadSiteToCache(retry int) error {
+	var site *Site
+	var err error
+	for i:=0;i<retry;i++ {
+		site, err = mh.GetSite(false)
+		if err == nil {
+			break
+		}else {
+			time.Sleep(time.Second*time.Duration(2*i))
+		}
+	}
+	if err != nil {
+		mh.isCacheEnabled = false
+		log.Errorf("Error: %s", err)
+	} else {
+		mh.isCacheEnabled = true
+		mh.siteCache = *site
+	}
+	return nil
 }
 
 // Loads site from file . File should be in exactly the same format as vinculum response
@@ -64,20 +98,26 @@ func (mh *ApiClient) LoadVincResponseFromFile(fileName string)error {
 // RegisterChannel should be used if new message has to be sent to channel instead of callback.
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *ApiClient) RegisterChannel(channelId string, ch chan Notify) {
+	mh.notifChMux.Lock()
 	mh.notifySubChannels[channelId] = ch
+	mh.notifChMux.Unlock()
 }
 
 // RegisterChannelWithFilter should be used if new message has to be sent to channel instead of callback.
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *ApiClient) RegisterChannelWithFilter(channelId string, ch chan Notify, filter NotifyFilter) {
+	mh.notifChMux.Lock()
 	mh.notifySubChannels[channelId] = ch
 	mh.subFilters[channelId] = filter
+	mh.notifChMux.Unlock()
 }
 
 // UnregisterChannel shold be used to unregiter channel
 func (mh *ApiClient) UnregisterChannel(channelId string) {
+	mh.notifChMux.Lock()
 	delete(mh.notifySubChannels, channelId)
 	delete(mh.subFilters, channelId)
+	mh.notifChMux.Unlock()
 }
 
 func (mh *ApiClient) StartNotifyRouter() {
@@ -113,6 +153,12 @@ func remove(s []int, i int) []int {
 // UpdateSite : Updates the site according to notification message.
 func (mh *ApiClient) UpdateSite(notif *Notify) {
 	log.Debugf("Command: %s & Component:%s", notif.Cmd, notif.Component)
+	if !mh.isVincAppsSyncEnabled {
+		if  notif.Component != ComponentArea && notif.Component != ComponentDevice && notif.Component != ComponentThing && notif.Component != ComponentRoom {
+			log.Debugf("Component skipped")
+			return
+		}
+	}
 	switch notif.Cmd {
 	case CmdAdd:
 		switch notif.Component {
@@ -122,12 +168,14 @@ func (mh *ApiClient) UpdateSite(notif *Notify) {
 			mh.siteCache.AddDevice(notif.GetDevice())
 		case ComponentRoom:
 			mh.siteCache.AddRoom(notif.GetRoom())
-		case ComponentTimer:
-			mh.siteCache.AddTimer(notif.GetTimer())
 		case ComponentThing:
 			mh.siteCache.AddThing(notif.GetThing())
 		case ComponentShortcut:
-			mh.siteCache.AddShortcut(notif.GetShortcut())
+			if mh.isVincAppsSyncEnabled {
+				mh.siteCache.AddShortcut(notif.GetShortcut())
+			}
+		case ComponentTimer:
+			mh.siteCache.AddTimer(notif.GetTimer())
 		default:
 			log.Errorf("Unknown Component:%s cannot be added.", notif.Component)
 		}
@@ -146,14 +194,10 @@ func (mh *ApiClient) UpdateSite(notif *Notify) {
 			mh.siteCache.UpdateDevice(notif.GetDevice())
 		case ComponentRoom:
 			mh.siteCache.UpdateRoom(notif.GetRoom())
-		case ComponentTimer:
-			mh.siteCache.UpdateTimer(notif.GetTimer())
-		//case ComponentHub:  //  TODO: Is this possible?
-		//	mh.siteCache.UpdateHub(notif.GetHub())
-		//case ComponentMode: //  TODO: Is this possible?
-		//	mh.siteCache.UpdateMode(notif.GetMode())
 		case ComponentThing:
 			mh.siteCache.UpdateThing(notif.GetThing())
+		case ComponentTimer:
+			mh.siteCache.UpdateTimer(notif.GetTimer())
 		case ComponentShortcut:
 			mh.siteCache.UpdateShortcut(notif.GetShortcut())
 		default:
@@ -162,30 +206,24 @@ func (mh *ApiClient) UpdateSite(notif *Notify) {
 	case CmdSet:
 		switch notif.Component {
 		case ComponentRoom:
-			roomIdx := mh.siteCache.FindIndex(ComponentRoom, int(notif.Id.(float64)))
-			if roomIdx != -1 {
-				log.Infof("Change in room id:%d", int(notif.Id.(float64)))
-			} else {
-				log.Errorf("Room with ID:%d not found. Adding", int(notif.Id.(float64)))
-			}
+			//roomIdx := mh.siteCache.FindIndex(ComponentRoom, int(notif.Id.(float64)))
+			//if roomIdx != -1 {
+			//	log.Infof("Change in room id:%d", int(notif.Id.(float64)))
+			//} else {
+			//	log.Errorf("Room with ID:%d not found. Adding", int(notif.Id.(float64)))
+			//}
 		case ComponentHub:
-			if notif.Id == "mode" {
-				modeChange := notif.GetModeChange()
-				if modeChange.Current != modeChange.Prev {
-					log.Infof("Mode is changed from %s to %s", modeChange.Prev, modeChange.Current)
-				} else {
-					log.Infof("Mode is same again as %s", modeChange.Current)
-				}
-			}
+			//if notif.Id == "mode" {
+			//	modeChange := notif.GetModeChange()
+			//	if modeChange.Current != modeChange.Prev {
+			//		log.Infof("Mode is changed from %s to %s", modeChange.Prev, modeChange.Current)
+			//	} else {
+			//		log.Infof("Mode is same again as %s", modeChange.Current)
+			//	}
+			//}
 		}
 	}
-	if mh.isNotifyRouterStarted { // make sure notify router is started
-		for cid, nf := range mh.subFilters { // check all subfilters
-			if nf.Cmd == notif.Cmd && nf.Component == notif.Component {
-				mh.notifySubChannels[cid] <- *notif // send notification to corresponding subchannel if there is match
-			}
-		}
-	}
+
 }
 
 // Receives notify messages and forwards them using filtering
@@ -213,6 +251,28 @@ func (mh *ApiClient) notifyRouter() {
 			continue
 		} else {
 			mh.UpdateSite(notif)
+			if mh.isNotifyRouterStarted { // make sure notify router is started
+				mh.notifChMux.RLock()
+				for cid, nfCh := range mh.notifySubChannels { // check all subfilters
+				    nfFilter , ok := mh.subFilters[cid]
+				    var send bool
+				    if ok {
+						if nfFilter.Cmd == notif.Cmd && nfFilter.Component == notif.Component {
+							send = true
+						}
+					}else {
+						send = true
+					}
+					if send {
+						select {
+						case nfCh <- *notif: // send notification to corresponding subchannel if there is match
+						default:
+							log.Warnf("<PF-API> Send channel %s is blocked ",cid)
+						}
+					}
+				}
+				mh.notifChMux.RUnlock()
+			}
 		}
 	}
 }
@@ -247,7 +307,7 @@ func (mh *ApiClient) GetDevices(fromCache bool) ([]Device, error) {
 		return mh.siteCache.Devices,nil
 	}
 
-	return nil, nil
+	return nil, errors.New("cache is empty")
 }
 
 // GetRooms Gets the rooms
@@ -265,7 +325,7 @@ func (mh *ApiClient) GetRooms(fromCache bool) ([]Room, error) {
 	}else if mh.isCacheEnabled {
 		return mh.siteCache.Rooms,nil
 	}
-	return nil, nil
+	return nil, errors.New("cache is empty")
 }
 
 // GetAreas Gets the areas
@@ -283,7 +343,7 @@ func (mh *ApiClient) GetAreas(fromCache bool) ([]Area, error) {
 	}else if mh.isCacheEnabled {
 		return mh.siteCache.Areas,nil
 	}
-	return nil, nil
+	return nil, errors.New("cache is empty")
 }
 
 // GetThings Gets the things
@@ -301,7 +361,7 @@ func (mh *ApiClient) GetThings(fromCache bool) ([]Thing, error) {
 	}else if mh.isCacheEnabled {
 		return mh.siteCache.Things,nil
 	}
-	return nil, nil
+	return nil, errors.New("cache is empty")
 }
 
 // GetShortcuts Gets the shortcuts
@@ -319,7 +379,7 @@ func (mh *ApiClient) GetShortcuts(fromCache bool) ([]Shortcut, error) {
 	}else if mh.isCacheEnabled {
 		return mh.siteCache.Shortcuts,nil
 	}
-	return nil, nil
+	return nil, errors.New("cache is empty")
 }
 
 // GetShortcuts Gets the modes
@@ -337,7 +397,7 @@ func (mh *ApiClient) GetModes(fromCache bool) ([]Mode, error) {
 	}else if mh.isCacheEnabled {
 		return mh.siteCache.Modes,nil
 	}
-	return nil, nil
+	return nil, errors.New("cache is empty")
 }
 
 // GetShortcuts Gets the modes
@@ -355,7 +415,7 @@ func (mh *ApiClient) GetTimers(fromCache bool) ([]Timer, error) {
 	}else if mh.isCacheEnabled {
 		return mh.siteCache.Timers,nil
 	}
-	return nil, nil
+	return nil, errors.New("cache is empty")
 }
 
 // GetVincServices Gets vinculum services
@@ -373,13 +433,20 @@ func (mh *ApiClient) GetVincServices(fromCache bool) (VincServices, error) {
 	}else if mh.isCacheEnabled {
 		return mh.siteCache.Services,nil
 	}
-	return VincServices{}, nil
+	return VincServices{}, errors.New("cache is empty")
 }
 
 // GetSite Gets the whole site information
 func (mh *ApiClient) GetSite(fromCache bool) (*Site, error) {
 	if !fromCache {
-		fimpResponse, err := mh.sendGetRequest([]string{ComponentThing, ComponentDevice, ComponentRoom, ComponentArea, ComponentShortcut, ComponentHouse, ComponentMode, ComponentService})
+		var components []string
+		if mh.isVincAppsSyncEnabled {
+			components = []string {ComponentThing, ComponentDevice, ComponentRoom, ComponentArea, ComponentShortcut, ComponentHouse, ComponentMode, ComponentService}
+		}else {
+			components = []string {ComponentThing, ComponentDevice, ComponentRoom, ComponentArea}
+		}
+
+		fimpResponse, err := mh.sendGetRequest(components)
 		if err != nil {
 			return nil, err
 		}
@@ -393,6 +460,8 @@ func (mh *ApiClient) GetSite(fromCache bool) (*Site, error) {
 		} else {
 			return SiteFromResponse(response), err
 		}
+	}else {
+		return &mh.siteCache, nil
 	}
-	return &mh.siteCache, nil
+	return nil, errors.New("cache is empty")
 }

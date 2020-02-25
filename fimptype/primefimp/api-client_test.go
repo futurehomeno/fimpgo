@@ -3,15 +3,16 @@ package primefimp
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/futurehomeno/fimpgo"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
 
-var brokerUrl = "tcp://cube.local:1883"
+var brokerUrl = "tcp://aleks.local:1884"
 var brokerUser = "aleks"
-var brokerPass = ""
+var brokerPass = "api-admin-1793"
 
 
 func TestPrimeFimp_ClientApi_Update(t *testing.T) {
@@ -27,7 +28,8 @@ func TestPrimeFimp_ClientApi_Update(t *testing.T) {
 		t.Error("Error connecting to broker ", err)
 	}
 
-	client := NewApiClient("test-1", mqtt, false)
+	client := NewApiClient("test-1", mqtt, true)
+	client.StartNotifyRouter()
 	site, err := client.GetSite(false)
 	if err != nil {
 		t.Error("Error", err)
@@ -35,14 +37,34 @@ func TestPrimeFimp_ClientApi_Update(t *testing.T) {
 	}
 
 	for _,r := range site.Rooms {
-		t.Logf("Room %s , area = %d ", r.Alias,r.Area)
+		log.Infof("Room %s , area = %d ", r.Alias,r.Area)
 
 	}
 
 	if len(site.Devices) == 0 {
 		t.Error("Site should have more then 0 devices ")
 	}
+
+	notifyCh := make(chan Notify, 10)
+	client.RegisterChannel("test-run-1",notifyCh)
+	go func() {
+		for {
+			newMsg := <- notifyCh
+			if newMsg.Component != "device" {
+				continue
+			}
+			log.Infof("Update from component : %s , command : %s ",newMsg.Component,newMsg.Cmd)
+			for _,r := range site.Devices {
+				var name string
+				if r.Client.Name != nil {
+					name = *r.Client.Name
+				}
+				log.Infof("Device id = %d , name = %s ",r.ID, name)
+			}
+		}
+	}()
 	log.Infof("Site contains %d devices", len(site.Devices))
+	time.Sleep(20*time.Minute)
 	client.Stop()
 }
 

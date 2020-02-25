@@ -2,8 +2,6 @@ package primefimp
 
 import (
 	"fmt"
-	"reflect"
-
 	log "github.com/sirupsen/logrus"
 )
 
@@ -184,12 +182,7 @@ func (s *Site) UpdateDevice(d *Device) {
 		// if component is not added before (somehow) add it.
 		s.Devices = append(s.Devices, *d)
 	} else {
-		// compare the new parameters
-		ischanged := reflect.DeepEqual(s.Devices[idx], *d)
-		// in future we might use deepequal to be able to get notified for more complex stuff
-		if ischanged {
-			s.Devices[idx] = *d
-		}
+		s.Devices[idx] = *d
 	}
 }
 
@@ -200,12 +193,7 @@ func (s *Site) UpdateArea(d *Area) {
 		// if component is not added before (somehow) add it.
 		s.Areas = append(s.Areas, *d)
 	} else {
-		// compare the new parameters
-		ischanged := reflect.DeepEqual(s.Areas[idx], *d)
-		// in future we might use deepequal to be able to get notified for more complex stuff
-		if ischanged {
-			s.Areas[idx] = *d
-		}
+		s.Areas[idx] = *d
 	}
 }
 
@@ -216,12 +204,7 @@ func (s *Site) UpdateRoom(d *Room) {
 		// if component is not added before (somehow) add it.
 		s.Rooms = append(s.Rooms, *d)
 	} else {
-		// compare the new parameters
-		ischanged := reflect.DeepEqual(s.Rooms[idx], *d)
-		// in future we might use deepequal to be able to get notified for more complex stuff
-		if ischanged {
-			s.Rooms[idx] = *d
-		}
+		s.Rooms[idx] = *d
 	}
 }
 
@@ -232,12 +215,7 @@ func (s *Site) UpdateThing(d *Thing) {
 		// if component is not added before (somehow) add it.
 		s.Things = append(s.Things, *d)
 	} else {
-		// compare the new parameters
-		ischanged := reflect.DeepEqual(s.Things[idx], *d)
-		// in future we might use deepequal to be able to get notified for more complex stuff
-		if ischanged {
-			s.Things[idx] = *d
-		}
+		s.Things[idx] = *d
 	}
 }
 
@@ -248,12 +226,7 @@ func (s *Site) UpdateTimer(d *Timer) {
 		// if component is not added before (somehow) add it.
 		s.Timers = append(s.Timers, *d)
 	} else {
-		// compare the new parameters
-		ischanged := reflect.DeepEqual(s.Timers[idx], *d)
-		// in future we might use deepequal to be able to get notified for more complex stuff
-		if ischanged {
-			s.Timers[idx] = *d
-		}
+	    s.Timers[idx] = *d
 	}
 }
 
@@ -264,12 +237,7 @@ func (s *Site) UpdateShortcut(d *Shortcut) {
 		// if component is not added before (somehow) add it.
 		s.Shortcuts = append(s.Shortcuts, *d)
 	} else {
-		// compare the new parameters
-		ischanged := reflect.DeepEqual(s.Shortcuts[idx], *d)
-		// in future we might use deepequal to be able to get notified for more complex stuff
-		if ischanged {
-			s.Shortcuts[idx] = *d
-		}
+		s.Shortcuts[idx] = *d
 	}
 }
 
