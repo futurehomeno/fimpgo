@@ -1,10 +1,13 @@
 package fimpgo
 
 import (
+	MQTT "github.com/eclipse/paho.mqtt.golang"
+	log "github.com/sirupsen/logrus"
 	"testing"
 	"time"
-	log "github.com/sirupsen/logrus"
 )
+
+
 
 var msgChan = make(chan int)
 
@@ -20,7 +23,9 @@ func onMsg(topic string, addr *Address, iotMsg *FimpMessage,rawMessage []byte){
 var isCorrect = make(map[int]bool)
 
 
+
 func TestMqttTransport_Publish(t *testing.T) {
+
 	log.SetLevel(log.DebugLevel)
 	mqtt := NewMqttTransport("tcp://localhost:1883","fimpgotest","","",true,1,1)
 	err := mqtt.Start()
@@ -47,6 +52,38 @@ func TestMqttTransport_Publish(t *testing.T) {
 
 }
 
+func TestMqttTransport_PublishSync(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	MQTT.DEBUG = log.StandardLogger()
+	mqtt := NewMqttTransport("tcp://localhost:1883","fimpgotest","","",true,1,1)
+	err := mqtt.Start()
+	t.Log("Connected")
+	if err != nil {
+		t.Error("Error connecting to broker ",err)
+	}
+
+	t.Log("Publishing message")
+
+	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
+	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
+
+	for i:=0;i<10;i++ {
+		err = mqtt.PublishSync(&adr,msg)
+		if err != nil {
+			log.Info("Publish failed . Err :",)
+		}else {
+			log.Info("Publish success ")
+		}
+		time.Sleep(time.Second*5)
+
+	}
+
+	t.Log("Waiting for new message")
+	t.Log("Got new message")
+	mqtt.Stop()
+
+}
+
 func TestMqttTransport_SubUnsub(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	mqtt := NewMqttTransport("tcp://localhost:1883","fimpgotest","","",true,1,1)
@@ -65,7 +102,7 @@ func TestMqttTransport_SubUnsub(t *testing.T) {
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
 	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
-	mqtt.Publish(&adr,msg)
+	mqtt.PublishSync(&adr,msg)
 
 	t.Log("Waiting for new message")
 	result := <- msgChan
@@ -80,7 +117,7 @@ func TestMqttTransport_SubUnsub(t *testing.T) {
 func TestMqttTransport_PublishTls(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	// for test replace XYZ with actual AWS IoT core address and ABC with actual clientid
-	mqtt := NewMqttTransport("ssl://a1ds8ixdqbiw53-ats.iot.eu-central-1.amazonaws.com:443","00000000alexdevtest","","",true,1,1)
+	mqtt := NewMqttTransport("ssl://a1ds8ixdqbiw53-ats.iot.eu-central-1.amazonaws.com:443","00000000alexdevtest","","",false,1,1)
 
 	// for test enter valid site-id
 	mqtt.SetGlobalTopicPrefix("331D092F-4685-4CC9-8337-2598E6F5D8D5")

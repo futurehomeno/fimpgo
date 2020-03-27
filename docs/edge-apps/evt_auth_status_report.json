@@ -1,0 +1,17 @@
+{
+  "type": "evt.auth.status_report",
+  "serv": "actual_app_name",
+  "val_t": "object",
+  "val": {
+    "status": "AUTHENTICATED",
+    "error_text": "",
+    "error_code": ""
+  },
+  "tags": null,
+  "props": null,
+  "ver": "1",
+  "corid": "08d2da8b-0d2c-4a2c-a0d7-8facc48b3025",
+  "src": "tplex-ui",
+  "ctime": "2019-09-13T11:12:51.597+09:00",
+  "uid": "08d2da8b-0d2c-4a2c-a0d7-8facc48b3026"
+}

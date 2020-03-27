@@ -1,0 +1,8 @@
+{
+    "app": "RUNNING",
+    "connection": "CONNECTED",
+    "config": "CONFIGURED",
+    "auth": "AUTHENTICATED",
+    "last_error_text": "",
+    "last_error_code": ""
+}

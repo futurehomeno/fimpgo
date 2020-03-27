@@ -28,6 +28,32 @@ topic: pt:j1/mt:cmd/rt:app/rn:vinculum/ad:1
 } 
 ```
 
+Reset smarthub : 
+
+```json
+{
+  "ctime": "2019-05-31 17:36:31 +0200",
+  "props": {},
+  "resp_to": "pt:j1/mt:rsp/rt:cloud/rn:backend-service/ad:tf-factory-hub-reset",
+  "serv": "vinculum",
+  "src": "prime-fimp-example-client",
+  "tags": [],
+  "type": "cmd.pd7.request",
+  "uid": "09936904-8ec8-4280-9285-945d77bd0a74",
+  "val": {
+    "cmd": "delete", 
+    "component": "config", 
+    "id": null, 
+    "param": {}, 
+    "requestId": 1 
+  },
+  "val_t": "object",
+  "ver": "1"
+} 
+
+
+```
+
 response 
 
 topic: pt:j1/mt:rsp/rt:app/rn:pf-ex-client/ad:r8117wyq
