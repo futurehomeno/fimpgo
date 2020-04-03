@@ -96,8 +96,11 @@ type RoomParams struct {
 }
 
 type RoomHeating struct {
-	Desired float64 `json:"desired"`
-	Target  float64 `json:"target"`
+	Desired    float64 `json:"desired"`
+	Target     float64 `json:"target"`
+	Thermostat bool    `json:"thermostat"`
+	Actuator   bool    `json:"actuator"`
+	Power      string  `json:"power"`
 }
 
 type Service struct {
