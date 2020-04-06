@@ -92,6 +92,10 @@ type Room struct {
 
 type RoomParams struct {
 	Heating  RoomHeating `json:"heating"`
+	Lighting interface{} `json:"lighting"`
+	Security interface{} `json:"security"`
+	Sensors  []string    `json:"sensors"`
+	Shading  interface{} `json:"shading"`
 	Triggers interface{} `json:"triggers"`
 }
 
