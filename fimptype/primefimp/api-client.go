@@ -152,7 +152,7 @@ func remove(s []int, i int) []int {
 
 // UpdateSite : Updates the site according to notification message.
 func (mh *ApiClient) UpdateSite(notif *Notify) {
-	log.Debugf("Command: %s & Component:%s", notif.Cmd, notif.Component)
+	log.Tracef("Command: %s & Component:%s", notif.Cmd, notif.Component)
 	if !mh.isVincAppsSyncEnabled {
 		if  notif.Component != ComponentArea && notif.Component != ComponentDevice && notif.Component != ComponentThing && notif.Component != ComponentRoom {
 			log.Debugf("Component skipped")

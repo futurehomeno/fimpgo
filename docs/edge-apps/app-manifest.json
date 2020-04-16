@@ -30,7 +30,7 @@
     },
     {
       "id": "param_3",
-      "label": "Parameter 3",
+      "label": {"en": "Parameter 3"},
       "val_t": "str_map",
       "ui": {
         "type": "multi_select",
@@ -54,6 +54,15 @@
       },
       "is_required": false,
       "config_point": "connection"
+    },{
+      "id":"factory_reset",
+      "label": {"en": "Factory reset"},
+      "req": {
+        "serv":"app-one",
+        "intf_t": "cmd.app.factory_reset",
+        "val": "action2"
+      },
+      "reload_config": true
     }
   ],
   "ui_buttons": [
@@ -63,7 +72,7 @@
       "req": {
         "serv":"hue",
         "intf_t": "cmd.system.sync",
-        "val": null
+        "val": "action1"
       },
       "reload_config": true
     },
@@ -73,9 +82,15 @@
       "req": {
         "serv":"hue",
         "intf_t": "cmd.system.reconnect",
-        "val": null
+        "val": "action2"
       },
       "reload_config": true
+    },{
+      "header": {"en": "Factory reset"},
+      "text": {"en": "The operation can't be undone"},
+      "configs": [],
+      "buttons": ["factory_reset"],
+      "footer": {"en": ""}
     }
 
   ],
@@ -84,13 +99,21 @@
       "header": {"en": "App configuration"},
       "text": {"en": ""},
       "configs": ["param_1","param_2","param_2","reconnect"],
+      "buttons": ["reconnect"],
       "footer": {"en": "footer text"}
     },
     {
       "header": {"en": "Security"},
       "text": {"en": ""},
       "configs": ["param_4"],
+      "buttons": [],
       "footer": {"en": "footer text"}
+    },{
+      "header": {"en": "Factory reset"},
+      "text": {"en": "The operation can't be undone"},
+      "configs": [],
+      "buttons": ["factory_reset"],
+      "footer": {"en": ""}
     }
   ],
   "auth": {

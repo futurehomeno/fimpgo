@@ -315,6 +315,12 @@ func (mh *MqttTransport) onConnect(client MQTT.Client) {
 
 //define a function for the default message handler
 func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
+	defer func() {
+		if r := recover(); r != nil {
+			mh.channelRegMux.Unlock()
+			log.Error("<MqttAd> onMessage CRASHED with error :", r)
+		}
+	}()
 	log.Tracef("<MqttAd> New msg from TOPIC: %s", msg.Topic())
 	var topic string
 	if mh.globalTopicPrefix != "" {

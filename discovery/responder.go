@@ -18,11 +18,12 @@ const (
 
 type Resource struct {
 	ResourceName           string            `json:"resource_name"`      // zigbee , fimpui
-	ResourceType           string            `json:"resource_type"`      // adapter , application
+	ResourceType           string            `json:"resource_type"`      // ad - adapter , app -  application
 	ResourceFullName       string            `json:"resource_full_name"` // full name is a name for app store or another registry
 	Description            string            `json:"description"`
 	Author                 string            `json:"author"`
 	Version                string            `json:"version"`
+	PackageName            string            `json:"package_name"` // in some cases package may have different name from service/resource name
 	State                  string            `json:"state"`    // Current application state
 	AppInfo                AppInfo           `json:"app_info"` // Either App or Adapter , it's defined by ResourceType
 	AdapterInfo            AdapterInfo       `json:"adapter_info"`
