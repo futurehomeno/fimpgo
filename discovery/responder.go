@@ -2,7 +2,6 @@ package discovery
 
 import (
 	"github.com/futurehomeno/fimpgo"
-	"github.com/futurehomeno/fimpgo/fimptype"
 	"github.com/sirupsen/logrus"
 )
 
@@ -34,17 +33,16 @@ type Resource struct {
 	IsInstanceConfigurable bool              `json:"is_instance_configurable"` // if true , the instance of adapter/app has to be configured before it can be used . false - adapter/app can be used without instance configuration
 	InstanceId             string            `json:"instance_id"`              // Some system configurations can allow to run multiple instances of the same app or adapter , for instance multiple hubs under the same site and with radio module every hub
 }
-
+// Will be removed in future
 type AppInfo struct {
-	Services []fimptype.Service `json:"services"`
 }
 
+// Will be removed in future
 type AdapterInfo struct {
 	FwVersion             string             `json:"fw_version"` // should be in Semantic Versioning format .
 	Technology            string             `json:"technology"`
 	HwDependency          map[string]string  `json:"hw_dependency"`           //  {"serialPort":"/dev/ttyUSB0"} ,
 	NetworkManagementType string             `json:"network_management_type"` // "inclusion_exclusion", "inclusion_dev_remove" , "full_sync"
-	Services              []fimptype.Service `json:"services"`
 }
 
 type ServiceDiscoveryResponder struct {
