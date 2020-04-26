@@ -13,6 +13,7 @@ import (
 
 type Configs struct {
 	path               string
+	WorkDir            string `json:"-"`
 	InstanceAddress    string `json:"instance_address"`
 	MqttServerURI      string `json:"mqtt_server_uri"`
 	MqttUsername       string `json:"mqtt_server_username"`
@@ -21,24 +22,29 @@ type Configs struct {
 	LogFile            string `json:"log_file"`
 	LogLevel           string `json:"log_level"`
 	LogFormat          string `json:"log_format"`
-	WorkDir            string `json:"-"`
 	ConfiguredAt       string `json:"configured_at"`
 	ConfiguredBy       string `json:"configured_by"`
+	CustomConfigs      interface{} `json:"custom_configs"`
 }
 // NewConfigs stores main application configurations
 func NewConfigs(workDir string) *Configs {
 	conf := &Configs{WorkDir: workDir}
-	conf.path = filepath.Join(workDir, "data", "config.json")
-	if !utils.FileExists(conf.path) {
+	conf.initFiles()
+	return conf
+}
+
+func (cf *Configs) initFiles() error {
+	cf.path = filepath.Join(cf.WorkDir, "data", "config.json")
+	if !utils.FileExists(cf.path) {
 		log.Info("Config file doesn't exist.Loading default config")
-		defaultConfigFile := filepath.Join(workDir, "defaults", "config.json")
-		err := utils.CopyFile(defaultConfigFile, conf.path)
+		defaultConfigFile := filepath.Join(cf.WorkDir, "defaults", "config.json")
+		err := utils.CopyFile(defaultConfigFile, cf.path)
 		if err != nil {
 			fmt.Print(err)
 			panic("Can't copy config file.")
 		}
 	}
-	return conf
+	return nil
 }
 
 func (cf *Configs) LoadFromFile() error {
@@ -80,6 +86,13 @@ func (cf *Configs) LoadDefaults() error {
 	return utils.CopyFile(defaultConfigFile, configFile)
 }
 
+func (cf *Configs) SetCustomConfigs(config interface{}) {
+	cf.CustomConfigs = config
+}
+
+func (cf *Configs) GetCustomConfigs()interface{} {
+	return cf.CustomConfigs
+}
 //func (cf *Configs) IsConfigured()bool {
 //	// TODO : Add logic here
 //	return true

@@ -68,6 +68,7 @@ type Lifecycle struct {
 	connectionState  State
 	authState        State
 	configState      State
+	lastError        string
 }
 
 func NewAppLifecycle() *Lifecycle {
@@ -120,6 +121,14 @@ func (al *Lifecycle) SetConnectionState(connectivityState State) {
 
 func (al *Lifecycle) AppState() State {
 	return al.appState
+}
+
+func (al *Lifecycle) LastError() string {
+	return al.lastError
+}
+
+func (al *Lifecycle) SetLastError(lastError string) {
+	al.lastError = lastError
 }
 
 func (al *Lifecycle) SetAppState(currentState State, params map[string]string) {
