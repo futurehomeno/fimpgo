@@ -57,22 +57,27 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, isCacheE
 }
 
 func (mh *ApiClient) ReloadSiteToCache(retry int) error {
+
 	var site *Site
 	var err error
-	for i:=0;i<retry;i++ {
+	for i:=1;i<retry;i++ {
+		log.Debug("<PF-API> Reloading site into the cache.Attempt ",i)
 		site, err = mh.GetSite(false)
 		if err == nil {
 			break
 		}else {
-			time.Sleep(time.Second*time.Duration(2*i))
+			log.Error("<PF-API> site sync error :",err.Error())
+			time.Sleep(time.Second*time.Duration(5*i))
 		}
 	}
 	if err != nil {
 		mh.isCacheEnabled = false
-		log.Errorf("Error: %s", err)
+		log.Errorf("<PF-API>: %s", err)
+		return err
 	} else {
 		mh.isCacheEnabled = true
 		mh.siteCache = *site
+		log.Debug("<PF-API> Site info successfully loaded to cache")
 	}
 	return nil
 }

@@ -172,4 +172,8 @@ func (m *Manifest) GetAppConfig(id string)*AppConfig {
 	return nil
 }
 
-
+type AuthResponse struct {
+	Status string `json:"status"`
+	ErrorText string `json:"error_text"`
+	ErrorCode string `json:"error_code"`
+}
