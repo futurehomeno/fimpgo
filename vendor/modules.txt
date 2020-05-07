@@ -1,5 +1,7 @@
 # github.com/buger/jsonparser v0.0.0-20170325175528-016ea00d7ed5
 github.com/buger/jsonparser
+# github.com/dgrijalva/jwt-go v3.2.0+incompatible
+github.com/dgrijalva/jwt-go
 # github.com/eclipse/paho.mqtt.golang v1.2.0
 github.com/eclipse/paho.mqtt.golang
 github.com/eclipse/paho.mqtt.golang/packets
@@ -21,3 +23,5 @@ golang.org/x/net/websocket
 # golang.org/x/sys v0.0.0-20181031143558-9b800f95dbbc
 golang.org/x/sys/unix
 golang.org/x/sys/windows
+# gopkg.in/natefinch/lumberjack.v2 v2.0.0
+gopkg.in/natefinch/lumberjack.v2

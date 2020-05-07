@@ -1,6 +1,9 @@
 package fimpgo
 
-import "time"
+import (
+	"encoding/base64"
+	"time"
+)
 import (
 	"encoding/json"
 	"errors"
@@ -23,6 +26,7 @@ const (
 	VTypeFloatArray = "float_array"
 	VTypeBoolArray  = "bool_array"
 	VTypeObject     = "object"
+	VTypeBase64     = "base64"
 	VTypeBinary     = "bin"
 	VTypeNull       = "null"
 )
@@ -232,6 +236,16 @@ func NewBoolMapMessage(type_ string, service string, value map[string]bool, prop
 	return NewMessage(type_, service, VTypeFloatMap, value, props, tags, requestMessage)
 }
 
+func NewObjectMessage(type_ string, service string, value interface{}, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
+	return NewMessage(type_, service, VTypeObject, value, props, tags, requestMessage)
+}
+
+// transport message is meant to carry original message using either encryption , signing or
+func NewBinaryMessage(type_,service string, value []byte ,props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
+	valEnc := base64.StdEncoding.EncodeToString(value)
+	return NewMessage(type_, service, VTypeBinary, valEnc, props, tags, requestMessage)
+}
+
 func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	fimpmsg := FimpMessage{}
 	var err error
@@ -315,6 +329,17 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 			return nil
 		}, "val")
 		fimpmsg.Value = val
+
+	case VTypeBinary:
+		fimpmsg.Value,err = jsonparser.GetString(msg, "val")
+		//base64val, err := jsonparser.GetString(msg, "val")
+		//if err != nil {
+		//	return nil,err
+		//}
+		//fimpmsg.Value ,err = base64.StdEncoding.DecodeString(base64val)
+		//if err != nil {
+		//	return nil,err
+		//}
 
 	case VTypeObject:
 		fimpmsg.ValueObj, _, _, err = jsonparser.Get(msg, "val")
