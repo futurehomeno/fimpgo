@@ -52,36 +52,63 @@ type FhOAuth2Client struct {
 	cbRetryDelay       time.Duration
 }
 //NewFhOAuth2Client implements OAuth client which communicates to 3rd party API over FH Auth proxy.
-func NewFhOAuth2Client(partnerName string, appName string) (*FhOAuth2Client,error) {
-	client := &FhOAuth2Client{partnerName: partnerName, mqttServerURI: "tcp://localhost:1883", mqttClientID: "fhouthclient"}
+func NewFhOAuth2Client(partnerName string, appName string) *FhOAuth2Client {
+	client := &FhOAuth2Client{partnerName: partnerName, mqttServerURI: "tcp://localhost:1883", mqttClientID: "auth_client_"+appName}
+	client.refreshTokenApiUrl = "https://partners-beta.futurehome.io/api/control/edge/proxy/refresh"
+	client.authCodeApiUrl = "https://partners-beta.futurehome.io/api/control/edge/proxy/auth-code"
 	client.retryDelay = 60
 	client.refreshRetry = 5
 	client.cbRetryDelay = 30
 	client.cbRetry = 7
-	err := client.ConfigureFimpSyncClient()
-	if err != nil {
-		return nil, err
-	}
-	err = client.LoadHubTokenFromCB()
-	return client,err
+	return client
+}
+// Init has to be invoked before requesting access token
+func (oac *FhOAuth2Client) Init()error {
+	return oac.LoadHubTokenFromCB()
 }
 
+// SetParameters can be used to change default configuration parameter parameters. Parameters which are set to null values will be ignored
+func (oac *FhOAuth2Client) SetParameters(mqttServerUri,authCodeApiUrl ,refreshTokenApiUrl string,retryDelay time.Duration ,refreshRetry int,cbRetry int,cbRetryDelay time.Duration) {
+	if mqttServerUri != "" {
+		oac.mqttServerURI = mqttServerUri
+	}
+	if authCodeApiUrl != "" {
+		oac.authCodeApiUrl = authCodeApiUrl
+	}
+	if refreshTokenApiUrl != "" {
+		oac.refreshTokenApiUrl = refreshTokenApiUrl
+	}
+	if retryDelay != 0 {
+		oac.retryDelay = retryDelay
+	}
+	if refreshRetry != 0 {
+		oac.refreshRetry = refreshRetry
+	}
+	if cbRetry != 0 {
+		oac.cbRetry = cbRetry
+	}
+	if cbRetryDelay != 0 {
+		oac.cbRetryDelay = cbRetryDelay
+	}
+}
+
+// ConfigureFimpSyncClient configures fimp sync client , which is used to obtain Hub token from cloud bridge.
 func (oac *FhOAuth2Client) ConfigureFimpSyncClient() error {
 	if oac.mqt == nil {
 		oac.mqt = fimpgo.NewMqttTransport(oac.mqttServerURI, oac.mqttClientID, "", "", true, 1, 1)
 		err := oac.mqt.Start()
-		log.Debug("Auth mqtt client connected")
 		if err != nil {
 			log.Error("Error connecting to broker ", err)
 			return err
 		}
+		log.Debug("Auth mqtt client connected")
 		oac.syncClient = fimpgo.NewSyncClient(oac.mqt)
 	} else {
 		log.Error("Mqtt client is not configured")
 	}
 	return nil
 }
-
+// LoadHubTokenFromCB - requests hub token from CloudBridge
 func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
 	if oac.mqt == nil || oac.syncClient == nil {
 		oac.ConfigureFimpSyncClient()
@@ -101,7 +128,6 @@ func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
 		time.Sleep(time.Second*oac.cbRetryDelay)
 	}
 
-	// TODO:retry
 	oac.syncClient.Stop()
 	oac.mqt.Stop()
 	if err != nil {
@@ -114,15 +140,18 @@ func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
 	return err
 }
 
+// ExchangeCodeForTokens - exchanging code for access token
 func (oac *FhOAuth2Client) ExchangeCodeForTokens(code string) (*OAuth2TokenResponse,error) {
 	req := OAuth2AuthCodeProxyRequest{AuthCode: code,PartnerCode: oac.partnerName}
 	return oac.postMsg(req,oac.refreshTokenApiUrl)
 }
 
+// ExchangeRefreshToken - exchange refresh token for new access
 func (oac *FhOAuth2Client) ExchangeRefreshToken(refreshToken string) (*OAuth2TokenResponse,error) {
 	req := OAuth2RefreshProxyRequest{RefreshToken: refreshToken,PartnerCode: oac.partnerName}
 	return oac.postMsg(req,oac.refreshTokenApiUrl)
 }
+
 
 func (oac *FhOAuth2Client) postMsg(req interface{},url string) (*OAuth2TokenResponse,error) {
 	if oac.hubToken == "" {
