@@ -60,6 +60,7 @@ func NewFhOAuth2Client(partnerName string, appName string) *FhOAuth2Client {
 	client.refreshRetry = 5
 	client.cbRetryDelay = 30
 	client.cbRetry = 7
+	client.appName = appName
 	return client
 }
 // Init has to be invoked before requesting access token
