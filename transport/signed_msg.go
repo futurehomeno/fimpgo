@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/futurehomeno/fimpgo"
+	"github.com/futurehomeno/fimpgo/security"
 	"strings"
 )
 
@@ -44,7 +45,7 @@ https://tools.ietf.org/html/rfc7518#section-3
 // {
 //  "type": "evt.transport.signed",
 //  "serv": "sensor_presence",
-//  "val_t": "base64",
+//  "val_t": "bin",
 //  "val": "ewogICJ0eXBlIjogImV2dC5wcmVzZW5jZS5yZXBvcnQiLAogICJzZXJ2IjogInNlbnNvcl9wcmVzZW5jZSIsCiAgInZhbF90IjogImJvb2wiLAogICJ2YWwiOiB0cnVlLAogICJ0YWdzIjogbnVsbCwKICAicHJvcHMiOiBudWxsLAogICJ2ZXIiOiAiMSIsCiAgImNvcmlkIjogIiIsCiAgImN0aW1lIjogIjIwMjAtMDUtMDZUMDk6Mjk6NTkuNTI3KzA1OjAwIiwKICAidWlkIjogIjczZjYxMDMwLTQzOTktNGQyMS1iYjk3LTRjYTdjMTYyM2FjMyIKfQ==",
 //  "tags": null,
 //  "props": {
@@ -58,25 +59,9 @@ https://tools.ietf.org/html/rfc7518#section-3
 //  "uid": "73f61030-4399-4d21-bb97-4ca7c1623ac3"
 //}
 
-// Compression
-
-// {
-//  "type": "evt.transport.compressed",
-//  "serv": "sensor_presence",
-//  "val_t": "base64",
-//  "val": "H4sIAAAAAAAA/1WOQQ6DIBBF957CsG0xgKLiObo3FMfGhAoZ0KRpeveKtk26fP+/P5lnluckPjyQLiewxsIjBJgNFAjeYSTnJATANQlbExz2X+coV237mNqrc/YXbcGobYCdo76FLZgXa3f26PxfsAKmC/yYG4fTkPiDcbrv/wkmGGWSsvrCVFdWneRFU7cnJjvGDnc5hqPRYihVQ6E1Ja2quqHacEUbLZSWbQkj5yR7vQFn0hAQ/gAAAA==",
-//  "tags": null,
-//  "props": {
-//      "type":"gzip"
-//  },
-//  "ver": "1",
-//  "corid": "",
-//  "ctime": "2020-05-06T09:29:59.527+05:00",
-//  "uid": "73f61030-4399-4d21-bb97-4ca7c1623ac3"
-//}
 
 // SignMessageES256 encapsulate original message into special transport message with added signature.
-func SignMessageES256(payload *fimpgo.FimpMessage,requestMsg *fimpgo.FimpMessage,userId string,keys *EcKeyPair,props *fimpgo.Props) (*fimpgo.FimpMessage,error) {
+func SignMessageES256(payload *fimpgo.FimpMessage,requestMsg *fimpgo.FimpMessage,userId string,keys *integration.EcdsaKey,props *fimpgo.Props) (*fimpgo.FimpMessage,error) {
 	serializedMsg,err := payload.SerializeToJson()
 	if err != nil {
 		return nil, err
@@ -91,7 +76,7 @@ func SignMessageES256(payload *fimpgo.FimpMessage,requestMsg *fimpgo.FimpMessage
 	signedMsg := fimpgo.NewBinaryMessage(msgType,payload.Service,serializedMsg,*props,nil,requestMsg)
 
 	signingMethodES256 := &jwt.SigningMethodECDSA{Name: "ES256", Hash: crypto.SHA256, KeySize: 32, CurveBits: 256}
-	signature , err := signingMethodES256.Sign(signedMsg.Value.(string),keys.privateKey)
+	signature , err := signingMethodES256.Sign(signedMsg.Value.(string),keys.PrivateKey())
 	if err != nil {
 		return nil,err
 	}
@@ -99,12 +84,11 @@ func SignMessageES256(payload *fimpgo.FimpMessage,requestMsg *fimpgo.FimpMessage
 	return signedMsg,nil
 }
 //
-func GetVerifiedMessageES256(signedMsg *fimpgo.FimpMessage,key *EcKeyPair) (*fimpgo.FimpMessage,error) {
+func GetVerifiedMessageES256(signedMsg *fimpgo.FimpMessage,key *integration.EcdsaKey) (*fimpgo.FimpMessage,error) {
 
 	if signedMsg.Type != "cmd.transport.signed" && signedMsg.Type != "evt.transport.signed"  {
 		return nil,errors.New("incorrect message type")
 	}
-
 	origMsgBin , ok1 := signedMsg.Value.(string)
 	if !ok1 {
 		return nil,errors.New("incorrect encapsulated message format")
@@ -114,7 +98,7 @@ func GetVerifiedMessageES256(signedMsg *fimpgo.FimpMessage,key *EcKeyPair) (*fim
 		return nil,errors.New("missing signature")
 	}
 	signingMethodES256 := &jwt.SigningMethodECDSA{Name: "ES256", Hash: crypto.SHA256, KeySize: 32, CurveBits: 256}
-	err := signingMethodES256.Verify(origMsgBin,sig,key.publicKey)
+	err := signingMethodES256.Verify(origMsgBin,sig,key.PublicKey())
 	if err == nil {
 		decodedPayloadBin,err := base64.StdEncoding.DecodeString(origMsgBin)
 		if err != nil {
@@ -125,3 +109,4 @@ func GetVerifiedMessageES256(signedMsg *fimpgo.FimpMessage,key *EcKeyPair) (*fim
 		return nil,err
 	}
 }
+

@@ -3,45 +3,37 @@ package integration
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/futurehomeno/fimpgo"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"math/rand"
+	"os"
 	"time"
 )
 
 const KeyTypePublic = "pub"
+const KeyTypePrivate = "private"
+const KeyTypeSymmetric = "sym"
+
+const AlgEcdsa256 = "ES256"
 
 type KeyRecord struct {
-	UserId    string
-	DeviceId  string
-	Algorithm string
-	KeyType   string
-	Key       string
-	nonce     string // last nonce sent to remote client
-	AddedAt   string
-}
-
-// The message is sent to remote client as request for public key
-type AppKeyRequest struct {
-	Nonce   string `json:"nonce"`
-	KeyType string `json:"key_type"`
-	Algorithm  string `json:"algo"`
-}
-
-// Remote client mus generate key-pair and respond with the message
-type AppKeyResponse struct {
-	SignedNonce string `json:"signed_nonce"`
-	Key         string `json:"key"`
-	KeyType     string `json:"key_type"`
-	Algorithm   string `json:"algo"`
-	UserId      string `json:"user_id"`
-	DeviceId    string `json:"device_id"`
+	UserId        string
+	DeviceId      string // Client device ID (mobile phone id)
+	Algorithm     string // ES256
+	KeyType       string // public/private/symmetric
+	SerializedKey string // serialized key
+	EcdsaKey      *EcdsaKey
+	AddedAt       string // SerializedKey added timestamp
 }
 
 type KeyStore struct {
 	keyStore         []KeyRecord
 	keyStoreFilePath string
+	isPrivate        bool // private store should restrict other application from reading key store file.
+}
+
+func NewKeyStore(keyStoreFilePath string,isPrivate bool) *KeyStore {
+	return &KeyStore{keyStoreFilePath: keyStoreFilePath,isPrivate: isPrivate}
 }
 
 // full username is a string which identifies a user on given device
@@ -53,37 +45,6 @@ func (cs *KeyStore) CheckIfUserHasKey(userId, deviceId string) bool {
 	}
 	return false
 }
-// Requesting crypto key from remote client (mobile app).
-func (cs *KeyStore) RequestKeyFromRemoteClient(mqtt *fimpgo.MqttTransport) error {
-	// send request message with nonce
-	// save response to internal store
-	// Edge app ---(evt.auth.get_client_key)--> Mobile APP
-	//    /|\                                    |
-	//     |_____(cmd.auth.set_client_key)_______|
-	//
-	edgeAppTopic := "edge_app_topic"
-	requestTopic := "request_topic"
-	request := AppKeyRequest{
-		Nonce: cs.getNonce(),
-		KeyType: KeyTypePublic,
-	}
-	reqMsg := fimpgo.NewObjectMessage("evt.auth.get_client_key","mobile-app",request,nil,nil,nil)
-	syncClient := fimpgo.NewSyncClient(mqtt)
-	syncClient.AddSubscription(edgeAppTopic)
-	response,err := syncClient.SendFimp(requestTopic,reqMsg,5)
-	syncClient.RemoveSubscription(edgeAppTopic)
-	if err != nil {
-		log.Error("<key-man> Key request timed out . Err:",err.Error())
-		return err
-	}
-	resp := AppKeyResponse{}
-	err = response.GetObjectValue(&resp)
-	if err != nil {
-		log.Error("<key-man> Key response can't be mapped to response object . Err:",err.Error())
-		return err
-	}
-	return cs.AddKey(resp.UserId,resp.DeviceId,resp.Key,resp.KeyType,resp.Algorithm)
-}
 
 func (cs *KeyStore) getNonce() string {
 	s1 := rand.NewSource(time.Now().UnixNano())
@@ -91,14 +52,14 @@ func (cs *KeyStore) getNonce() string {
 	return fmt.Sprint(r1.Int31())
 }
 
-func (cs *KeyStore) AddKey(user, device, key,keyType, cipher string) error {
+func (cs *KeyStore) AddSerializedKey(user, device, key, keyType, algo string) error {
 	cs.keyStore = append(cs.keyStore, KeyRecord{
-		UserId:    user,
-		DeviceId:  device,
-		Key:       key,
-		KeyType:   keyType,
-		Algorithm: cipher,
-		AddedAt:   time.Now().Format(time.RFC3339),
+		UserId:        user,
+		DeviceId:      device,
+		SerializedKey: key,
+		KeyType:       keyType,
+		Algorithm:     algo,
+		AddedAt:       time.Now().Format(time.RFC3339),
 	})
 	return cs.SaveToDisk()
 }
@@ -112,8 +73,39 @@ func (cs *KeyStore) GetKey(userId, deviceId, keyType string) *KeyRecord {
 	return nil
 }
 
+func (cs *KeyStore) GetEcdsaKey(userId, deviceId ,keyType string) (*EcdsaKey,error) {
+	for i := range cs.keyStore {
+		if cs.keyStore[i].DeviceId == deviceId && cs.keyStore[i].UserId == userId && cs.keyStore[i].Algorithm == AlgEcdsa256 && cs.keyStore[i].KeyType == keyType{
+			if cs.keyStore[i].EcdsaKey == nil {
+				if cs.keyStore[i].SerializedKey == "" {
+					log.Warn("<kstore> Empty key string")
+					return nil,fmt.Errorf("empty key string")
+				}else {
+					cs.keyStore[i].EcdsaKey = NewEcdsaKey()
+					var err error
+					if cs.keyStore[i].KeyType == KeyTypePrivate {
+						err = cs.keyStore[i].EcdsaKey.ImportX509PrivateKey(cs.keyStore[i].SerializedKey)
+					}else if cs.keyStore[i].KeyType == KeyTypePublic {
+						err = cs.keyStore[i].EcdsaKey.ImportX509PublicKey(cs.keyStore[i].SerializedKey)
+					}else {
+						return nil,fmt.Errorf("unknown key type %s",keyType)
+					}
+					if err != nil {
+						return nil, err
+					}
+					return cs.keyStore[i].EcdsaKey,nil
+				}
+			}else{
+				return cs.keyStore[i].EcdsaKey,nil
+			}
+		}
+	}
+	return nil,fmt.Errorf("key not found")
+}
+
+
 //
-func (cs *KeyStore) GetAllUserKeys(userId, keyType string) []KeyRecord {
+func (cs *KeyStore) GetAllUserKeys(userId string) []KeyRecord {
 	var result []KeyRecord
 	for i := range cs.keyStore {
 		if cs.keyStore[i].UserId == userId {
@@ -125,7 +117,13 @@ func (cs *KeyStore) GetAllUserKeys(userId, keyType string) []KeyRecord {
 
 func (cs *KeyStore) SaveToDisk() error {
 	bpayload, err := json.Marshal(cs.keyStore)
-	err = ioutil.WriteFile(cs.keyStoreFilePath, bpayload, 0664)
+	var mode os.FileMode
+	if cs.isPrivate {
+		mode = 0600
+	}else {
+		mode = 0664
+	}
+	err = ioutil.WriteFile(cs.keyStoreFilePath, bpayload, mode)
 	if err != nil {
 		return err
 	}
@@ -152,4 +150,3 @@ func (cs *KeyStore) LoadFromDisk() error {
 //	//3. Validate signature using public key
 //
 //}
-

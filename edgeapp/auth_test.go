@@ -14,7 +14,7 @@ func TestFhOAuth2Client_ExchangeRefreshToken(t *testing.T) {
 		t.FailNow()
 	}
 	t.Log(client.hubToken)
-	r , err := client.ExchangeRefreshToken("")
+	r , err := client.ExchangeRefreshToken("5ae37d5fac34a5f3d98b7492|ef2b826bc5a80941a5ebfa797762bdc3")
 	if err != nil {
 		t.Error("Can't fetch token",err)
 		t.FailNow()

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/futurehomeno/fimpgo"
+	"github.com/futurehomeno/fimpgo/utils"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
@@ -51,11 +52,33 @@ type FhOAuth2Client struct {
 	cbRetry            int
 	cbRetryDelay       time.Duration
 }
+
+func (oac *FhOAuth2Client) AuthCodeApiUrl() string {
+	return oac.authCodeApiUrl
+}
+
+func (oac *FhOAuth2Client) SetAuthCodeApiUrl(authCodeApiUrl string) {
+	oac.authCodeApiUrl = authCodeApiUrl
+}
+
+func (oac *FhOAuth2Client) RefreshTokenApiUrl() string {
+	return oac.refreshTokenApiUrl
+}
+
+func (oac *FhOAuth2Client) SetRefreshTokenApiUrl(refreshTokenApiUrl string) {
+	oac.refreshTokenApiUrl = refreshTokenApiUrl
+}
+
 //NewFhOAuth2Client implements OAuth client which communicates to 3rd party API over FH Auth proxy.
-func NewFhOAuth2Client(partnerName string, appName string) *FhOAuth2Client {
+func NewFhOAuth2Client(partnerName string, appName string,env string ) *FhOAuth2Client {
 	client := &FhOAuth2Client{partnerName: partnerName, mqttServerURI: "tcp://localhost:1883", mqttClientID: "auth_client_"+appName}
-	client.refreshTokenApiUrl = "https://partners-beta.futurehome.io/api/control/edge/proxy/refresh"
-	client.authCodeApiUrl = "https://partners-beta.futurehome.io/api/control/edge/proxy/auth-code"
+	if env == utils.EnvBeta {
+		client.refreshTokenApiUrl = "https://partners-beta.futurehome.io/api/control/edge/proxy/refresh"
+		client.authCodeApiUrl = "https://partners-beta.futurehome.io/api/control/edge/proxy/auth-code"
+	}else {
+		client.refreshTokenApiUrl = "https://partners.futurehome.io/api/control/edge/proxy/refresh"
+		client.authCodeApiUrl = "https://partners.futurehome.io/api/control/edge/proxy/auth-code"
+	}
 	client.retryDelay = 60
 	client.refreshRetry = 5
 	client.cbRetryDelay = 30
