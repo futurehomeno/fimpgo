@@ -1,4 +1,4 @@
-package integration
+package security
 
 import (
 	"crypto"
@@ -110,6 +110,24 @@ func (kp *EcdsaKey) ImportJsonPublicKey(jkey JsonEcKey)  error {
 		Curve: elliptic.P256(),
 		X:     x,
 		Y:     y,
+	}
+	return  nil
+}
+
+func (kp *EcdsaKey) ImportJsonPrivateKey(jkey JsonEcKey)  error {
+	x , xok := big.NewInt(0).SetString(jkey.X,16)
+	y , yok := big.NewInt(0).SetString(jkey.Y,16)
+	d , dok := big.NewInt(0).SetString(jkey.D,16)
+	if  !xok || !yok || !dok {
+		return errors.New("json key parse error")
+	}
+	kp.privateKey = &ecdsa.PrivateKey{
+		PublicKey: ecdsa.PublicKey{
+			Curve: elliptic.P256(),
+			X:     x,
+			Y:     y,
+		},
+		D:         d,
 	}
 	return  nil
 }

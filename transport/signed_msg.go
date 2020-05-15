@@ -61,7 +61,7 @@ https://tools.ietf.org/html/rfc7518#section-3
 
 
 // SignMessageES256 encapsulate original message into special transport message with added signature.
-func SignMessageES256(payload *fimpgo.FimpMessage,requestMsg *fimpgo.FimpMessage,userId string,keys *integration.EcdsaKey,props *fimpgo.Props) (*fimpgo.FimpMessage,error) {
+func SignMessageES256(payload *fimpgo.FimpMessage,requestMsg *fimpgo.FimpMessage,userId string,keys *security.EcdsaKey,props *fimpgo.Props) (*fimpgo.FimpMessage,error) {
 	serializedMsg,err := payload.SerializeToJson()
 	if err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ func SignMessageES256(payload *fimpgo.FimpMessage,requestMsg *fimpgo.FimpMessage
 	return signedMsg,nil
 }
 //
-func GetVerifiedMessageES256(signedMsg *fimpgo.FimpMessage,key *integration.EcdsaKey) (*fimpgo.FimpMessage,error) {
+func GetVerifiedMessageES256(signedMsg *fimpgo.FimpMessage,key *security.EcdsaKey) (*fimpgo.FimpMessage,error) {
 
 	if signedMsg.Type != "cmd.transport.signed" && signedMsg.Type != "evt.transport.signed"  {
 		return nil,errors.New("incorrect message type")

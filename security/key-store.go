@@ -1,4 +1,4 @@
-package integration
+package security
 
 import (
 	"encoding/json"
