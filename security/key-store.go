@@ -5,7 +5,6 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
-	"math/rand"
 	"os"
 	"time"
 )
@@ -33,6 +32,9 @@ type KeyStore struct {
 }
 
 func NewKeyStore(keyStoreFilePath string,isPrivate bool) *KeyStore {
+	if keyStoreFilePath == "" {
+		keyStoreFilePath = "/var/lib/futurehome/hub/pub_key_store.json"
+	}
 	return &KeyStore{keyStoreFilePath: keyStoreFilePath,isPrivate: isPrivate}
 }
 
@@ -44,12 +46,6 @@ func (cs *KeyStore) CheckIfUserHasKey(userId, deviceId string) bool {
 		}
 	}
 	return false
-}
-
-func (cs *KeyStore) getNonce() string {
-	s1 := rand.NewSource(time.Now().UnixNano())
-	r1 := rand.New(s1)
-	return fmt.Sprint(r1.Int31())
 }
 
 func (cs *KeyStore) AddSerializedKey(user, device, key, keyType, algo string) error {

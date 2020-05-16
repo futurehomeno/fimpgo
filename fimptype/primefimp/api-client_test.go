@@ -10,9 +10,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var brokerUrl = "tcp://aleks.local:1884"
-var brokerUser = "aleks"
-var brokerPass = "api-admin-1793"
+var brokerUrl = "tcp://cube.local:1883"
+var brokerUser = ""
+var brokerPass = ""
 
 
 func TestPrimeFimp_ClientApi_Update(t *testing.T) {
@@ -107,8 +107,33 @@ func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
 	}
 }
 
-func TestPrimeFimp_ClientApi_Notify_With_Filter(t *testing.T) {
+func TestPrimeFimp_SiteLazyLoading(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
+
+	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
+
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
+	err := mqtt.Start()
+	t.Log("Connected")
+	if err != nil {
+		t.Error("Error connecting to broker ", err)
+	}
+
+	// Actual test
+	apiclientid := uuid.New().String()[0:12]
+	client := NewApiClient(apiclientid, mqtt, false)
+	if !client.IsCacheEmpty() {
+		t.Error("Cache is not empty.Must be empty")
+	}
+	_,err = client.GetSite(true)
+	if err != nil || client.IsCacheEmpty() {
+		t.Error("Cache is empty. Cache must contain data.")
+	}
+
+}
+
+func TestPrimeFimp_ClientApi_Notify_With_Filter(t *testing.T) {
+	log.SetLevel(log.TraceLevel)
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
 

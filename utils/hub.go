@@ -2,7 +2,10 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"math/rand"
+	"time"
 )
 const EnvBeta = "beta"
 const EnvProd = "prod"
@@ -39,4 +42,10 @@ func (cs *HubUtils) GetHubInfo() (*HubInfo,error) {
 		return nil,err
 	}
 	return hubInfo,nil
+}
+
+func GetNonce() string {
+	s1 := rand.NewSource(time.Now().UnixNano())
+	r1 := rand.New(s1)
+	return fmt.Sprint(r1.Int31())
 }
