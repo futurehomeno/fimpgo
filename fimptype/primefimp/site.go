@@ -71,7 +71,7 @@ func (s *Site) AddShortcut(sh *Shortcut) {
 }
 
 // FindIndex Finds the index of a component with given ID
-// returns the index in the arreay of corresponding component
+// returns the index in the array of corresponding component
 // return -1 in case the component is not found
 func (s *Site) FindIndex(comp string, id int) int {
 	switch comp {
@@ -112,7 +112,7 @@ func (s *Site) FindIndex(comp string, id int) int {
 			}
 		}
 	default:
-		log.Error("Component does not support findindex.")
+		log.Error("Component does not support find index.")
 	}
 	return -1
 }
@@ -226,7 +226,7 @@ func (s *Site) UpdateTimer(d *Timer) {
 		// if component is not added before (somehow) add it.
 		s.Timers = append(s.Timers, *d)
 	} else {
-	    s.Timers[idx] = *d
+		s.Timers[idx] = *d
 	}
 }
 
@@ -241,7 +241,7 @@ func (s *Site) UpdateShortcut(d *Shortcut) {
 	}
 }
 
-func (s *Site) GetRoomById(ID int)*Room {
+func (s *Site) GetRoomById(ID int) *Room {
 	for i := range s.Rooms {
 		if s.Rooms[i].ID == ID {
 			return &s.Rooms[i]
@@ -250,7 +250,7 @@ func (s *Site) GetRoomById(ID int)*Room {
 	return nil
 }
 
-func (s *Site) GetAreaById(ID int)*Area {
+func (s *Site) GetAreaById(ID int) *Area {
 	for i := range s.Areas {
 		if s.Areas[i].ID == ID {
 			return &s.Areas[i]
@@ -259,7 +259,7 @@ func (s *Site) GetAreaById(ID int)*Area {
 	return nil
 }
 
-func (s *Site) GetThingById(ID int)*Thing {
+func (s *Site) GetThingById(ID int) *Thing {
 	for i := range s.Things {
 		if s.Things[i].ID == ID {
 			return &s.Things[i]
@@ -268,7 +268,7 @@ func (s *Site) GetThingById(ID int)*Thing {
 	return nil
 }
 
-func (s *Site) GetDeviceById(ID int)*Device {
+func (s *Site) GetDeviceById(ID int) *Device {
 	for i := range s.Devices {
 		if s.Devices[i].ID == ID {
 			return &s.Devices[i]
@@ -277,9 +277,9 @@ func (s *Site) GetDeviceById(ID int)*Device {
 	return nil
 }
 
-func (s *Site) GetDeviceByServiceAddress(addr string)*Device {
+func (s *Site) GetDeviceByServiceAddress(addr string) *Device {
 	for i := range s.Devices {
-		for _,v := range s.Devices[i].Service {
+		for _, v := range s.Devices[i].Service {
 			if v.Addr == addr {
 				return &s.Devices[i]
 			}
@@ -290,7 +290,7 @@ func (s *Site) GetDeviceByServiceAddress(addr string)*Device {
 
 func (s *Site) GetServiceByAddress(addr string) *Service {
 	for i := range s.Devices {
-		for _,v := range s.Devices[i].Service {
+		for _, v := range s.Devices[i].Service {
 			if v.Addr == addr {
 				return &v
 			}

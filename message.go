@@ -2,52 +2,54 @@ package fimpgo
 
 import (
 	"encoding/base64"
+	"fmt"
+	"reflect"
 	"time"
 )
 import (
 	"encoding/json"
-	"errors"
 	"github.com/buger/jsonparser"
 	"github.com/satori/go.uuid"
 )
 
 const (
-	TimeFormat      = "2006-01-02T15:04:05.999Z07:00"
-	VTypeString     = "string"
-	VTypeInt        = "int"
-	VTypeFloat      = "float"
-	VTypeBool       = "bool"
-	VTypeStrMap     = "str_map"
-	VTypeIntMap     = "int_map"
-	VTypeFloatMap   = "float_map"
-	VTypeBoolMap    = "bool_map"
-	VTypeStrArray   = "str_array"
-	VTypeIntArray   = "int_array"
-	VTypeFloatArray = "float_array"
-	VTypeBoolArray  = "bool_array"
-	VTypeObject     = "object"
-	VTypeBase64     = "base64"
-	VTypeBinary     = "bin"
-	VTypeNull       = "null"
+	TimeFormat       = "2006-01-02T15:04:05.999Z07:00"
+	VTypeString      = "string"
+	VTypeInt         = "int"
+	VTypeFloat       = "float"
+	VTypeBool        = "bool"
+	VTypeStrMap      = "str_map"
+	VTypeIntMap      = "int_map"
+	VTypeFloatMap    = "float_map"
+	VTypeBoolMap     = "bool_map"
+	VTypeStrArray    = "str_array"
+	VTypeIntArray    = "int_array"
+	VTypeFloatArray  = "float_array"
+	VTypeBoolArray   = "bool_array"
+	VTypeObject      = "object"
+	VTypeBase64      = "base64"
+	VTypeBinary      = "bin"
+	VTypeNull        = "null"
+	wrongValueFormat = "wrong value type. expected %+v, got %+v"
 )
 
 type Props map[string]string
 type Tags []string
 
 type FimpMessage struct {
-	Type          string      `json:"type"`
-	Service       string      `json:"serv"`
-	ValueType     string      `json:"val_t"`
-	Value         interface{} `json:"val"`
-	ValueObj      []byte      `json:"-"`
-	Tags          Tags        `json:"tags"`
-	Properties    Props       `json:"props"`
-	Version       string      `json:"ver"`
-	CorrelationID string      `json:"corid"`
-	ResponseToTopic string    `json:"resp_to,omitempty"`
-	Source        string      `json:"src,omitempty"`
-	CreationTime  string      `json:"ctime"`
-	UID           string      `json:"uid"`
+	Type            string      `json:"type"`
+	Service         string      `json:"serv"`
+	ValueType       string      `json:"val_t"`
+	Value           interface{} `json:"val"`
+	ValueObj        []byte      `json:"-"`
+	Tags            Tags        `json:"tags"`
+	Properties      Props       `json:"props"`
+	Version         string      `json:"ver"`
+	CorrelationID   string      `json:"corid"`
+	ResponseToTopic string      `json:"resp_to,omitempty"`
+	Source          string      `json:"src,omitempty"`
+	CreationTime    string      `json:"ctime"`
+	UID             string      `json:"uid"`
 }
 
 func (msg *FimpMessage) SetValue(value interface{}, valType string) {
@@ -60,7 +62,7 @@ func (msg *FimpMessage) GetIntValue() (int64, error) {
 	if ok {
 		return val, nil
 	}
-	return 0, errors.New("Wrong value type")
+	return 0, fmt.Errorf(wrongValueFormat, "int64", reflect.ValueOf(msg.Value))
 }
 
 func (msg *FimpMessage) GetStringValue() (string, error) {
@@ -68,7 +70,7 @@ func (msg *FimpMessage) GetStringValue() (string, error) {
 	if ok {
 		return val, nil
 	}
-	return "", errors.New("Wrong value type")
+	return "", fmt.Errorf(wrongValueFormat, "string", reflect.ValueOf(msg.Value))
 }
 
 func (msg *FimpMessage) GetBoolValue() (bool, error) {
@@ -76,7 +78,7 @@ func (msg *FimpMessage) GetBoolValue() (bool, error) {
 	if ok {
 		return val, nil
 	}
-	return false, errors.New("Wrong value type")
+	return false, fmt.Errorf(wrongValueFormat, "bool", reflect.ValueOf(msg.Value))
 }
 
 func (msg *FimpMessage) GetFloatValue() (float64, error) {
@@ -84,7 +86,7 @@ func (msg *FimpMessage) GetFloatValue() (float64, error) {
 	if ok {
 		return val, nil
 	}
-	return 0, errors.New("Wrong value type")
+	return 0, fmt.Errorf(wrongValueFormat, "float64", reflect.ValueOf(msg.Value))
 }
 
 func (msg *FimpMessage) GetStrArrayValue() ([]string, error) {
@@ -92,7 +94,7 @@ func (msg *FimpMessage) GetStrArrayValue() ([]string, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, errors.New("Wrong value type")
+	return nil, fmt.Errorf(wrongValueFormat, "[]string", reflect.ValueOf(msg.Value))
 }
 
 func (msg *FimpMessage) GetIntArrayValue() ([]int64, error) {
@@ -100,7 +102,7 @@ func (msg *FimpMessage) GetIntArrayValue() ([]int64, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, errors.New("Wrong value type")
+	return nil, fmt.Errorf(wrongValueFormat, "[]int64]", reflect.ValueOf(msg.Value))
 }
 
 func (msg *FimpMessage) GetFloatArrayValue() ([]float64, error) {
@@ -108,7 +110,7 @@ func (msg *FimpMessage) GetFloatArrayValue() ([]float64, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, errors.New("Wrong value type")
+	return nil, fmt.Errorf(wrongValueFormat, "[]float64", reflect.ValueOf(msg.Value))
 }
 
 func (msg *FimpMessage) GetBoolArrayValue() ([]bool, error) {
@@ -116,7 +118,7 @@ func (msg *FimpMessage) GetBoolArrayValue() ([]bool, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, errors.New("Wrong value type")
+	return nil, fmt.Errorf(wrongValueFormat, "[]bool", reflect.ValueOf(msg.Value))
 }
 
 func (msg *FimpMessage) GetStrMapValue() (map[string]string, error) {
@@ -124,7 +126,7 @@ func (msg *FimpMessage) GetStrMapValue() (map[string]string, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, errors.New("Wrong value type")
+	return nil, fmt.Errorf(wrongValueFormat, "map[string]string", reflect.ValueOf(msg.Value))
 }
 
 func (msg *FimpMessage) GetIntMapValue() (map[string]int64, error) {
@@ -132,7 +134,7 @@ func (msg *FimpMessage) GetIntMapValue() (map[string]int64, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, errors.New("Wrong value type")
+	return nil, fmt.Errorf(wrongValueFormat, "map[string]int64", reflect.ValueOf(msg.Value))
 }
 
 func (msg *FimpMessage) GetFloatMapValue() (map[string]float64, error) {
@@ -140,7 +142,7 @@ func (msg *FimpMessage) GetFloatMapValue() (map[string]float64, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, errors.New("Wrong value type")
+	return nil, fmt.Errorf(wrongValueFormat, "map[string]float64", reflect.ValueOf(msg.Value))
 }
 
 func (msg *FimpMessage) GetBoolMapValue() (map[string]bool, error) {
@@ -148,7 +150,7 @@ func (msg *FimpMessage) GetBoolMapValue() (map[string]bool, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, errors.New("Wrong value type")
+	return nil, fmt.Errorf(wrongValueFormat, "map[string]bool", reflect.ValueOf(msg.Value))
 }
 
 func (msg *FimpMessage) GetRawObjectValue() []byte {
@@ -241,7 +243,7 @@ func NewObjectMessage(type_ string, service string, value interface{}, props Pro
 }
 
 // transport message is meant to carry original message using either encryption , signing or
-func NewBinaryMessage(type_,service string, value []byte ,props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
+func NewBinaryMessage(type_, service string, value []byte, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
 	valEnc := base64.StdEncoding.EncodeToString(value)
 	return NewMessage(type_, service, VTypeBinary, valEnc, props, tags, requestMessage)
 }
@@ -268,7 +270,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	case VTypeFloat:
 		fimpmsg.Value, err = jsonparser.GetFloat(msg, "val")
 	case VTypeBoolArray:
-		val := []bool{}
+		var val []bool
 		jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, _ := jsonparser.ParseBoolean(value)
 			val = append(val, item)
@@ -276,7 +278,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 
 		fimpmsg.Value = val
 	case VTypeStrArray:
-		val := []string{}
+		var val []string
 		jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, _ := jsonparser.ParseString(value)
 			val = append(val, item)
@@ -284,14 +286,14 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 
 		fimpmsg.Value = val
 	case VTypeIntArray:
-		val := []int64{}
+		var val []int64
 		jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, _ := jsonparser.ParseInt(value)
 			val = append(val, item)
 		}, "val")
 		fimpmsg.Value = val
 	case VTypeFloatArray:
-		val := []float64{}
+		var val []float64
 		jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, _ := jsonparser.ParseFloat(value)
 			val = append(val, item)
@@ -331,7 +333,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 		fimpmsg.Value = val
 
 	case VTypeBinary:
-		fimpmsg.Value,err = jsonparser.GetString(msg, "val")
+		fimpmsg.Value, err = jsonparser.GetString(msg, "val")
 		//base64val, err := jsonparser.GetString(msg, "val")
 		//if err != nil {
 		//	return nil,err
