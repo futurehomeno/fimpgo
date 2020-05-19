@@ -144,3 +144,15 @@ func (resp *Response) GetVincServices() VincServices {
 	}
 	return result
 }
+
+func (resp *Response) GetState() (State, error) {
+	param, ok := resp.ParamRaw[ComponentState]
+	if !ok {
+		return State{}, nil
+	}
+	var result State
+	if err := json.Unmarshal(param, &result); err != nil {
+		return State{}, err
+	}
+	return result, nil
+}
