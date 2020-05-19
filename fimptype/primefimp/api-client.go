@@ -16,6 +16,24 @@ type NotifyFilter struct {
 	Component string
 }
 
+type apiClientConfig struct {
+	cloudService string
+}
+
+type Option interface {
+	apply(*apiClientConfig)
+}
+
+type cloudServiceOption string
+
+func (cso cloudServiceOption) apply(config *apiClientConfig) {
+	config.cloudService = string(cso)
+}
+
+func WithCloudService(service string) Option {
+	return cloudServiceOption(service)
+}
+
 type ApiClient struct {
 	clientID              string
 	mqttTransport         *fimpgo.MqttTransport
@@ -29,10 +47,12 @@ type ApiClient struct {
 	isNotifyRouterStarted bool
 	notifChMux            sync.RWMutex
 	isVincAppsSyncEnabled bool
+
+	cloudService string
 }
 
 // NewApiClient Creates a new api client. If isCacheEnabled it set to true , it will try to sync entire site on startup.
-func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSiteIntoCache bool) *ApiClient {
+func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSiteIntoCache bool, options ...Option) *ApiClient {
 	api := &ApiClient{clientID: clientID, mqttTransport: mqttTransport}
 	api.notifySubChannels = make(map[string]chan Notify)
 	api.subFilters = make(map[string]NotifyFilter)
@@ -41,6 +61,13 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSite
 	if loadSiteIntoCache {
 		api.ReloadSiteToCache(3)
 	}
+
+	config := apiClientConfig{}
+	for _, o := range options {
+		o.apply(&config)
+	}
+
+	api.cloudService = config.cloudService
 	return api
 }
 
@@ -305,6 +332,11 @@ func (mh *ApiClient) notifyRouter() {
 func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, error) {
 	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
 	respAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeRsp, ResourceType: fimpgo.ResourceTypeApp, ResourceName: mh.clientID, ResourceAddress: "1"}
+	if mh.cloudService != "" {
+		respAddr.ResourceType = fimpgo.ResourceTypeCloud
+		respAddr.ResourceName = "backend-service"
+		respAddr.ResourceAddress = mh.cloudService
+	}
 	mh.sClient.AddSubscription(respAddr.Serialize())
 
 	param := RequestParam{Components: components}
