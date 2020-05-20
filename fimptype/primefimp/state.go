@@ -52,6 +52,27 @@ type StateAttributeValue struct {
 	Props     map[string]string `json:"props"`
 }
 
+func (sav StateAttributeValue) SetValue(value interface{}, valType string) {
+	sav.Val = value
+	sav.ValType = valType
+}
+
+func (sav StateAttributeValue) GetIntValue() (int64, error) {
+	val, ok := sav.Val.(int64)
+	if ok {
+		return val, nil
+	}
+	return 0, fmt.Errorf(wrongValueFormat, "int64", reflect.ValueOf(sav.Val))
+}
+
+func (sav StateAttributeValue) GetStringValue() (string, error) {
+	val, ok := sav.Val.(string)
+	if ok {
+		return val, nil
+	}
+	return "", fmt.Errorf(wrongValueFormat, "string", reflect.ValueOf(sav.Val))
+}
+
 func (sav StateAttributeValue) GetBoolValue() (bool, error) {
 	val, ok := sav.Val.(bool)
 	if ok {
@@ -60,20 +81,20 @@ func (sav StateAttributeValue) GetBoolValue() (bool, error) {
 	return false, fmt.Errorf(wrongValueFormat, "bool", reflect.ValueOf(sav.Val))
 }
 
+func (sav StateAttributeValue) GetFloatValue() (float64, error) {
+	val, ok := sav.Val.(float64)
+	if ok {
+		return val, nil
+	}
+	return 0, fmt.Errorf(wrongValueFormat, "float64", reflect.ValueOf(sav.Val))
+}
+
 func (sav StateAttributeValue) GetStrArrayValue() ([]string, error) {
 	val, ok := sav.Val.([]string)
 	if ok {
 		return val, nil
 	}
 	return nil, fmt.Errorf(wrongValueFormat, "[]string", reflect.ValueOf(sav.Val))
-}
-
-func (sav StateAttributeValue) GetStrMapValue() (map[string]string, error) {
-	val, ok := sav.Val.(map[string]string)
-	if ok {
-		return val, nil
-	}
-	return nil, fmt.Errorf(wrongValueFormat, "map[string]string", reflect.ValueOf(sav.Val))
 }
 
 func (sav StateAttributeValue) GetIntArrayValue() ([]int64, error) {
@@ -90,6 +111,46 @@ func (sav StateAttributeValue) GetFloatArrayValue() ([]float64, error) {
 		return val, nil
 	}
 	return nil, fmt.Errorf(wrongValueFormat, "[]float64", reflect.ValueOf(sav.Val))
+}
+
+func (sav StateAttributeValue) GetBoolArrayValue() ([]bool, error) {
+	val, ok := sav.Val.([]bool)
+	if ok {
+		return val, nil
+	}
+	return nil, fmt.Errorf(wrongValueFormat, "[]bool", reflect.ValueOf(sav.Val))
+}
+
+func (sav StateAttributeValue) GetStrMapValue() (map[string]string, error) {
+	val, ok := sav.Val.(map[string]string)
+	if ok {
+		return val, nil
+	}
+	return nil, fmt.Errorf(wrongValueFormat, "map[string]string", reflect.ValueOf(sav.Val))
+}
+
+func (sav StateAttributeValue) GetIntMapValue() (map[string]int64, error) {
+	val, ok := sav.Val.(map[string]int64)
+	if ok {
+		return val, nil
+	}
+	return nil, fmt.Errorf(wrongValueFormat, "map[string]int64", reflect.ValueOf(sav.Val))
+}
+
+func (sav StateAttributeValue) GetFloatMapValue() (map[string]float64, error) {
+	val, ok := sav.Val.(map[string]float64)
+	if ok {
+		return val, nil
+	}
+	return nil, fmt.Errorf(wrongValueFormat, "map[string]float64", reflect.ValueOf(sav.Val))
+}
+
+func (sav StateAttributeValue) GetBoolMapValue() (map[string]bool, error) {
+	val, ok := sav.Val.(map[string]bool)
+	if ok {
+		return val, nil
+	}
+	return nil, fmt.Errorf(wrongValueFormat, "map[string]bool", reflect.ValueOf(sav.Val))
 }
 
 type State struct {
