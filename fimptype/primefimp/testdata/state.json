@@ -1,0 +1,1390 @@
+{
+  "corid": "055d3a20-99a9-11ea-ef08-b5e5c9810a17",
+  "ctime": "2020-05-19T10:16:20+0200",
+  "props": {},
+  "serv": "vinculum",
+  "tags": [],
+  "type": "evt.pd7.response",
+  "uid": "aaea7716-701b-4a0e-82eb-5f456ebfc24a",
+  "val": {
+    "errors": null,
+    "param": {
+      "state": {
+        "devices": [
+          {
+            "id": 7,
+            "services": [
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_uv/ad:18_0",
+                "attributes": [
+                  {
+                    "name": "sensor",
+                    "values": [
+                      {
+                        "props": {
+                          "unit": "index"
+                        },
+                        "ts": "2020-05-19 09:46:52 +0200",
+                        "val": 0,
+                        "val_t": "float"
+                      }
+                    ]
+                  }
+                ],
+                "name": "sensor_uv"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:alarm_burglar/ad:18_0",
+                "attributes": [
+                  {
+                    "name": "alarm",
+                    "values": [
+                      {
+                        "ts": "2020-05-15 14:16:41 +0200",
+                        "val": {
+                          "event": "tamper_removed_cover",
+                          "status": "deactiv"
+                        },
+                        "val_t": "str_map"
+                      }
+                    ]
+                  }
+                ],
+                "name": "alarm_burglar"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:battery/ad:18_0",
+                "attributes": [
+                  {
+                    "name": "lvl",
+                    "values": [
+                      {
+                        "ts": "2020-05-19 09:46:52 +0200",
+                        "val": 100,
+                        "val_t": "int"
+                      }
+                    ]
+                  }
+                ],
+                "name": "battery"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_humid/ad:18_0",
+                "attributes": [
+                  {
+                    "name": "sensor",
+                    "values": [
+                      {
+                        "props": {
+                          "unit": "%"
+                        },
+                        "ts": "2020-05-19 09:46:51 +0200",
+                        "val": 15,
+                        "val_t": "float"
+                      }
+                    ]
+                  }
+                ],
+                "name": "sensor_humid"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_temp/ad:18_0",
+                "attributes": [
+                  {
+                    "name": "sensor",
+                    "values": [
+                      {
+                        "props": {
+                          "unit": "C"
+                        },
+                        "ts": "2020-05-19 09:46:51 +0200",
+                        "val": 23.7000007629395,
+                        "val_t": "float"
+                      }
+                    ]
+                  }
+                ],
+                "name": "sensor_temp"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:basic/ad:18_0",
+                "attributes": [
+                  {
+                    "name": "lvl",
+                    "values": [
+                      {
+                        "ts": "2020-05-19 09:59:13 +0200",
+                        "val": 255,
+                        "val_t": "int"
+                      }
+                    ]
+                  }
+                ],
+                "name": "basic"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_presence/ad:18_0",
+                "attributes": [
+                  {
+                    "name": "presence",
+                    "values": [
+                      {
+                        "ts": "2020-05-19 09:59:13 +0200",
+                        "val": true,
+                        "val_t": "bool"
+                      }
+                    ]
+                  }
+                ],
+                "name": "sensor_presence"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_lumin/ad:18_0",
+                "attributes": [
+                  {
+                    "name": "sensor",
+                    "values": [
+                      {
+                        "props": {
+                          "unit": "Lux"
+                        },
+                        "ts": "2020-05-19 09:46:52 +0200",
+                        "val": 293,
+                        "val_t": "float"
+                      }
+                    ]
+                  }
+                ],
+                "name": "sensor_lumin"
+              }
+            ]
+          },
+          {
+            "id": 9,
+            "services": [
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_temp/ad:22_0",
+                "attributes": [
+                  {
+                    "name": "sensor",
+                    "values": [
+                      {
+                        "props": {
+                          "unit": "C"
+                        },
+                        "ts": "2020-03-12 13:59:01 +0100",
+                        "val": 24.5699996948242,
+                        "val_t": "float"
+                      }
+                    ]
+                  }
+                ],
+                "name": "sensor_temp"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:alarm_burglar/ad:22_0",
+                "attributes": [
+                  {
+                    "name": "alarm",
+                    "values": [
+                      {
+                        "ts": "2020-03-12 12:13:23 +0100",
+                        "val": {
+                          "event": "tamper_removed_cover",
+                          "status": "deactiv"
+                        },
+                        "val_t": "str_map"
+                      }
+                    ]
+                  }
+                ],
+                "name": "alarm_burglar"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:22_0",
+                "attributes": [
+                  {
+                    "name": "state",
+                    "values": [
+                      {
+                        "ts": "2020-03-12 17:12:20 +0100",
+                        "val": "DOWN",
+                        "val_t": "string"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "error",
+                    "values": [
+                      {
+                        "props": {
+                          "msg": "TRANSMIT_COMPLETE_NOROUTE",
+                          "src": "nodeId=22_0;service=battery"
+                        },
+                        "ts": "2020-05-15 08:59:04 +0200",
+                        "val": "TX_ERROR",
+                        "val_t": "string"
+                      }
+                    ]
+                  }
+                ],
+                "name": "dev_sys"
+              }
+            ]
+          },
+          {
+            "id": 11,
+            "services": [
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:meter_elec/ad:25_0",
+                "attributes": [
+                  {
+                    "name": "meter",
+                    "values": [
+                      {
+                        "props": {
+                          "unit": "kWh"
+                        },
+                        "ts": "2020-05-15 08:59:07 +0200",
+                        "val": 0.129999995231628,
+                        "val_t": "float"
+                      }
+                    ]
+                  }
+                ],
+                "name": "meter_elec"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:25_0",
+                "attributes": [
+                  {
+                    "name": "error",
+                    "values": [
+                      {
+                        "props": {
+                          "msg": "TRANSMIT_COMPLETE_NOROUTE",
+                          "src": "nodeId=25_0;service=meter_elec"
+                        },
+                        "ts": "2020-05-15 08:59:07 +0200",
+                        "val": "TX_ERROR",
+                        "val_t": "string"
+                      }
+                    ]
+                  }
+                ],
+                "name": "dev_sys"
+              }
+            ]
+          },
+          {
+            "id": 12,
+            "services": [
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:out_lvl_switch/ad:25_1",
+                "attributes": [
+                  {
+                    "name": "lvl",
+                    "values": [
+                      {
+                        "ts": "2020-03-12 09:48:29 +0100",
+                        "val": 100,
+                        "val_t": "int"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "binary",
+                    "values": [
+                      {
+                        "ts": "2020-03-12 09:46:38 +0100",
+                        "val": true,
+                        "val_t": "bool"
+                      }
+                    ]
+                  }
+                ],
+                "name": "out_lvl_switch"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:25_1",
+                "attributes": [
+                  {
+                    "name": "error",
+                    "values": [
+                      {
+                        "props": {
+                          "msg": "TRANSMIT_COMPLETE_NOROUTE",
+                          "src": "nodeId=25_1;service=out_lvl_switch"
+                        },
+                        "ts": "2020-05-19 09:59:31 +0200",
+                        "val": "TX_ERROR",
+                        "val_t": "string"
+                      }
+                    ]
+                  }
+                ],
+                "name": "dev_sys"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:meter_elec/ad:25_1",
+                "attributes": [
+                  {
+                    "name": "meter",
+                    "values": [
+                      {
+                        "props": {
+                          "unit": "kWh"
+                        },
+                        "ts": "2020-05-15 08:59:04 +0200",
+                        "val": 0.180000007152557,
+                        "val_t": "float"
+                      },
+                      {
+                        "props": {
+                          "unit": "W"
+                        },
+                        "ts": "2020-03-12 09:48:31 +0100",
+                        "val": 0,
+                        "val_t": "float"
+                      }
+                    ]
+                  }
+                ],
+                "name": "meter_elec"
+              }
+            ]
+          },
+          {
+            "id": 13,
+            "services": [
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:out_lvl_switch/ad:25_2",
+                "attributes": [
+                  {
+                    "name": "lvl",
+                    "values": [
+                      {
+                        "ts": "2020-03-04 08:59:23 +0100",
+                        "val": 100,
+                        "val_t": "int"
+                      }
+                    ]
+                  }
+                ],
+                "name": "out_lvl_switch"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:25_2",
+                "attributes": [
+                  {
+                    "name": "error",
+                    "values": [
+                      {
+                        "props": {
+                          "msg": "TRANSMIT_COMPLETE_NOROUTE",
+                          "src": "nodeId=25_2;service=out_lvl_switch"
+                        },
+                        "ts": "2020-05-15 08:59:05 +0200",
+                        "val": "TX_ERROR",
+                        "val_t": "string"
+                      }
+                    ]
+                  }
+                ],
+                "name": "dev_sys"
+              }
+            ]
+          },
+          {
+            "id": 14,
+            "services": [
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:26_0",
+                "attributes": [
+                  {
+                    "name": "error",
+                    "values": [
+                      {
+                        "props": {
+                          "msg": "TRANSMIT_COMPLETE_NOROUTE",
+                          "src": "nodeId=26_0;service=sensor_temp"
+                        },
+                        "ts": "2020-05-15 08:59:05 +0200",
+                        "val": "TX_ERROR",
+                        "val_t": "string"
+                      }
+                    ]
+                  }
+                ],
+                "name": "dev_sys"
+              }
+            ]
+          },
+          {
+            "id": 15,
+            "services": [
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:27_0",
+                "attributes": [
+                  {
+                    "name": "binary",
+                    "values": [
+                      {
+                        "ts": "2020-03-04 08:59:23 +0100",
+                        "val": false,
+                        "val_t": "bool"
+                      }
+                    ]
+                  }
+                ],
+                "name": "out_bin_switch"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:barrier_ctrl/ad:27_0",
+                "attributes": [
+                  {
+                    "name": "state",
+                    "values": [
+                      {
+                        "ts": "2020-05-15 08:58:48 +0200",
+                        "val": "closed",
+                        "val_t": "string"
+                      }
+                    ]
+                  }
+                ],
+                "name": "barrier_ctrl"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:27_0",
+                "attributes": [
+                  {
+                    "name": "state",
+                    "values": [
+                      {
+                        "ts": "2020-03-17 19:05:49 +0100",
+                        "val": "DOWN",
+                        "val_t": "string"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "config",
+                    "values": [
+                      {
+                        "ts": "2020-03-03 10:44:37 +0100",
+                        "val": {
+                          "43": "5;1"
+                        },
+                        "val_t": "str_map"
+                      },
+                      {
+                        "ts": "2020-03-04 09:12:00 +0100",
+                        "val": {
+                          "34": "-1;1"
+                        },
+                        "val_t": "str_map"
+                      },
+                      {
+                        "ts": "2020-03-04 09:11:14 +0100",
+                        "val": {
+                          "44": "1;1"
+                        },
+                        "val_t": "str_map"
+                      },
+                      {
+                        "ts": "2020-03-03 10:48:26 +0100",
+                        "val": {
+                          "32": "0;1"
+                        },
+                        "val_t": "str_map"
+                      },
+                      {
+                        "ts": "2020-03-03 10:48:53 +0100",
+                        "val": {
+                          "36": "5;1"
+                        },
+                        "val_t": "str_map"
+                      },
+                      {
+                        "ts": "2020-03-04 09:01:51 +0100",
+                        "val": {
+                          "37": "167839744;4"
+                        },
+                        "val_t": "str_map"
+                      },
+                      {
+                        "ts": "2020-03-04 09:02:14 +0100",
+                        "val": {
+                          "38": "167839744;4"
+                        },
+                        "val_t": "str_map"
+                      },
+                      {
+                        "ts": "2020-03-04 09:12:49 +0100",
+                        "val": {
+                          "41": "15;1"
+                        },
+                        "val_t": "str_map"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "error",
+                    "values": [
+                      {
+                        "props": {
+                          "msg": "TRANSMIT_COMPLETE_NOROUTE",
+                          "src": "nodeId=27_0;service=barrier_ctrl"
+                        },
+                        "ts": "2020-05-19 09:59:32 +0200",
+                        "val": "TX_ERROR",
+                        "val_t": "string"
+                      }
+                    ]
+                  }
+                ],
+                "name": "dev_sys"
+              }
+            ]
+          },
+          {
+            "id": 16,
+            "services": [
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_power/ad:31_0",
+                "attributes": [
+                  {
+                    "name": "sensor",
+                    "values": [
+                      {
+                        "props": {
+                          "unit": "W"
+                        },
+                        "ts": "2020-03-12 13:47:53 +0100",
+                        "val": 0,
+                        "val_t": "float"
+                      }
+                    ]
+                  }
+                ],
+                "name": "sensor_power"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:31_0",
+                "attributes": [
+                  {
+                    "name": "binary",
+                    "values": [
+                      {
+                        "ts": "2020-03-10 07:55:37 +0100",
+                        "val": true,
+                        "val_t": "bool"
+                      }
+                    ]
+                  }
+                ],
+                "name": "out_bin_switch"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:31_0",
+                "attributes": [
+                  {
+                    "name": "state",
+                    "values": [
+                      {
+                        "ts": "2020-03-24 13:04:31 +0100",
+                        "val": "DOWN",
+                        "val_t": "string"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "error",
+                    "values": [
+                      {
+                        "props": {
+                          "msg": "TRANSMIT_COMPLETE_NOROUTE",
+                          "src": "nodeId=31_0;service=out_bin_switch"
+                        },
+                        "ts": "2020-05-19 10:06:17 +0200",
+                        "val": "TX_ERROR",
+                        "val_t": "string"
+                      }
+                    ]
+                  }
+                ],
+                "name": "dev_sys"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:meter_elec/ad:31_0",
+                "attributes": [
+                  {
+                    "name": "meter",
+                    "values": [
+                      {
+                        "props": {
+                          "unit": "kWh"
+                        },
+                        "ts": "2020-05-15 08:58:48 +0200",
+                        "val": 0,
+                        "val_t": "float"
+                      }
+                    ]
+                  }
+                ],
+                "name": "meter_elec"
+              }
+            ]
+          },
+          {
+            "id": 18,
+            "services": [
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:thermostat/ad:33_0",
+                "attributes": [
+                  {
+                    "name": "mode",
+                    "values": [
+                      {
+                        "ts": "2020-05-15 08:59:06 +0200",
+                        "val": "heat",
+                        "val_t": "string"
+                      }
+                    ]
+                  }
+                ],
+                "name": "thermostat"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:33_0",
+                "attributes": [
+                  {
+                    "name": "error",
+                    "values": [
+                      {
+                        "props": {
+                          "msg": "TRANSMIT_COMPLETE_NOROUTE",
+                          "src": "nodeId=33_0;service=thermostat"
+                        },
+                        "ts": "2020-05-19 10:06:17 +0200",
+                        "val": "TX_ERROR",
+                        "val_t": "string"
+                      }
+                    ]
+                  }
+                ],
+                "name": "dev_sys"
+              }
+            ]
+          },
+          {
+            "id": 19,
+            "services": [
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:meter_elec/ad:37_0",
+                "attributes": [
+                  {
+                    "name": "meter",
+                    "values": [
+                      {
+                        "props": {
+                          "unit": "kWh"
+                        },
+                        "ts": "2020-05-15 08:58:47 +0200",
+                        "val": 0.898000001907349,
+                        "val_t": "float"
+                      }
+                    ]
+                  }
+                ],
+                "name": "meter_elec"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:out_lvl_switch/ad:37_0",
+                "attributes": [
+                  {
+                    "name": "lvl",
+                    "values": [
+                      {
+                        "ts": "2020-05-19 10:06:16 +0200",
+                        "val": 99,
+                        "val_t": "int"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "binary",
+                    "values": [
+                      {
+                        "ts": "2020-05-14 13:39:28 +0200",
+                        "val": false,
+                        "val_t": "bool"
+                      }
+                    ]
+                  }
+                ],
+                "name": "out_lvl_switch"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:color_ctrl/ad:37_0",
+                "attributes": [
+                  {
+                    "name": "color",
+                    "values": [
+                      {
+                        "ts": "2020-05-19 10:06:16 +0200",
+                        "val": {
+                          "blue": 255,
+                          "green": 255,
+                          "red": 255
+                        },
+                        "val_t": "int_map"
+                      }
+                    ]
+                  }
+                ],
+                "name": "color_ctrl"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:37_0",
+                "attributes": [
+                  {
+                    "name": "state",
+                    "values": [
+                      {
+                        "ts": "2020-05-19 08:07:53 +0200",
+                        "val": "UP",
+                        "val_t": "string"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "group",
+                    "values": [
+                      {
+                        "props": {
+                          "max_supports": "5"
+                        },
+                        "ts": "2020-03-30 22:05:32 +0200",
+                        "val": {
+                          "group": "1",
+                          "members": [
+                            "1_0"
+                          ]
+                        },
+                        "val_t": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "config",
+                    "values": [
+                      {
+                        "ts": "2020-04-17 08:59:39 +0200",
+                        "val": {
+                          "85": "5;1"
+                        },
+                        "val_t": "str_map"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "error",
+                    "values": [
+                      {
+                        "props": {
+                          "msg": "TRANSMIT_COMPLETE_UNKNOWN",
+                          "src": "nodeId=37_0;service=color_ctrl"
+                        },
+                        "ts": "2020-05-15 08:58:47 +0200",
+                        "val": "TX_ERROR",
+                        "val_t": "string"
+                      }
+                    ]
+                  }
+                ],
+                "name": "dev_sys"
+              }
+            ]
+          },
+          {
+            "id": 20,
+            "services": [
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:meter_elec/ad:37_1",
+                "attributes": [
+                  {
+                    "name": "meter",
+                    "values": [
+                      {
+                        "props": {
+                          "delta_t": "15",
+                          "prv_data": "0.899000",
+                          "unit": "kWh"
+                        },
+                        "ts": "2020-05-16 02:35:56 +0200",
+                        "val": 0.899999976158142,
+                        "val_t": "float"
+                      },
+                      {
+                        "props": {
+                          "unit": "W"
+                        },
+                        "ts": "2020-05-16 13:20:56 +0200",
+                        "val": 0,
+                        "val_t": "float"
+                      },
+                      {
+                        "props": {
+                          "unit": "A"
+                        },
+                        "ts": "2020-05-16 13:20:56 +0200",
+                        "val": 0.00800000037997961,
+                        "val_t": "float"
+                      },
+                      {
+                        "props": {
+                          "unit": "V"
+                        },
+                        "ts": "2020-05-16 13:25:41 +0200",
+                        "val": 230.794006347656,
+                        "val_t": "float"
+                      }
+                    ]
+                  }
+                ],
+                "name": "meter_elec"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:37_1",
+                "attributes": [
+                  {
+                    "name": "error",
+                    "values": [
+                      {
+                        "props": {
+                          "msg": "TRANSMIT_COMPLETE_NO_ACK",
+                          "src": "nodeId=37_1;service=out_lvl_switch"
+                        },
+                        "ts": "2020-05-19 08:07:52 +0200",
+                        "val": "TX_ERROR",
+                        "val_t": "string"
+                      }
+                    ]
+                  }
+                ],
+                "name": "dev_sys"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:out_lvl_switch/ad:37_1",
+                "attributes": [
+                  {
+                    "name": "lvl",
+                    "values": [
+                      {
+                        "ts": "2020-05-19 10:06:16 +0200",
+                        "val": 99,
+                        "val_t": "int"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "binary",
+                    "values": [
+                      {
+                        "ts": "2020-05-19 08:07:55 +0200",
+                        "val": true,
+                        "val_t": "bool"
+                      }
+                    ]
+                  }
+                ],
+                "name": "out_lvl_switch"
+              }
+            ]
+          },
+          {
+            "id": 21,
+            "services": [
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:out_lvl_switch/ad:37_2",
+                "attributes": [
+                  {
+                    "name": "lvl",
+                    "values": [
+                      {
+                        "ts": "2020-05-19 10:06:16 +0200",
+                        "val": 99,
+                        "val_t": "int"
+                      }
+                    ]
+                  }
+                ],
+                "name": "out_lvl_switch"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:color_ctrl/ad:37_2",
+                "attributes": [
+                  {
+                    "name": "color",
+                    "values": [
+                      {
+                        "ts": "2020-05-19 10:06:16 +0200",
+                        "val": {
+                          "blue": 255,
+                          "green": 255,
+                          "red": 255
+                        },
+                        "val_t": "int_map"
+                      }
+                    ]
+                  }
+                ],
+                "name": "color_ctrl"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:37_2",
+                "attributes": [
+                  {
+                    "name": "error",
+                    "values": [
+                      {
+                        "props": {
+                          "msg": "TRANSMIT_COMPLETE_UNKNOWN",
+                          "src": "nodeId=37_2;service=color_ctrl"
+                        },
+                        "ts": "2020-05-15 08:58:45 +0200",
+                        "val": "TX_ERROR",
+                        "val_t": "string"
+                      }
+                    ]
+                  }
+                ],
+                "name": "dev_sys"
+              }
+            ]
+          },
+          {
+            "id": 23,
+            "services": [
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:39_0",
+                "attributes": [
+                  {
+                    "name": "state",
+                    "values": [
+                      {
+                        "ts": "2020-05-15 08:59:02 +0200",
+                        "val": "UP",
+                        "val_t": "string"
+                      }
+                    ]
+                  }
+                ],
+                "name": "dev_sys"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_temp/ad:39_0",
+                "attributes": [
+                  {
+                    "name": "sensor",
+                    "values": [
+                      {
+                        "props": {
+                          "unit": "C"
+                        },
+                        "ts": "2020-05-19 10:11:12 +0200",
+                        "val": 22.7900009155273,
+                        "val_t": "float"
+                      }
+                    ]
+                  }
+                ],
+                "name": "sensor_temp"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_humid/ad:39_0",
+                "attributes": [
+                  {
+                    "name": "sensor",
+                    "values": [
+                      {
+                        "props": {
+                          "unit": "%"
+                        },
+                        "ts": "2020-05-19 10:11:12 +0200",
+                        "val": 19,
+                        "val_t": "float"
+                      }
+                    ]
+                  }
+                ],
+                "name": "sensor_humid"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:alarm_fire/ad:39_0",
+                "attributes": [
+                  {
+                    "name": "alarm",
+                    "values": [
+                      {
+                        "ts": "2020-05-06 13:50:18 +0200",
+                        "val": {
+                          "event": "smoke_test",
+                          "status": "activ"
+                        },
+                        "val_t": "str_map"
+                      }
+                    ]
+                  }
+                ],
+                "name": "alarm_fire"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:battery/ad:39_0",
+                "attributes": [
+                  {
+                    "name": "lvl",
+                    "values": [
+                      {
+                        "ts": "2020-04-30 13:06:19 +0200",
+                        "val": 90,
+                        "val_t": "int"
+                      }
+                    ]
+                  }
+                ],
+                "name": "battery"
+              }
+            ]
+          },
+          {
+            "id": 24,
+            "services": [
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:41_0",
+                "attributes": [
+                  {
+                    "name": "group",
+                    "values": [
+                      {
+                        "props": {
+                          "max_supports": "5"
+                        },
+                        "ts": "2020-03-31 09:40:53 +0200",
+                        "val": {
+                          "group": "1",
+                          "members": [
+                            "1_0",
+                            "18_0",
+                            "26_0"
+                          ]
+                        },
+                        "val_t": "object"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "error",
+                    "values": [
+                      {
+                        "props": {
+                          "msg": "ZW_ERR_OP_FAILED",
+                          "src": "nodeId=41_0;service=out_bin_switch"
+                        },
+                        "ts": "2020-03-27 14:32:07 +0100",
+                        "val": "TX_ERROR",
+                        "val_t": "string"
+                      }
+                    ]
+                  }
+                ],
+                "name": "dev_sys"
+              }
+            ]
+          },
+          {
+            "id": 25,
+            "services": []
+          },
+          {
+            "id": 26,
+            "services": [
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:43_0",
+                "attributes": [
+                  {
+                    "name": "state",
+                    "values": [
+                      {
+                        "ts": "2020-04-16 09:16:35 +0200",
+                        "val": "UP",
+                        "val_t": "string"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "error",
+                    "values": [
+                      {
+                        "props": {
+                          "msg": "TRANSMIT_COMPLETE_NOROUTE",
+                          "src": "nodeId=43_0;service=sensor_temp"
+                        },
+                        "ts": "2020-05-15 08:59:01 +0200",
+                        "val": "TX_ERROR",
+                        "val_t": "string"
+                      }
+                    ]
+                  }
+                ],
+                "name": "dev_sys"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:alarm_fire/ad:43_0",
+                "attributes": [
+                  {
+                    "name": "alarm",
+                    "values": [
+                      {
+                        "ts": "2020-03-31 13:38:05 +0200",
+                        "val": {
+                          "event": "smoke",
+                          "status": "deactiv"
+                        },
+                        "val_t": "str_map"
+                      }
+                    ]
+                  }
+                ],
+                "name": "alarm_fire"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_temp/ad:43_0",
+                "attributes": [
+                  {
+                    "name": "sensor",
+                    "values": [
+                      {
+                        "props": {
+                          "unit": "C"
+                        },
+                        "ts": "2020-04-16 09:17:29 +0200",
+                        "val": 26.6000003814697,
+                        "val_t": "float"
+                      }
+                    ]
+                  }
+                ],
+                "name": "sensor_temp"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:battery/ad:43_0",
+                "attributes": [
+                  {
+                    "name": "state",
+                    "values": [
+                      {
+                        "ts": "2020-03-31 16:04:55 +0200",
+                        "val": "replace_soon",
+                        "val_t": "string"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "alarm",
+                    "values": [
+                      {
+                        "ts": "2020-03-31 16:04:55 +0200",
+                        "val": {
+                          "event": "low_battery",
+                          "status": "activ"
+                        },
+                        "val_t": "str_map"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "lvl",
+                    "values": [
+                      {
+                        "ts": "2020-04-16 09:17:29 +0200",
+                        "val": 75,
+                        "val_t": "int"
+                      }
+                    ]
+                  }
+                ],
+                "name": "battery"
+              }
+            ]
+          },
+          {
+            "id": 27,
+            "services": [
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:sensor_power/ad:45_0",
+                "attributes": [
+                  {
+                    "name": "sensor",
+                    "values": [
+                      {
+                        "props": {
+                          "unit": "W"
+                        },
+                        "ts": "2020-05-19 10:06:51 +0200",
+                        "val": 0,
+                        "val_t": "float"
+                      }
+                    ]
+                  }
+                ],
+                "name": "sensor_power"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:out_bin_switch/ad:45_0",
+                "attributes": [
+                  {
+                    "name": "binary",
+                    "values": [
+                      {
+                        "ts": "2020-05-19 10:12:56 +0200",
+                        "val": false,
+                        "val_t": "bool"
+                      }
+                    ]
+                  }
+                ],
+                "name": "out_bin_switch"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:45_0",
+                "attributes": [
+                  {
+                    "name": "state",
+                    "values": [
+                      {
+                        "ts": "2020-05-19 01:56:15 +0200",
+                        "val": "UP",
+                        "val_t": "string"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "error",
+                    "values": [
+                      {
+                        "props": {
+                          "msg": "TRANSMIT_COMPLETE_NO_ACK",
+                          "src": "nodeId=45_0;service=out_bin_switch"
+                        },
+                        "ts": "2020-05-19 01:41:55 +0200",
+                        "val": "TX_ERROR",
+                        "val_t": "string"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "group",
+                    "values": [
+                      {
+                        "props": {
+                          "max_supports": "1"
+                        },
+                        "ts": "2020-05-07 13:22:47 +0200",
+                        "val": {
+                          "group": "1",
+                          "members": [
+                            "1_0"
+                          ]
+                        },
+                        "val_t": "object"
+                      }
+                    ]
+                  }
+                ],
+                "name": "dev_sys"
+              },
+              {
+                "addr": "/rt:dev/rn:zw/ad:1/sv:meter_elec/ad:45_0",
+                "attributes": [
+                  {
+                    "name": "meter",
+                    "values": [
+                      {
+                        "props": {
+                          "unit": "kWh"
+                        },
+                        "ts": "2020-05-15 08:58:45 +0200",
+                        "val": 0.310000002384186,
+                        "val_t": "float"
+                      }
+                    ]
+                  }
+                ],
+                "name": "meter_elec"
+              }
+            ]
+          },
+          {
+            "id": 28,
+            "services": [
+              {
+                "addr": "/rt:dev/rn:tibber/ad:1/sv:meter_elec/ad:c70dcbe5-4485-4821-933d-a8a86452737b",
+                "attributes": [
+                  {
+                    "name": "meter_ext",
+                    "values": [
+                      {
+                        "ts": "2020-05-05 18:39:50 +0200",
+                        "val": {
+                          "e_export": 0,
+                          "e_import": 48814.722,
+                          "i1": 8.339,
+                          "i2": 4.362,
+                          "i3": 7.94,
+                          "last_e_export": 0,
+                          "last_e_import": 38.087243,
+                          "p_export": 0,
+                          "p_export_max": 0,
+                          "p_export_min": 0,
+                          "p_import": 2506,
+                          "p_import_avg": 2040.6,
+                          "p_import_max": 6176,
+                          "p_import_min": 464,
+                          "u1": 224.4,
+                          "u2": 224.9,
+                          "u3": 224.9
+                        },
+                        "val_t": "float_map"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "meter",
+                    "values": [
+                      {
+                        "props": {
+                          "unit": "W"
+                        },
+                        "ts": "2020-05-05 18:39:48 +0200",
+                        "val": 2508,
+                        "val_t": "float"
+                      }
+                    ]
+                  }
+                ],
+                "name": "meter_elec"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "requestId": "158987618067376",
+    "success": true
+  },
+  "val_t": "object",
+  "ver": "1"
+}
