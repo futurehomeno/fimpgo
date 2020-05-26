@@ -51,12 +51,18 @@ func (kp *EcdsaKey) Generate() error {
 }
 
 func (kp *EcdsaKey) ExportX509EncodedKeys() (string,string) {
-	x509Encoded, _ := x509.MarshalECPrivateKey(kp.privateKey)
-	pemEncoded := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: x509Encoded})
-
-	x509EncodedPub, _ := x509.MarshalPKIXPublicKey(kp.publicKey)
-	pemEncodedPub := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: x509EncodedPub})
-	return string(pemEncoded), string(pemEncodedPub)
+	var pemEncodedStr,pemEncodedPubStr string
+	if kp.privateKey != nil {
+		x509Encoded, _ := x509.MarshalECPrivateKey(kp.privateKey)
+		pemEncoded := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: x509Encoded})
+		pemEncodedStr = string(pemEncoded)
+	}
+	if kp.publicKey != nil {
+		x509EncodedPub, _ := x509.MarshalPKIXPublicKey(kp.publicKey)
+		pemEncodedPub := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: x509EncodedPub})
+		pemEncodedPubStr = string(pemEncodedPub)
+	}
+	return pemEncodedStr, pemEncodedPubStr
 }
 
 func (kp *EcdsaKey) ExportJsonEncodedKeys() (JsonEcKey, JsonEcKey) {

@@ -29,6 +29,7 @@ type ApiClient struct {
 	isNotifyRouterStarted bool
 	notifChMux            sync.RWMutex
 	isVincAppsSyncEnabled bool
+
 }
 
 func (mh *ApiClient) IsCacheEnabled() bool {
