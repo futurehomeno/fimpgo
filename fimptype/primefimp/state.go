@@ -52,7 +52,7 @@ type StateAttribute struct {
 type StateAttributeValue struct {
 	Timestamp string            `json:"ts"`
 	ValType   string            `json:"val_t"`
-	Val       interface{}       `json:"-"`
+	Val       interface{}       `json:"val"`
 	Props     map[string]string `json:"props"`
 }
 
