@@ -44,9 +44,106 @@ func (ss StateService) ContainsAttribute(attribute string) bool {
 	return false
 }
 
+// Note from the documentation: https://github.com/futurehomeno/docs/blob/master/smart-home/core/prime-fimp-states.md
+// All attributes will usually have only one value
 type StateAttribute struct {
-	Name   string                 `json:"name"`
-	Values []*StateAttributeValue `json:"values"`
+	Name   string                `json:"name"`
+	Values []StateAttributeValue `json:"values"`
+}
+
+func (sa StateAttribute) validate() error {
+	if len(sa.Values) == 0 {
+		return fmt.Errorf("empty attribute values for attribute: %+v", sa.Name)
+	}
+	return nil
+}
+
+func (sa StateAttribute) GetFirstValueString() (string, error) {
+	if err := sa.validate(); err != nil {
+		return "", err
+	}
+	attrVal := sa.Values[0]
+	return attrVal.GetStringValue()
+}
+
+func (sa StateAttribute) GetFirstValueInt() (int64, error) {
+	if err := sa.validate(); err != nil {
+		return -1, err
+	}
+	attrVal := sa.Values[0]
+	return attrVal.GetIntValue()
+}
+
+func (sa StateAttribute) GetFirstValueFloat() (float64, error) {
+	if err := sa.validate(); err != nil {
+		return -1, err
+	}
+	attrVal := sa.Values[0]
+	return attrVal.GetFloatValue()
+}
+
+func (sa StateAttribute) GetFirstValueBinary() (bool, error) {
+	if err := sa.validate(); err != nil {
+		return false, err
+	}
+	attrVal := sa.Values[0]
+	return attrVal.GetBoolValue()
+}
+
+func (sa StateAttribute) GetFirstStrArrayValue() ([]string, error) {
+	if err := sa.validate(); err != nil {
+		return nil, err
+	}
+	attrVal := sa.Values[0]
+	return attrVal.GetStrArrayValue()
+}
+
+func (sa StateAttribute) GetFirstStrMapValue() (map[string]string, error) {
+	if err := sa.validate(); err != nil {
+		return nil, err
+	}
+	attrVal := sa.Values[0]
+	return attrVal.GetStrMapValue()
+}
+
+func (sa StateAttribute) GetFirstIntArrayValue() ([]int64, error) {
+	if err := sa.validate(); err != nil {
+		return nil, err
+	}
+	attrVal := sa.Values[0]
+	return attrVal.GetIntArrayValue()
+}
+
+func (sa StateAttribute) GetFirstIntMapValue() (map[string]int64, error) {
+	if err := sa.validate(); err != nil {
+		return nil, err
+	}
+	attrVal := sa.Values[0]
+	return attrVal.GetIntMapValue()
+}
+
+func (sa StateAttribute) GetFirstFloatArrayValue() ([]float64, error) {
+	if err := sa.validate(); err != nil {
+		return nil, err
+	}
+	attrVal := sa.Values[0]
+	return attrVal.GetFloatArrayValue()
+}
+
+func (sa StateAttribute) GetFirstFloatMapValue() (map[string]float64, error) {
+	if err := sa.validate(); err != nil {
+		return nil, err
+	}
+	attrVal := sa.Values[0]
+	return attrVal.GetFloatMapValue()
+}
+
+func (sa StateAttribute) GetFirstBoolMapValue() (map[string]bool, error) {
+	if err := sa.validate(); err != nil {
+		return nil, err
+	}
+	attrVal := sa.Values[0]
+	return attrVal.GetBoolMapValue()
 }
 
 type StateAttributeValue struct {
@@ -252,6 +349,39 @@ func (sav StateAttributeValue) GetFloatArrayValue() ([]float64, error) {
 		return val, nil
 	}
 	return nil, fmt.Errorf(wrongValueFormat, "[]float64", reflect.ValueOf(sav.Val))
+}
+
+func (sav StateAttributeValue) GetFloatMapValue() (map[string]float64, error) {
+	if err := (&sav).parse(); err != nil {
+		return nil, errors.Wrap(err, "parsing")
+	}
+	val, ok := sav.Val.(map[string]float64)
+	if ok {
+		return val, nil
+	}
+	return nil, fmt.Errorf(wrongValueFormat, "map[string]float64", reflect.ValueOf(sav.Val))
+}
+
+func (sav StateAttributeValue) GetIntMapValue() (map[string]int64, error) {
+	if err := (&sav).parse(); err != nil {
+		return nil, errors.Wrap(err, "parsing")
+	}
+	val, ok := sav.Val.(map[string]int64)
+	if ok {
+		return val, nil
+	}
+	return nil, fmt.Errorf(wrongValueFormat, "map[string]int64", reflect.ValueOf(sav.Val))
+}
+
+func (sav StateAttributeValue) GetBoolMapValue() (map[string]bool, error) {
+	if err := (&sav).parse(); err != nil {
+		return nil, errors.Wrap(err, "parsing")
+	}
+	val, ok := sav.Val.(map[string]bool)
+	if ok {
+		return val, nil
+	}
+	return nil, fmt.Errorf(wrongValueFormat, "map[string]bool", reflect.ValueOf(sav.Val))
 }
 
 type State struct {
