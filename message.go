@@ -31,6 +31,8 @@ const (
 	VTypeBinary      = "bin"
 	VTypeNull        = "null"
 	wrongValueFormat = "wrong value type. expected %+v, got %+v"
+
+	Val = "val"
 )
 
 type Props map[string]string

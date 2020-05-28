@@ -1,7 +1,11 @@
 package primefimp
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/buger/jsonparser"
+	"github.com/futurehomeno/fimpgo"
+	"github.com/pkg/errors"
 	"reflect"
 )
 
@@ -41,18 +45,153 @@ func (ss StateService) ContainsAttribute(attribute string) bool {
 }
 
 type StateAttribute struct {
-	Name   string                `json:"name"`
-	Values []StateAttributeValue `json:"values"`
+	Name   string                 `json:"name"`
+	Values []*StateAttributeValue `json:"values"`
 }
 
 type StateAttributeValue struct {
 	Timestamp string            `json:"ts"`
 	ValType   string            `json:"val_t"`
-	Val       interface{}       `json:"val"`
+	Val       interface{}       `json:"-"`
 	Props     map[string]string `json:"props"`
 }
 
+func (sav *StateAttributeValue) parse() error {
+	b, err := json.Marshal(sav)
+	if err != nil {
+		return errors.Wrap(err, "marshalling")
+	}
+	switch sav.ValType {
+	case fimpgo.VTypeString:
+		if sav.Val, err = jsonparser.GetString(b, fimpgo.Val); err != nil {
+			return err
+		}
+	case fimpgo.VTypeBool:
+		if sav.Val, err = jsonparser.GetBoolean(b, fimpgo.Val); err != nil {
+			return err
+		}
+	case fimpgo.VTypeInt:
+		if sav.Val, err = jsonparser.GetInt(b, fimpgo.Val); err != nil {
+			return err
+		}
+	case fimpgo.VTypeFloat:
+		if sav.Val, err = jsonparser.GetFloat(b, fimpgo.Val); err != nil {
+			return err
+		}
+	case fimpgo.VTypeBoolArray:
+		var val []bool
+		_, err = jsonparser.ArrayEach(b, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+			item, _ := jsonparser.ParseBoolean(value)
+			val = append(val, item)
+		}, fimpgo.Val)
+		if err != nil {
+			return err
+		}
+		sav.Val = val
+	case fimpgo.VTypeStrArray:
+		var val []string
+		if _, err = jsonparser.ArrayEach(b, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+			item, _ := jsonparser.ParseString(value)
+			val = append(val, item)
+		}, fimpgo.Val); err != nil {
+			return err
+		}
+		sav.Val = val
+	case fimpgo.VTypeIntArray:
+		var val []int64
+		if _, err = jsonparser.ArrayEach(b, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+			item, _ := jsonparser.ParseInt(value)
+			val = append(val, item)
+		}, fimpgo.Val); err != nil {
+			return err
+		}
+		sav.Val = val
+	case fimpgo.VTypeFloatArray:
+		var val []float64
+		if _, err = jsonparser.ArrayEach(b, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+			item, _ := jsonparser.ParseFloat(value)
+			val = append(val, item)
+		}, fimpgo.Val); err != nil {
+			return nil
+		}
+		sav.Val = val
+	case fimpgo.VTypeStrMap:
+		val := make(map[string]string)
+		if err = jsonparser.ObjectEach(b, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+			val[string(key)], err = jsonparser.ParseString(value)
+			return nil
+		}, fimpgo.Val); err != nil {
+			return err
+		}
+		sav.Val = val
+	case fimpgo.VTypeIntMap:
+		val := make(map[string]int64)
+		if err = jsonparser.ObjectEach(b, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+			val[string(key)], err = jsonparser.ParseInt(value)
+			return nil
+		}, fimpgo.Val); err != nil {
+			return err
+		}
+		sav.Val = val
+	case fimpgo.VTypeFloatMap:
+		val := make(map[string]bool)
+		if err = jsonparser.ObjectEach(b, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+			val[string(key)], err = jsonparser.ParseBoolean(value)
+			return nil
+		}, fimpgo.Val); err != nil {
+			return err
+		}
+		sav.Val = val
+	case fimpgo.VTypeBoolMap:
+		val := make(map[string]bool)
+		if err = jsonparser.ObjectEach(b, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+			val[string(key)], err = jsonparser.ParseBoolean(value)
+			return nil
+		}, fimpgo.Val); err != nil {
+			return err
+		}
+		sav.Val = val
+	}
+	return nil
+}
+
+func (sav StateAttributeValue) GetStringValue() (string, error) {
+	if err := (&sav).parse(); err != nil {
+		return "", errors.Wrap(err, "parsing")
+	}
+	val, ok := sav.Val.(string)
+	if ok {
+		return val, nil
+	}
+	return "", fmt.Errorf(wrongValueFormat, "string", reflect.ValueOf(sav.Val))
+}
+
+func (sav StateAttributeValue) GetIntValue() (int64, error) {
+	if err := (&sav).parse(); err != nil {
+		return -1, errors.Wrap(err, "parsing")
+	}
+	val, ok := sav.Val.(int64)
+	if ok {
+		return val, nil
+	}
+	return -1, fmt.Errorf(wrongValueFormat, "int64", reflect.ValueOf(sav.Val))
+}
+
+func (sav StateAttributeValue) GetFloatValue() (float64, error) {
+	if err := (&sav).parse(); err != nil {
+		return -1, errors.Wrap(err, "parsing")
+	}
+	val, ok := sav.Val.(float64)
+	if ok {
+		return val, nil
+	}
+	return -1, fmt.Errorf(wrongValueFormat, "float64", reflect.ValueOf(sav.Val))
+}
+
 func (sav StateAttributeValue) GetBoolValue() (bool, error) {
+	if err := (&sav).parse(); err != nil {
+		return false, errors.Wrap(err, "parsing")
+	}
 	val, ok := sav.Val.(bool)
 	if ok {
 		return val, nil
@@ -61,6 +200,9 @@ func (sav StateAttributeValue) GetBoolValue() (bool, error) {
 }
 
 func (sav StateAttributeValue) GetStrArrayValue() ([]string, error) {
+	if err := (&sav).parse(); err != nil {
+		return nil, errors.Wrap(err, "parsing")
+	}
 	val, ok := sav.Val.([]string)
 	if ok {
 		return val, nil
@@ -69,14 +211,31 @@ func (sav StateAttributeValue) GetStrArrayValue() ([]string, error) {
 }
 
 func (sav StateAttributeValue) GetStrMapValue() (map[string]string, error) {
-	val, ok := sav.Val.(map[string]string)
-	if ok {
-		return val, nil
+	if err := (&sav).parse(); err != nil {
+		return nil, errors.Wrap(err, "parsing")
 	}
-	return nil, fmt.Errorf(wrongValueFormat, "map[string]string", reflect.ValueOf(sav.Val))
+	strMapVal, ok := sav.Val.(map[string]string)
+	if ok {
+		return strMapVal, nil
+	}
+
+	iMapVal, ok := sav.Val.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf(wrongValueFormat, "map[string]string", reflect.ValueOf(sav.Val))
+	}
+
+	result := map[string]string{}
+	for k, v := range iMapVal {
+		result[k] = fmt.Sprint(v)
+	}
+	return result, nil
+
 }
 
 func (sav StateAttributeValue) GetIntArrayValue() ([]int64, error) {
+	if err := (&sav).parse(); err != nil {
+		return nil, errors.Wrap(err, "parsing")
+	}
 	val, ok := sav.Val.([]int64)
 	if ok {
 		return val, nil
@@ -85,6 +244,9 @@ func (sav StateAttributeValue) GetIntArrayValue() ([]int64, error) {
 }
 
 func (sav StateAttributeValue) GetFloatArrayValue() ([]float64, error) {
+	if err := (&sav).parse(); err != nil {
+		return nil, errors.Wrap(err, "parsing")
+	}
 	val, ok := sav.Val.([]float64)
 	if ok {
 		return val, nil
@@ -96,7 +258,7 @@ type State struct {
 	Devices []StateDevice `json:"devices"`
 }
 
-func (s State) FilterDevicesByService(service string) []StateDevice {
+func (s *State) FilterDevicesByService(service string) []StateDevice {
 	if len(s.Devices) == 0 {
 		return nil
 	}
@@ -112,7 +274,7 @@ func (s State) FilterDevicesByService(service string) []StateDevice {
 	return result
 }
 
-func (s State) FilterDevicesByAttribute(attribute string) []StateDevice {
+func (s *State) FilterDevicesByAttribute(attribute string) []StateDevice {
 	if len(s.Devices) == 0 {
 		return nil
 	}
