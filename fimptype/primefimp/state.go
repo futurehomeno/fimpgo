@@ -9,6 +9,50 @@ import (
 	"reflect"
 )
 
+/*
+	State
+*/
+
+type State struct {
+	Devices []StateDevice `json:"devices"`
+}
+
+func (s *State) FilterDevicesByService(service string) []StateDevice {
+	if len(s.Devices) == 0 {
+		return nil
+	}
+	var result []StateDevice
+
+	for _, sd := range s.Devices {
+		if sd.ContainsService(service) {
+			result = append(result, sd)
+			continue
+		}
+
+	}
+	return result
+}
+
+func (s *State) FilterDevicesByAttribute(attribute string) []StateDevice {
+	if len(s.Devices) == 0 {
+		return nil
+	}
+	var result []StateDevice
+
+	for _, sd := range s.Devices {
+		for _, ds := range sd.Services {
+			if _, ok := ds.FindAttribute(attribute); ok {
+				result = append(result, sd)
+				continue
+			}
+		}
+	}
+	return result
+}
+
+/*
+	Device
+*/
 type StateDevice struct {
 	Id       int64          `json:"id"`
 	Services []StateService `json:"services"`
@@ -25,24 +69,40 @@ func (sd StateDevice) ContainsService(service string) bool {
 	}
 	return false
 }
+func (sd StateDevice) FilterServices(serviceNames []string) []StateService {
+	var result []StateService
+	for _, sn := range serviceNames {
+		for _, stateService := range sd.Services {
+			if stateService.Name == sn {
+				result = append(result, stateService)
+				break
+			}
+		}
+	}
+	return result
+}
 
+/*
+	Service
+*/
 type StateService struct {
 	Name       string           `json:"name"`
 	Address    string           `json:"addr"`
 	Attributes []StateAttribute `json:"attributes"`
 }
 
-func (ss StateService) ContainsAttribute(attribute string) bool {
-	if len(ss.Attributes) == 0 {
-		return false
-	}
-	for _, sa := range ss.Attributes {
-		if sa.Name == attribute {
-			return true
+func (ss StateService) FindAttribute(attributeName string) (StateAttribute, bool) {
+	for _, serviceAttribute := range ss.Attributes {
+		if serviceAttribute.Name == attributeName {
+			return serviceAttribute, true
 		}
 	}
-	return false
+	return StateAttribute{}, false
 }
+
+/*
+	Attribute
+*/
 
 // Note from the documentation: https://github.com/futurehomeno/docs/blob/master/smart-home/core/prime-fimp-states.md
 // All attributes will usually have only one value
@@ -58,7 +118,14 @@ func (sa StateAttribute) validate() error {
 	return nil
 }
 
-func (sa StateAttribute) GetFirstValueString() (string, error) {
+func (sa StateAttribute) GetFirstValue() (StateAttributeValue, error) {
+	if err := sa.validate(); err != nil {
+		return StateAttributeValue{}, err
+	}
+	return sa.Values[0], nil
+}
+
+func (sa StateAttribute) GetFirstStringValue() (string, error) {
 	if err := sa.validate(); err != nil {
 		return "", err
 	}
@@ -66,7 +133,7 @@ func (sa StateAttribute) GetFirstValueString() (string, error) {
 	return attrVal.GetStringValue()
 }
 
-func (sa StateAttribute) GetFirstValueInt() (int64, error) {
+func (sa StateAttribute) GetFirstIntValue() (int64, error) {
 	if err := sa.validate(); err != nil {
 		return -1, err
 	}
@@ -74,7 +141,7 @@ func (sa StateAttribute) GetFirstValueInt() (int64, error) {
 	return attrVal.GetIntValue()
 }
 
-func (sa StateAttribute) GetFirstValueFloat() (float64, error) {
+func (sa StateAttribute) GetFirstFloatValue() (float64, error) {
 	if err := sa.validate(); err != nil {
 		return -1, err
 	}
@@ -82,7 +149,7 @@ func (sa StateAttribute) GetFirstValueFloat() (float64, error) {
 	return attrVal.GetFloatValue()
 }
 
-func (sa StateAttribute) GetFirstValueBinary() (bool, error) {
+func (sa StateAttribute) GetFirstBinaryValue() (bool, error) {
 	if err := sa.validate(); err != nil {
 		return false, err
 	}
@@ -146,6 +213,21 @@ func (sa StateAttribute) GetFirstBoolMapValue() (map[string]bool, error) {
 	return attrVal.GetBoolMapValue()
 }
 
+func (sa StateAttribute) GetFirstPropAsString(propName string) (string, error) {
+	if err := sa.validate(); err != nil {
+		return "", err
+	}
+	props := sa.Values[0].Props
+	propVal, ok := props[propName]
+	if !ok {
+		return "", fmt.Errorf("cannot find attribute property: %+v", propName)
+	}
+	return propVal, nil
+}
+
+/*
+	Attribute Value
+*/
 type StateAttributeValue struct {
 	Timestamp string            `json:"ts"`
 	ValType   string            `json:"val_t"`
@@ -382,41 +464,4 @@ func (sav StateAttributeValue) GetBoolMapValue() (map[string]bool, error) {
 		return val, nil
 	}
 	return nil, fmt.Errorf(wrongValueFormat, "map[string]bool", reflect.ValueOf(sav.Val))
-}
-
-type State struct {
-	Devices []StateDevice `json:"devices"`
-}
-
-func (s *State) FilterDevicesByService(service string) []StateDevice {
-	if len(s.Devices) == 0 {
-		return nil
-	}
-	var result []StateDevice
-
-	for _, sd := range s.Devices {
-		if sd.ContainsService(service) {
-			result = append(result, sd)
-			continue
-		}
-
-	}
-	return result
-}
-
-func (s *State) FilterDevicesByAttribute(attribute string) []StateDevice {
-	if len(s.Devices) == 0 {
-		return nil
-	}
-	var result []StateDevice
-
-	for _, sd := range s.Devices {
-		for _, ds := range sd.Services {
-			if ds.ContainsAttribute(attribute) {
-				result = append(result, sd)
-				continue
-			}
-		}
-	}
-	return result
 }
