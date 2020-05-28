@@ -24,6 +24,12 @@ const (
 	CmdAdd    = "add"
 
 	wrongValueFormat = "wrong value type. expected %+v, got %+v"
+
+	ServiceOutBinSwitch = "out_bin_switch"
+	ServiceOutLvlSwitch = "out_lvl_switch"
+	ServiceThermostat   = "thermostat"
+	ServiceColorControl = "color_ctrl"
+	ServiceSensorTemp   = "sensor_temp"
 )
 
 // Top level element for commands
