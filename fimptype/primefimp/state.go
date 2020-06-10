@@ -17,6 +17,8 @@ type State struct {
 	Devices []StateDevice `json:"devices"`
 }
 
+type StateDeviceFilter func(StateDevice) bool
+
 func (s *State) FilterDevicesByService(service string) []StateDevice {
 	if len(s.Devices) == 0 {
 		return nil
@@ -45,6 +47,16 @@ func (s *State) FilterDevicesByAttribute(attribute string) []StateDevice {
 				result = append(result, sd)
 				continue
 			}
+		}
+	}
+	return result
+}
+
+func (s *State) FilterDevicesByFunc(filter StateDeviceFilter) []StateDevice {
+	var result []StateDevice
+	for _, sd := range s.Devices {
+		if filter(sd) {
+			result = append(result, sd)
 		}
 	}
 	return result
