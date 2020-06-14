@@ -13,11 +13,12 @@ import (
 	State
 */
 
-type State struct {
-	Devices []StateDevice `json:"devices"`
-}
-
-type StateDeviceFilter func(StateDevice) bool
+type (
+	State struct {
+		Devices []StateDevice `json:"devices"`
+	}
+	StateDeviceFilter func(StateDevice) bool
+)
 
 func (s *State) FilterDevicesByService(service string) []StateDevice {
 	if len(s.Devices) == 0 {
@@ -65,10 +66,14 @@ func (s *State) FilterDevicesByFunc(filter StateDeviceFilter) []StateDevice {
 /*
 	Device
 */
-type StateDevice struct {
-	Id       int64          `json:"id"`
-	Services []StateService `json:"services"`
-}
+type (
+	StateDevice struct {
+		Id       int64          `json:"id"`
+		Services []StateService `json:"services"`
+	}
+
+	StateServiceFilterFunc func(ss StateService) bool
+)
 
 func (sd StateDevice) ContainsService(service string) bool {
 	if len(sd.Services) == 0 {
@@ -94,14 +99,28 @@ func (sd StateDevice) FilterServices(serviceNames []string) []StateService {
 	return result
 }
 
+func (sd StateDevice) FilterServicesByFunc(filter StateServiceFilterFunc) []StateService {
+	var result []StateService
+	for _, s := range sd.Services {
+		if filter(s) {
+			result = append(result, s)
+		}
+	}
+	return result
+}
+
 /*
 	Service
 */
-type StateService struct {
-	Name       string           `json:"name"`
-	Address    string           `json:"addr"`
-	Attributes []StateAttribute `json:"attributes"`
-}
+type (
+	StateService struct {
+		Name       string           `json:"name"`
+		Address    string           `json:"addr"`
+		Attributes []StateAttribute `json:"attributes"`
+	}
+
+	StateAttributeFilterFunc func(sa StateAttribute) bool
+)
 
 func (ss StateService) FindAttribute(attributeName string) (StateAttribute, bool) {
 	for _, serviceAttribute := range ss.Attributes {
@@ -110,6 +129,16 @@ func (ss StateService) FindAttribute(attributeName string) (StateAttribute, bool
 		}
 	}
 	return StateAttribute{}, false
+}
+
+func (ss StateService) FilterAttributeByFunc(filter StateAttributeFilterFunc) []StateAttribute {
+	var result []StateAttribute
+	for _, sa := range ss.Attributes {
+		if filter(sa) {
+			result = append(result, sa)
+		}
+	}
+	return result
 }
 
 /*
