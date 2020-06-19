@@ -50,6 +50,7 @@ https://tools.ietf.org/html/rfc7518#section-3
 //  "tags": null,
 //  "props": {
 //  	"user_id":"aleks@gmail.com",
+//      "device_id":"dafdsafsf",
 //      "sig":"<computed signature>",
 //		"alg":"ES256"
 //  },
