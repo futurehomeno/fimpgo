@@ -7,7 +7,6 @@ import (
 	"time"
 )
 
-
 // SyncClient allows sync interaction over async channel.
 type SyncClient struct {
 	mqttTransport         *MqttTransport
@@ -40,9 +39,10 @@ func NewSyncClientV2(mqttTransport *MqttTransport, transactionPoolSize int, inbo
 	sc.init()
 	return &sc
 }
+
 // NewSyncClientV3 Creates new sync client either using connections pool internal connection
 func NewSyncClientV3(connPool *MqttConnectionPool) *SyncClient {
-	sc := SyncClient{mqttConnPool: connPool, isConnPoolEnabled:true}
+	sc := SyncClient{mqttConnPool: connPool, isConnPoolEnabled: true}
 	//TODO : Add current pool size
 	sc.transactionPoolSize = 20
 	sc.inboundBufferSize = 10
@@ -104,10 +104,10 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	//log.Debug("Registering request uid = ",fimpMsg.UID)
 	var conId int
 	var conn *MqttTransport
-	var inboundCh = make (MessageCh,10)
+	var inboundCh = make(MessageCh, 10)
 	var responseChannel chan *FimpMessage
 	var err error
-	var chanName  = uuid.NewV4().String()
+	var chanName = uuid.NewV4().String()
 
 	defer func() {
 		if autoSubscribe && responseTopic != "" && conn != nil {
@@ -123,15 +123,15 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	}()
 
 	if sc.isConnPoolEnabled {
-		conId ,conn , err = sc.mqttConnPool.BorrowConnection()
+		conId, conn, err = sc.mqttConnPool.BorrowConnection()
 		if err != nil {
-			return nil,err
+			return nil, err
 		}
-	}else {
+	} else {
 		conn = sc.mqttTransport
 	}
 	conn.RegisterChannel(chanName, inboundCh)
-	responseChannel = sc.startResponseListener(fimpMsg,responseMsgType,responseService,responseTopic,inboundCh,timeout)
+	responseChannel = sc.startResponseListener(fimpMsg, responseMsgType, responseService, responseTopic, inboundCh, timeout)
 	if autoSubscribe && responseTopic != "" {
 		conn.Subscribe(responseTopic)
 	}
@@ -162,7 +162,7 @@ func (sc *SyncClient) SendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	return sc.sendFimpWithTopicResponse(topic, fimpMsg, responseTopic, responseService, responseMsgType, timeout, false)
 }
 
-func (sc *SyncClient) startResponseListener(requestMsg *FimpMessage ,respMsgType,respService,respTopic string, inboundCh MessageCh,timeout int64) chan *FimpMessage {
+func (sc *SyncClient) startResponseListener(requestMsg *FimpMessage, respMsgType, respService, respTopic string, inboundCh MessageCh, timeout int64) chan *FimpMessage {
 	log.Debug("<SyncClient> Msg listener is started")
 	respChan := make(chan *FimpMessage)
 	go func() {

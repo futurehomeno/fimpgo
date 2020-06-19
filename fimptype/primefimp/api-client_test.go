@@ -1,6 +1,8 @@
 package primefimp
 
 import (
+	"fmt"
+	"io/ioutil"
 	"strings"
 	"testing"
 	"time"
@@ -13,7 +15,6 @@ import (
 var brokerUrl = "tcp://cube.local:1883"
 var brokerUser = ""
 var brokerPass = ""
-
 
 func TestPrimeFimp_ClientApi_Update(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
@@ -36,8 +37,8 @@ func TestPrimeFimp_ClientApi_Update(t *testing.T) {
 		t.Fail()
 	}
 
-	for _,r := range site.Rooms {
-		log.Infof("Room %s , area = %d ", r.Alias,r.Area)
+	for _, r := range site.Rooms {
+		log.Infof("Room %s , area = %d ", r.Alias, r.Area)
 
 	}
 
@@ -46,29 +47,27 @@ func TestPrimeFimp_ClientApi_Update(t *testing.T) {
 	}
 
 	notifyCh := make(chan Notify, 10)
-	client.RegisterChannel("test-run-1",notifyCh)
+	client.RegisterChannel("test-run-1", notifyCh)
 	go func() {
 		for {
-			newMsg := <- notifyCh
+			newMsg := <-notifyCh
 			if newMsg.Component != "device" {
 				continue
 			}
-			log.Infof("Update from component : %s , command : %s ",newMsg.Component,newMsg.Cmd)
-			for _,r := range site.Devices {
+			log.Infof("Update from component : %s , command : %s ", newMsg.Component, newMsg.Cmd)
+			for _, r := range site.Devices {
 				var name string
 				if r.Client.Name != nil {
 					name = *r.Client.Name
 				}
-				log.Infof("Device id = %d , name = %s ",r.ID, name)
+				log.Infof("Device id = %d , name = %s ", r.ID, name)
 			}
 		}
 	}()
 	log.Infof("Site contains %d devices", len(site.Devices))
-	time.Sleep(20*time.Minute)
+	time.Sleep(20 * time.Minute)
 	client.Stop()
 }
-
-
 
 func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
@@ -125,7 +124,7 @@ func TestPrimeFimp_SiteLazyLoading(t *testing.T) {
 	if !client.IsCacheEmpty() {
 		t.Error("Cache is not empty.Must be empty")
 	}
-	_,err = client.GetSite(true)
+	_, err = client.GetSite(true)
 	if err != nil || client.IsCacheEmpty() {
 		t.Error("Cache is empty. Cache must contain data.")
 	}
@@ -204,7 +203,6 @@ func TestPrimeFimp_ClientApi_Notify_With_Filter(t *testing.T) {
 	t.Log("Tadaaa")
 }
 
-
 func TestPrimeFimp_LoadSiteFromFile(t *testing.T) {
 	fApi := NewApiClient("pf-test", nil, false)
 	err := fApi.LoadVincResponseFromFile("testdata/site-info-response.json")
@@ -212,7 +210,7 @@ func TestPrimeFimp_LoadSiteFromFile(t *testing.T) {
 		t.Error(err)
 		t.FailNow()
 	}
-	site , err := fApi.GetSite(true)
+	site, err := fApi.GetSite(true)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -238,4 +236,44 @@ func TestPrimeFimp_LoadSiteFromFile(t *testing.T) {
 		t.FailNow()
 	}
 	t.Log(room.Alias)
+}
+
+func TestPrimefimp_LoadStateFromFile(t *testing.T) {
+	const deviceCount = 18
+	bSite, err := ioutil.ReadFile("testdata/state.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fimpMsg, err := fimpgo.NewMessageFromBytes(bSite)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := FimpToResponse(fimpMsg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	state, err := response.GetState()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if deviceCount != len(state.Devices) {
+		t.Fatal("device counts do not match")
+	}
+
+	// the current state.json file has 7 devices with the "meter_elec" service
+	const meterElecDevices = 7
+	filteredDevices := state.FilterDevicesByServices("meter_elec")
+	if len(filteredDevices) != meterElecDevices {
+		t.Fatal(fmt.Sprintf("meter_elec devices count does not match. expected %d, got %d", meterElecDevices, len(filteredDevices)))
+	}
+
+	// tue current state.json file has 6 attributes with the "meter" name
+	const meterAttributes = 7
+	filteredDevices = state.FilterDevicesByAttribute("meter")
+	if len(filteredDevices) != meterAttributes {
+		t.Fatal(fmt.Sprintf("meter_elec devices count does not match. expected %d, got %d", meterAttributes, len(filteredDevices)))
+	}
+
 }
