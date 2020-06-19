@@ -60,6 +60,27 @@ func (cs *KeyStore) AddSerializedKey(user, device, key, keyType, algo string) er
 	return cs.SaveToDisk()
 }
 
+func (cs *KeyStore) UpdateSerializedKey(userId, deviceId, key, keyType, algo string) (bool,error) {
+	for i := range cs.keyStore {
+		if cs.keyStore[i].DeviceId == deviceId && cs.keyStore[i].UserId == userId && cs.keyStore[i].KeyType == keyType && cs.keyStore[i].Algorithm == algo {
+			cs.keyStore[i].SerializedKey = key
+			cs.keyStore[i].AddedAt = time.Now().Format(time.RFC3339)
+			return true,cs.SaveToDisk()
+
+		}
+	}
+	return false,nil
+}
+
+func (cs *KeyStore) UpsertSerializedKey(userId, deviceId, key, keyType, algo string) error {
+	keyExists , err := cs.UpdateSerializedKey(userId,deviceId,key,keyType,algo)
+	if !keyExists {
+		err = cs.AddSerializedKey(userId,deviceId,key,keyType,algo)
+	}
+	return err
+}
+
+
 func (cs *KeyStore) GetKey(userId, deviceId, keyType string) *KeyRecord {
 	for i := range cs.keyStore {
 		if cs.keyStore[i].DeviceId == deviceId && cs.keyStore[i].UserId == userId && cs.keyStore[i].KeyType == keyType {
