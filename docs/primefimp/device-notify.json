@@ -33,7 +33,7 @@
         "batteryLevel": null,
         "batteryPercentage": null,
         "presence": true,
-        "timestamp": "2019-06-01 10:41:40 +0200"
+        "timestamp": "2019-06-01 10:41:40 +0200",
       },
       "problem": false,
       "room": 1,
