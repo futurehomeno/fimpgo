@@ -4,15 +4,15 @@ import (
 	"flag"
 	"github.com/futurehomeno/fimpgo"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 func onMsg(topic string, addr *fimpgo.Address, iotMsg *fimpgo.FimpMessage,rawMessage []byte){
 	log.Infof("New message from topic %s",topic)
+	log.Infof("Message received with type: %s", iotMsg.Type)
 }
 
 func main() {
-	mqttHost := flag.String("host","cube.local:1883","MQTT broker URL , for instance cube.local:1883")
+	mqttHost := flag.String("host","localhost:1883","MQTT broker URL , for instance cube.local:1883")
 	flag.Parse()
 	log.SetLevel(log.DebugLevel)
 	log.Infof("Broker url %s",*mqttHost)
@@ -24,7 +24,7 @@ func main() {
 	}
 
 	mqtt.SetMessageHandler(onMsg)
-	time.Sleep(time.Second*1)
+	//time.Sleep(time.Second*1)
 	mqtt.Subscribe("#")
 	log.Info("Publishing message")
 
@@ -35,5 +35,5 @@ func main() {
 	select {
 
 	}
-	
+
 }

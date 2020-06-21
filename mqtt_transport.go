@@ -317,7 +317,6 @@ func (mh *MqttTransport) onConnect(client MQTT.Client) {
 func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
 	defer func() {
 		if r := recover(); r != nil {
-			mh.channelRegMux.Unlock()
 			log.Error("<MqttAd> onMessage CRASHED with error :", r)
 		}
 	}()
@@ -343,23 +342,28 @@ func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
 		} else {
 			log.Debug(string(msg.Payload()))
 			log.Error("<MqttAd> Error processing payload :", err)
+			return
 		}
 	}
+
 	mh.channelRegMux.Lock()
+	defer mh.channelRegMux.Unlock()
+
 	for i := range mh.subChannels {
 		if !mh.isChannelInterested(i, topic, addr, fimpMsg) {
 			continue
 		}
-
 		msg := Message{Topic: topic, Addr: addr, Payload: fimpMsg}
+		timer := time.NewTimer(time.Second* time.Duration(mh.receiveChTimeout))
 		select {
 			case mh.subChannels[i] <- &msg:
+				timer.Stop()
 				// send to channel
-			case <- time.After(time.Second* time.Duration(mh.receiveChTimeout)):
+			case <- timer.C:
 				log.Info("<MqttAd> Channel is not read for ",mh.receiveChTimeout)
 		}
 	}
-	mh.channelRegMux.Unlock()
+
 }
 
 // isChannelInterested validates if channel is interested in message. Filtering is executed against either static filters or filter function
