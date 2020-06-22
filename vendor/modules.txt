@@ -1,4 +1,4 @@
-# github.com/buger/jsonparser v0.0.0-20170325175528-016ea00d7ed5
+# github.com/buger/jsonparser v1.0.0
 github.com/buger/jsonparser
 # github.com/dgrijalva/jwt-go v3.2.0+incompatible
 github.com/dgrijalva/jwt-go
