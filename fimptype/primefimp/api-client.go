@@ -196,12 +196,6 @@ func (mh *ApiClient) Stop() {
 	}
 }
 
-func remove(s []int, i int) []int {
-	s[i] = s[len(s)-1]
-	// We do not need to put s[i] at the end, as it will be discarded anyway
-	return s[:len(s)-1]
-}
-
 // UpdateSite : Updates the internal cache according to notification message.
 func (mh *ApiClient) UpdateSite(notif *Notify) {
 	log.Tracef("Command: %s & Component:%s", notif.Cmd, notif.Component)
@@ -465,6 +459,26 @@ func (mh *ApiClient) GetModes(fromCache bool) ([]Mode, error) {
 	} else if mh.isCacheEnabled {
 		if mh.ValidateAndReloadSiteCache() {
 			return mh.siteCache.Modes, nil
+		}
+	}
+	return nil, errors.New("cache is empty")
+}
+
+func (mh *ApiClient) GetCurrentMode(fromCache bool) (*House, error) {
+	if !fromCache {
+		fimpResponse, err := mh.sendGetRequest([]string{ComponentHouse})
+		if err != nil {
+			return nil, err
+		}
+		resp, err := FimpToResponse(fimpResponse)
+		if err != nil {
+			return nil, err
+		}
+		return resp.GetHouse(), nil
+	}
+	if mh.isCacheEnabled {
+		if mh.ValidateAndReloadSiteCache() {
+			return mh.siteCache.House, nil
 		}
 	}
 	return nil, errors.New("cache is empty")
