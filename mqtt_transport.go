@@ -411,16 +411,17 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 
 // Publish iotMsg to string topic
 func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) error {
-	bytm, err := fimpMsg.SerializeToJson()
+	byteMessage, err := fimpMsg.SerializeToJson()
+	if err != nil {
+		return err
+	}
+
 	if mh.globalTopicPrefix != "" {
 		topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
 	}
-	if err == nil {
-		log.Trace("<MqttAd> Publishing msg to topic:", topic)
-		mh.client.Publish(topic, mh.pubQos, false, bytm)
-		return nil
-	}
-	return err
+
+	log.Trace("<MqttAd> Publishing msg to topic:", topic)
+	return mh.client.Publish(topic, mh.pubQos, false, byteMessage).Error()
 }
 
 // RespondToRequest should be used by a service to respond to request
