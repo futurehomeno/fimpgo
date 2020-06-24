@@ -41,7 +41,9 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSite
 	api.sClient = fimpgo.NewSyncClient(mqttTransport)
 	api.notifChMux = sync.RWMutex{}
 	if loadSiteIntoCache {
-		api.ReloadSiteToCache(3)
+		if err := api.ReloadSiteToCache(3); err != nil {
+			log.Error("<PF-API> Error reloading cache: ", err)
+		}
 	}
 
 	config := apiClientConfig{}
@@ -77,7 +79,9 @@ func (mh *ApiClient) IsCacheEmpty() bool {
 func (mh *ApiClient) ValidateAndReloadSiteCache() bool {
 	if mh.IsCacheEmpty() {
 		log.Debug("<PF-API> Empty site cache.Reloading...")
-		mh.ReloadSiteToCache(1)
+		if err := mh.ReloadSiteToCache(1); err != nil {
+			log.Error("<PF-API> Error reloading cache: ", err)
+		}
 		if mh.IsCacheEmpty() {
 			return false
 		}
@@ -264,7 +268,9 @@ func (mh *ApiClient) notifyRouter() {
 
 	mh.inMsgChan = make(fimpgo.MessageCh, 10)
 	mh.mqttTransport.RegisterChannel(mh.clientID, mh.inMsgChan)
-	mh.mqttTransport.Subscribe(VincEventTopic)
+	if err := mh.mqttTransport.Subscribe(VincEventTopic); err != nil {
+		log.Error("<PF-API> error subscribing to the vinculum event topic: ", err)
+	}
 
 	for msg := range mh.inMsgChan {
 		if mh.stopFlag {
@@ -316,7 +322,7 @@ func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, e
 	mh.sClient.AddSubscription(respAddr.Serialize())
 
 	param := RequestParam{Components: components}
-	req := Request{Cmd: CmdGet, Param: param}
+	req := Request{Cmd: CmdGet, Param: &param}
 
 	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimpgo.VTypeObject, req, nil, nil, nil)
 	msg.ResponseToTopic = respAddr.Serialize()
