@@ -16,24 +16,6 @@ type NotifyFilter struct {
 	Component string
 }
 
-type apiClientConfig struct {
-	cloudService string
-}
-
-type Option interface {
-	apply(*apiClientConfig)
-}
-
-type cloudServiceOption string
-
-func (cso cloudServiceOption) apply(config *apiClientConfig) {
-	config.cloudService = string(cso)
-}
-
-func WithCloudService(service string) Option {
-	return cloudServiceOption(service)
-}
-
 type ApiClient struct {
 	clientID              string
 	mqttTransport         *fimpgo.MqttTransport
@@ -342,6 +324,24 @@ func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, e
 	return mh.sClient.SendFimpWithTopicResponse(reqAddr.Serialize(), msg, respAddr.Serialize(), "", "", 5)
 }
 
+func (mh *ApiClient) sendSetRequest(component string, value interface{}) (*fimpgo.FimpMessage, error) {
+	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
+	respAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeRsp, ResourceType: fimpgo.ResourceTypeApp, ResourceName: mh.clientID, ResourceAddress: "1"}
+	if mh.cloudService != "" {
+		respAddr.ResourceType = fimpgo.ResourceTypeCloud
+		respAddr.ResourceName = "backend-service"
+		respAddr.ResourceAddress = mh.cloudService
+	}
+	mh.sClient.AddSubscription(respAddr.Serialize())
+
+	req := Request{Cmd: CmdSet, Component: component, Id: value}
+
+	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimpgo.VTypeObject, req, nil, nil, nil)
+	msg.ResponseToTopic = respAddr.Serialize()
+	msg.Source = mh.clientID
+	return mh.sClient.SendFimpWithTopicResponse(reqAddr.Serialize(), msg, respAddr.Serialize(), "", "", 5)
+}
+
 // GetDevices Gets the devices
 func (mh *ApiClient) GetDevices(fromCache bool) ([]Device, error) {
 	if !fromCache {
@@ -567,4 +567,21 @@ func (mh *ApiClient) GetState() (State, error) {
 		return State{}, err
 	}
 	return resp.GetState()
+}
+
+func (mh *ApiClient) RunShortcut(shortcutId int) ([]byte, error) {
+	fimpResponse, err := mh.sendSetRequest(ComponentShortcut, shortcutId)
+	if err != nil {
+		return nil, err
+	}
+	return fimpResponse.GetRawObjectValue(), nil
+}
+
+func (mh *ApiClient) ChangeMode(mode string) ([]byte, error) {
+	fimpResponse, err := mh.sendSetRequest(ComponentMode, mode)
+	if err != nil {
+		return nil, err
+	}
+	return fimpResponse.GetRawObjectValue(), nil
+
 }
