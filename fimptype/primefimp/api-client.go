@@ -569,19 +569,18 @@ func (mh *ApiClient) GetState() (State, error) {
 	return resp.GetState()
 }
 
-func (mh *ApiClient) RunShortcut(shortcutId int) ([]byte, error) {
+func (mh *ApiClient) RunShortcut(shortcutId int) (*Response, error) {
 	fimpResponse, err := mh.sendSetRequest(ComponentShortcut, shortcutId)
 	if err != nil {
 		return nil, err
 	}
-	return fimpResponse.GetRawObjectValue(), nil
+	return FimpToResponse(fimpResponse)
 }
 
-func (mh *ApiClient) ChangeMode(mode string) ([]byte, error) {
+func (mh *ApiClient) ChangeMode(mode string) (*Response, error) {
 	fimpResponse, err := mh.sendSetRequest(ComponentMode, mode)
 	if err != nil {
 		return nil, err
 	}
-	return fimpResponse.GetRawObjectValue(), nil
-
+	return FimpToResponse(fimpResponse)
 }
