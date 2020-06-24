@@ -92,11 +92,15 @@ func (sc *SyncClient) Stop() {
 
 // AddSubscription has to be invoked before Send methods
 func (sc *SyncClient) AddSubscription(topic string) {
-	sc.mqttTransport.Subscribe(topic)
+	if err := sc.mqttTransport.Subscribe(topic); err != nil {
+		log.Error("<SyncClient> error subscribing to topic:", err)
+	}
 }
 
 func (sc *SyncClient) RemoveSubscription(topic string) {
-	sc.mqttTransport.Unsubscribe(topic)
+	if err := sc.mqttTransport.Unsubscribe(topic); err != nil {
+		log.Error("<SyncClient> error unsubscribing from topic:", err)
+	}
 }
 
 // SendFimpWithTopicResponse send message over mqtt and awaits response from responseTopic with responseService and responseMsgType
@@ -111,7 +115,9 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 
 	defer func() {
 		if autoSubscribe && responseTopic != "" && conn != nil {
-			conn.Unsubscribe(responseTopic)
+			if err := conn.Unsubscribe(responseTopic); err != nil {
+				log.Error("<SyncClient> error unsubscribing from topic:", err)
+			}
 		}
 		if conn != nil {
 			conn.UnregisterChannel(chanName)
@@ -133,9 +139,13 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	conn.RegisterChannel(chanName, inboundCh)
 	responseChannel = sc.startResponseListener(fimpMsg, responseMsgType, responseService, responseTopic, inboundCh, timeout)
 	if autoSubscribe && responseTopic != "" {
-		conn.Subscribe(responseTopic)
+		if err := conn.Subscribe(responseTopic); err != nil {
+			log.Error("<SyncClient> error subscribing to topic:", err)
+		}
 	}
-	conn.PublishToTopic(topic, fimpMsg)
+	if err := conn.PublishToTopic(topic, fimpMsg); err != nil {
+		log.Error("<SyncClient> error publishing to topic:", err)
+	}
 
 	select {
 	case fimpResponse := <-responseChannel:
