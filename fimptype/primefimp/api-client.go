@@ -52,6 +52,14 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSite
 	}
 
 	api.cloudService = config.cloudService
+	// add subscription
+	respAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeRsp, ResourceType: fimpgo.ResourceTypeApp, ResourceName: api.clientID, ResourceAddress: "1"}
+	if api.cloudService != "" {
+		respAddr.ResourceType = fimpgo.ResourceTypeCloud
+		respAddr.ResourceName = "backend-service"
+		respAddr.ResourceAddress = api.cloudService
+	}
+	api.sClient.AddSubscription(respAddr.Serialize())
 	return api
 }
 
@@ -314,12 +322,12 @@ func (mh *ApiClient) notifyRouter() {
 func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, error) {
 	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
 	respAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeRsp, ResourceType: fimpgo.ResourceTypeApp, ResourceName: mh.clientID, ResourceAddress: "1"}
-	if mh.cloudService != "" {
-		respAddr.ResourceType = fimpgo.ResourceTypeCloud
-		respAddr.ResourceName = "backend-service"
-		respAddr.ResourceAddress = mh.cloudService
-	}
-	mh.sClient.AddSubscription(respAddr.Serialize())
+	//if mh.cloudService != "" {
+	//	respAddr.ResourceType = fimpgo.ResourceTypeCloud
+	//	respAddr.ResourceName = "backend-service"
+	//	respAddr.ResourceAddress = mh.cloudService
+	//}
+	//mh.sClient.AddSubscription(respAddr.Serialize())
 
 	param := RequestParam{Components: components}
 	req := Request{Cmd: CmdGet, Param: &param}
@@ -333,12 +341,12 @@ func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, e
 func (mh *ApiClient) sendSetRequest(component string, value interface{}) (*fimpgo.FimpMessage, error) {
 	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
 	respAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeRsp, ResourceType: fimpgo.ResourceTypeApp, ResourceName: mh.clientID, ResourceAddress: "1"}
-	if mh.cloudService != "" {
-		respAddr.ResourceType = fimpgo.ResourceTypeCloud
-		respAddr.ResourceName = "backend-service"
-		respAddr.ResourceAddress = mh.cloudService
-	}
-	mh.sClient.AddSubscription(respAddr.Serialize())
+	//if mh.cloudService != "" {
+	//	respAddr.ResourceType = fimpgo.ResourceTypeCloud
+	//	respAddr.ResourceName = "backend-service"
+	//	respAddr.ResourceAddress = mh.cloudService
+	//}
+	//mh.sClient.AddSubscription(respAddr.Serialize())
 
 	req := Request{Cmd: CmdSet, Component: component, Id: value}
 
