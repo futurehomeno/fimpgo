@@ -34,8 +34,8 @@ const (
 	// sensors
 	ServiceSensorTemp    = "sensor_temp"
 	ServiceSensorContact = "sensor_contact"
-	ServiceLumin         = "sensor_lumin"
-	SensorHumid          = "sensor_humid"
+	ServiceSensorLumin   = "sensor_lumin"
+	ServiceSensorHumid   = "sensor_humid"
 )
 
 // Top level element for commands
