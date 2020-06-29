@@ -29,7 +29,13 @@ const (
 	ServiceOutLvlSwitch = "out_lvl_switch"
 	ServiceThermostat   = "thermostat"
 	ServiceColorControl = "color_ctrl"
-	ServiceSensorTemp   = "sensor_temp"
+	ServiceBattery      = "battery"
+
+	// sensors
+	ServiceSensorTemp    = "sensor_temp"
+	ServiceSensorContact = "sensor_contact"
+	ServiceLumin         = "sensor_lumin"
+	SensorHumid          = "sensor_humid"
 )
 
 // Top level element for commands
