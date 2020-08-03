@@ -235,7 +235,7 @@ func NewFloatMapMessage(type_ string, service string, value map[string]float64, 
 }
 
 func NewBoolMapMessage(type_ string, service string, value map[string]bool, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
-	return NewMessage(type_, service, VTypeFloatMap, value, props, tags, requestMessage)
+	return NewMessage(type_, service, VTypeBoolMap, value, props, tags, requestMessage)
 }
 
 func NewObjectMessage(type_ string, service string, value interface{}, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
