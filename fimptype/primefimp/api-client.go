@@ -16,24 +16,6 @@ type NotifyFilter struct {
 	Component string
 }
 
-type apiClientConfig struct {
-	cloudService string
-}
-
-type Option interface {
-	apply(*apiClientConfig)
-}
-
-type cloudServiceOption string
-
-func (cso cloudServiceOption) apply(config *apiClientConfig) {
-	config.cloudService = string(cso)
-}
-
-func WithCloudService(service string) Option {
-	return cloudServiceOption(service)
-}
-
 type ApiClient struct {
 	clientID              string
 	mqttTransport         *fimpgo.MqttTransport
@@ -59,7 +41,9 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSite
 	api.sClient = fimpgo.NewSyncClient(mqttTransport)
 	api.notifChMux = sync.RWMutex{}
 	if loadSiteIntoCache {
-		api.ReloadSiteToCache(3)
+		if err := api.ReloadSiteToCache(3); err != nil {
+			log.Error("<PF-API> Error reloading cache: ", err)
+		}
 	}
 
 	config := apiClientConfig{}
@@ -68,6 +52,7 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSite
 	}
 
 	api.cloudService = config.cloudService
+
 	return api
 }
 
@@ -95,7 +80,9 @@ func (mh *ApiClient) IsCacheEmpty() bool {
 func (mh *ApiClient) ValidateAndReloadSiteCache() bool {
 	if mh.IsCacheEmpty() {
 		log.Debug("<PF-API> Empty site cache.Reloading...")
-		mh.ReloadSiteToCache(1)
+		if err := mh.ReloadSiteToCache(1); err != nil {
+			log.Error("<PF-API> Error reloading cache: ", err)
+		}
 		if mh.IsCacheEmpty() {
 			return false
 		}
@@ -196,12 +183,6 @@ func (mh *ApiClient) Stop() {
 	}
 }
 
-func remove(s []int, i int) []int {
-	s[i] = s[len(s)-1]
-	// We do not need to put s[i] at the end, as it will be discarded anyway
-	return s[:len(s)-1]
-}
-
 // UpdateSite : Updates the internal cache according to notification message.
 func (mh *ApiClient) UpdateSite(notif *Notify) {
 	log.Tracef("Command: %s & Component:%s", notif.Cmd, notif.Component)
@@ -288,7 +269,9 @@ func (mh *ApiClient) notifyRouter() {
 
 	mh.inMsgChan = make(fimpgo.MessageCh, 10)
 	mh.mqttTransport.RegisterChannel(mh.clientID, mh.inMsgChan)
-	mh.mqttTransport.Subscribe(VincEventTopic)
+	if err := mh.mqttTransport.Subscribe(VincEventTopic); err != nil {
+		log.Error("<PF-API> error subscribing to the vinculum event topic: ", err)
+	}
 
 	for msg := range mh.inMsgChan {
 		if mh.stopFlag {
@@ -329,18 +312,36 @@ func (mh *ApiClient) notifyRouter() {
 	}
 }
 
-func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, error) {
-	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
+func (mh *ApiClient) responseAddress() fimpgo.Address {
 	respAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeRsp, ResourceType: fimpgo.ResourceTypeApp, ResourceName: mh.clientID, ResourceAddress: "1"}
 	if mh.cloudService != "" {
 		respAddr.ResourceType = fimpgo.ResourceTypeCloud
 		respAddr.ResourceName = "backend-service"
 		respAddr.ResourceAddress = mh.cloudService
 	}
+	return respAddr
+}
+
+func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, error) {
+	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
+	respAddr := mh.responseAddress()
 	mh.sClient.AddSubscription(respAddr.Serialize())
 
 	param := RequestParam{Components: components}
-	req := Request{Cmd: CmdGet, Param: param}
+	req := Request{Cmd: CmdGet, Param: &param}
+
+	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimpgo.VTypeObject, req, nil, nil, nil)
+	msg.ResponseToTopic = respAddr.Serialize()
+	msg.Source = mh.clientID
+	return mh.sClient.SendFimpWithTopicResponse(reqAddr.Serialize(), msg, respAddr.Serialize(), "", "", 5)
+}
+
+func (mh *ApiClient) sendSetRequest(component string, value interface{}) (*fimpgo.FimpMessage, error) {
+	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
+	respAddr := mh.responseAddress()
+	mh.sClient.AddSubscription(respAddr.Serialize())
+
+	req := Request{Cmd: CmdSet, Component: component, Id: value}
 
 	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimpgo.VTypeObject, req, nil, nil, nil)
 	msg.ResponseToTopic = respAddr.Serialize()
@@ -470,6 +471,26 @@ func (mh *ApiClient) GetModes(fromCache bool) ([]Mode, error) {
 	return nil, errors.New("cache is empty")
 }
 
+func (mh *ApiClient) GetCurrentMode(fromCache bool) (*House, error) {
+	if !fromCache {
+		fimpResponse, err := mh.sendGetRequest([]string{ComponentHouse})
+		if err != nil {
+			return nil, err
+		}
+		resp, err := FimpToResponse(fimpResponse)
+		if err != nil {
+			return nil, err
+		}
+		return resp.GetHouse(), nil
+	}
+	if mh.isCacheEnabled {
+		if mh.ValidateAndReloadSiteCache() {
+			return mh.siteCache.House, nil
+		}
+	}
+	return nil, errors.New("cache is empty")
+}
+
 // GetShortcuts Gets the modes
 func (mh *ApiClient) GetTimers(fromCache bool) ([]Timer, error) {
 	if !fromCache {
@@ -553,4 +574,20 @@ func (mh *ApiClient) GetState() (State, error) {
 		return State{}, err
 	}
 	return resp.GetState()
+}
+
+func (mh *ApiClient) RunShortcut(shortcutId int) (*Response, error) {
+	fimpResponse, err := mh.sendSetRequest(ComponentShortcut, shortcutId)
+	if err != nil {
+		return nil, err
+	}
+	return FimpToResponse(fimpResponse)
+}
+
+func (mh *ApiClient) ChangeMode(mode string) (*Response, error) {
+	fimpResponse, err := mh.sendSetRequest(ComponentMode, mode)
+	if err != nil {
+		return nil, err
+	}
+	return FimpToResponse(fimpResponse)
 }

@@ -29,16 +29,22 @@ const (
 	ServiceOutLvlSwitch = "out_lvl_switch"
 	ServiceThermostat   = "thermostat"
 	ServiceColorControl = "color_ctrl"
-	ServiceSensorTemp   = "sensor_temp"
+	ServiceBattery      = "battery"
+
+	// sensors
+	ServiceSensorTemp    = "sensor_temp"
+	ServiceSensorContact = "sensor_contact"
+	ServiceSensorLumin   = "sensor_lumin"
+	ServiceSensorHumid   = "sensor_humid"
 )
 
 // Top level element for commands
 type Request struct {
-	Cmd       string       `json:"cmd"`
-	Component interface{}  `json:"component"`
-	Param     RequestParam `json:"param"`
-	RequestID interface{}  `json:"requestId,omitempty"`
-	Id        interface{}  `json:"id,omitempty"`
+	Cmd       string        `json:"cmd"`
+	Component interface{}   `json:"component"`
+	Param     *RequestParam `json:"param,omitempty"`
+	RequestID interface{}   `json:"requestId,omitempty"`
+	Id        interface{}   `json:"id,omitempty"`
 }
 
 type RequestParam struct {
