@@ -3,10 +3,10 @@ package fimpgo
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/futurehomeno/fimpgo/utils"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"path/filepath"
@@ -32,6 +32,8 @@ type MqttConnectionConfigs struct {
 	CertFileName        string //
 	ReceiveChTimeout    int
 	IsAws               bool // Should be set to true if cloud broker is AwS IoT platform .
+
+	connectionLostHandler MQTT.ConnectionLostHandler
 }
 
 type Message struct {
@@ -67,6 +69,7 @@ type MqttTransport struct {
 	syncPublishTimeout  time.Duration
 	channelRegMux       sync.Mutex
 	subMutex            sync.Mutex
+	fieldsMux           sync.Mutex
 }
 
 func (mh *MqttTransport) SetReceiveChTimeout(receiveChTimeout int) {
@@ -121,7 +124,13 @@ func NewMqttTransportFromConnection(client MQTT.Client, subQos byte, pubQos byte
 	return &mh
 }
 
-func NewMqttTransportFromConfigs(configs MqttConnectionConfigs) *MqttTransport {
+func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Option) *MqttTransport {
+
+	// apply extra options
+	for _, o := range options {
+		o.apply(&configs)
+	}
+
 	mh := MqttTransport{}
 	mh.mqttOptions = MQTT.NewClientOptions().AddBroker(configs.ServerURI)
 	mh.mqttOptions.SetClientID(configs.ClientID)
@@ -130,8 +139,9 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs) *MqttTransport {
 	mh.mqttOptions.SetDefaultPublishHandler(mh.onMessage)
 	mh.mqttOptions.SetCleanSession(configs.CleanSession)
 	mh.mqttOptions.SetAutoReconnect(true)
-	mh.mqttOptions.SetConnectionLostHandler(mh.onConnectionLost)
+	mh.mqttOptions.SetConnectionLostHandler(configs.connectionLostHandler)
 	mh.mqttOptions.SetOnConnectHandler(mh.onConnect)
+
 	//create and start a client using the above ClientOptions
 	mh.client = MQTT.NewClient(mh.mqttOptions)
 	mh.pubQos = configs.PubQos
@@ -162,6 +172,7 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs) *MqttTransport {
 			log.Error("Certificate loading error :", err.Error())
 		}
 	}
+
 	return &mh
 }
 
@@ -187,7 +198,7 @@ func (mh *MqttTransport) RegisterChannel(channelId string, messageCh MessageCh) 
 	mh.channelRegMux.Unlock()
 }
 
-// UnregisterChannel shold be used to unregiter channel
+// UnregisterChannel should be used to unregister channel
 func (mh *MqttTransport) UnregisterChannel(channelId string) {
 	mh.channelRegMux.Lock()
 	delete(mh.subChannels, channelId)
@@ -286,6 +297,7 @@ func (mh *MqttTransport) Unsubscribe(topic string) error {
 	delete(mh.subs, topic)
 	return nil
 }
+
 func (mh *MqttTransport) UnsubscribeAll() {
 	var topics []string
 	mh.subMutex.Lock()
@@ -294,7 +306,9 @@ func (mh *MqttTransport) UnsubscribeAll() {
 	}
 	mh.subMutex.Unlock()
 	for _, t := range topics {
-		mh.Unsubscribe(t)
+		if err := mh.Unsubscribe(t); err != nil {
+			log.Error(errors.Wrap(err, "unsubscribing from topic"))
+		}
 	}
 }
 
