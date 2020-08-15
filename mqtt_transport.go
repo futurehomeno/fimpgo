@@ -69,7 +69,6 @@ type MqttTransport struct {
 	syncPublishTimeout  time.Duration
 	channelRegMux       sync.Mutex
 	subMutex            sync.Mutex
-	fieldsMux           sync.Mutex
 }
 
 func (mh *MqttTransport) SetReceiveChTimeout(receiveChTimeout int) {
@@ -254,7 +253,7 @@ func (mh *MqttTransport) Stop() {
 
 // Subscribe - subscribing for topic
 func (mh *MqttTransport) Subscribe(topic string) error {
-	if topic == "" {
+	if strings.TrimSpace(topic) == "" {
 		return nil
 	}
 
@@ -312,11 +311,11 @@ func (mh *MqttTransport) UnsubscribeAll() {
 	}
 }
 
-func (mh *MqttTransport) onConnectionLost(client MQTT.Client, err error) {
+func (mh *MqttTransport) onConnectionLost(_ MQTT.Client, err error) {
 	log.Errorf("<MqttAd> Connection lost with MQTT broker . Error : %v", err)
 }
 
-func (mh *MqttTransport) onConnect(client MQTT.Client) {
+func (mh *MqttTransport) onConnect(_ MQTT.Client) {
 	mh.subMutex.Lock()
 	defer mh.subMutex.Unlock()
 
@@ -329,7 +328,7 @@ func (mh *MqttTransport) onConnect(client MQTT.Client) {
 }
 
 //define a function for the default message handler
-func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
+func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Error("<MqttAd> onMessage CRASHED with error :", r)
@@ -337,7 +336,7 @@ func (mh *MqttTransport) onMessage(client MQTT.Client, msg MQTT.Message) {
 	}()
 	log.Tracef("<MqttAd> New msg from TOPIC: %s", msg.Topic())
 	var topic string
-	if mh.globalTopicPrefix != "" {
+	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
 		_, topic = DetachGlobalPrefixFromTopic(msg.Topic())
 	} else {
 		topic = msg.Topic()
@@ -412,7 +411,7 @@ func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr
 func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 	bytm, err := fimpMsg.SerializeToJson()
 	topic := addr.Serialize()
-	if mh.globalTopicPrefix != "" {
+	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
 		topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
 	}
 	if err == nil {
@@ -430,7 +429,7 @@ func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) erro
 		return err
 	}
 
-	if mh.globalTopicPrefix != "" {
+	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
 		topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
 	}
 
@@ -449,7 +448,7 @@ func (mh *MqttTransport) RespondToRequest(requestMsg *FimpMessage, responseMsg *
 func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error {
 	bytm, err := fimpMsg.SerializeToJson()
 	topic := addr.Serialize()
-	if mh.globalTopicPrefix != "" {
+	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
 		topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
 	}
 	if err == nil {
@@ -487,7 +486,7 @@ func AddGlobalPrefixToTopic(domain string, topic string) string {
 	if topic[0] == 47 {
 		return domain + topic
 	}
-	if domain == "" {
+	if strings.TrimSpace(domain) == "" {
 		return topic
 	}
 	return domain + "/" + topic
@@ -528,7 +527,7 @@ func (mh *MqttTransport) ConfigureTls(privateKeyFileName, certFileName, certDir 
 	}
 	TLSConfig.RootCAs = certPool
 
-	if certFileName != "" {
+	if strings.TrimSpace(certFileName) != "" {
 		certPool, err := mh.getCertPool(certFileName)
 		if err != nil {
 			return err
