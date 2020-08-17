@@ -5,17 +5,24 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type Option interface {
-	apply(*MqttConnectionConfigs)
-}
+type (
+	Option interface {
+		apply(*MqttConnectionConfigs)
+	}
 
-type connectionLostHandler mqtt.ConnectionLostHandler
+	connectionLostHandler mqtt.ConnectionLostHandler
+)
+
+func applyDefaults(mqttConfigs *MqttConnectionConfigs) {
+	// backwards compatibility
+	mqttConfigs.connectionLostHandler = defaultConnectionLastHandler
+}
 
 func (clh connectionLostHandler) apply(connectionConfigs *MqttConnectionConfigs) {
 	connectionConfigs.connectionLostHandler = mqtt.ConnectionLostHandler(clh)
 }
 
-func defaultConnectionLastHandler(client mqtt.Client, err error) {
+func defaultConnectionLastHandler(_ mqtt.Client, err error) {
 	log.Errorf("connection lost with MQTT broker . Error : %v", err)
 }
 
