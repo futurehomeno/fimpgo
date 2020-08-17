@@ -125,6 +125,9 @@ func NewMqttTransportFromConnection(client MQTT.Client, subQos byte, pubQos byte
 
 func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Option) *MqttTransport {
 
+	// backwards compatibility
+	configs.connectionLostHandler = defaultConnectionLastHandler
+
 	// apply extra options
 	for _, o := range options {
 		o.apply(&configs)
