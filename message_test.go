@@ -139,7 +139,7 @@ func TestNewMessageFromBytesWithProps(t *testing.T) {
 }
 
 func TestFimpMessage_GetStrArrayValue(t *testing.T) {
-	msgString := "{\"serv\":\"dev_sys\",\"type\":\"cmd.config.set\",\"val_t\":\"str_array\",\"val\":[\"val1\",\"val2\"],\"props\":null,\"tags\":null}"
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"str_array","val":["val1","val2"],"props":null,"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -155,7 +155,7 @@ func TestFimpMessage_GetStrArrayValue(t *testing.T) {
 }
 
 func TestFimpMessage_GetIntArrayValue(t *testing.T) {
-	msgString := "{\"serv\":\"dev_sys\",\"type\":\"cmd.config.set\",\"val_t\":\"int_array\",\"val\":[123,1234],\"props\":null,\"tags\":null}"
+	msgString := `{serv":"dev_sys","type":"cmd.config.set","val_t":"int_array","val":[123,1234],"props":null,"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -171,7 +171,7 @@ func TestFimpMessage_GetIntArrayValue(t *testing.T) {
 }
 
 func TestFimpMessage_GetFloatArrayValue(t *testing.T) {
-	msgString := "{\"serv\":\"dev_sys\",\"type\":\"cmd.config.set\",\"val_t\":\"float_array\",\"val\":[1.5,2.5],\"props\":null,\"tags\":null}"
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"float_array","val":[1.5,2.5],"props":null,"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -187,7 +187,7 @@ func TestFimpMessage_GetFloatArrayValue(t *testing.T) {
 }
 
 func TestFimpMessage_GetBoolArrayValue(t *testing.T) {
-	msgString := "{\"serv\":\"dev_sys\",\"type\":\"cmd.config.set\",\"val_t\":\"bool_array\",\"val\":[true,true],\"props\":null,\"tags\":null}"
+	msgString := `{serv":"dev_sys","type":"cmd.config.set","val_t":"bool_array","val":[true,true],"props":null,"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -203,7 +203,7 @@ func TestFimpMessage_GetBoolArrayValue(t *testing.T) {
 }
 
 func TestFimpMessage_GetStrMapValue(t *testing.T) {
-	msgString := "{\"serv\":\"dev_sys\",\"type\":\"cmd.config.set\",\"val_t\":\"str_map\",\"val\":{\"param1\":\"val1\",\"param2\":\"val2\"},\"props\":null,\"tags\":null}"
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"str_map","val":{"param1":"val1","param2":"val2"},"props":null,"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -219,7 +219,7 @@ func TestFimpMessage_GetStrMapValue(t *testing.T) {
 }
 
 func TestFimpMessage_GetIntMapValue(t *testing.T) {
-	msgString := "{\"serv\":\"dev_sys\",\"type\":\"cmd.config.set\",\"val_t\":\"int_map\",\"val\":{\"param1\":1,\"param2\":2},\"props\":null,\"tags\":null}"
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"int_map","val":{"param1":1,"param2":2},"props":null,"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -235,7 +235,7 @@ func TestFimpMessage_GetIntMapValue(t *testing.T) {
 }
 
 func TestFimpMessage_GetFloatMapValue(t *testing.T) {
-	msgString := "{\"serv\":\"dev_sys\",\"type\":\"cmd.config.set\",\"val_t\":\"float_map\",\"val\":{\"param1\":0.5,\"param2\":2.5},\"props\":null,\"tags\":null}"
+	msgString := `{serv":"dev_sys","type":"cmd.config.set","val_t":"float_map","val":{"param1":0.5,"param2":2.5},"props":null,"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -251,7 +251,7 @@ func TestFimpMessage_GetFloatMapValue(t *testing.T) {
 }
 
 func TestFimpMessage_GetBoolMapValue(t *testing.T) {
-	msgString := "{\"serv\":\"dev_sys\",\"type\":\"cmd.config.set\",\"val_t\":\"bool_map\",\"val\":{\"param1\":true,\"param2\":true},\"props\":null,\"tags\":null}"
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"bool_map","val":{"param1":true,"param2":true},"props":null,"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -267,7 +267,7 @@ func TestFimpMessage_GetBoolMapValue(t *testing.T) {
 }
 
 func BenchmarkFimpMessage_GetStrMapValue(b *testing.B) {
-	msgString := []byte("{\"serv\":\"dev_sys\",\"type\":\"cmd.config.set\",\"val_t\":\"str_map\",\"val\":{\"param1\":\"val1\",\"param2\":\"val2\"},\"props\":null,\"tags\":null}")
+	msgString := []byte(`{"serv":"dev_sys","type":"cmd.config.set","val_t":"str_map","val":{"param1":"val1","param2":"val2"},"props":null,"tags":null}`)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		fimp, err := NewMessageFromBytes(msgString)
@@ -290,7 +290,7 @@ func TestFimpMessage_GetObjectValue(t *testing.T) {
 		Param1 string
 		Param2 string
 	}
-	msgString := "{\"serv\":\"dev_sys\",\"type\":\"cmd.config.set\",\"val_t\":\"object\",\"val\":{\"param1\":\"val1\",\"param2\":\"val2\"},\"props\":null,\"tags\":null}"
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"object","val":{"param1":"val1","param2":"val2"},"props":null,"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -310,7 +310,7 @@ func BenchmarkFimpMessage_GetObjectValue(b *testing.B) {
 		Param1 string
 		Param2 string
 	}
-	msgString := []byte("{\"serv\":\"dev_sys\",\"type\":\"cmd.config.set\",\"val_t\":\"object\",\"val\":{\"param1\":\"val1\",\"param2\":\"val2\"},\"props\":null,\"tags\":null}")
+	msgString := []byte(`{"serv":"dev_sys","type":"cmd.config.set","val_t":"object","val":{"param1":"val1","param2":"val2"},"props":null,"tags":null}`)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		fimp, err := NewMessageFromBytes(msgString)
