@@ -264,7 +264,7 @@ func TestPrimefimp_LoadStateFromFile(t *testing.T) {
 
 	// the current state.json file has 7 devices with the "meter_elec" service
 	const meterElecDevices = 7
-	filteredDevices := state.FilterDevicesByServices("meter_elec")
+	filteredDevices := state.FilterDevicesByService("meter_elec")
 	if len(filteredDevices) != meterElecDevices {
 		t.Fatal(fmt.Sprintf("meter_elec devices count does not match. expected %d, got %d", meterElecDevices, len(filteredDevices)))
 	}

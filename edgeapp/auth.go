@@ -137,7 +137,9 @@ func (oac *FhOAuth2Client) ConfigureFimpSyncClient() error {
 // LoadHubTokenFromCB - requests hub token from CloudBridge
 func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
 	if oac.mqt == nil || oac.syncClient == nil {
-		oac.ConfigureFimpSyncClient()
+		if err := oac.ConfigureFimpSyncClient(); err != nil {
+			log.Error(err)
+		}
 	}
 	responseTopic := fmt.Sprintf("pt:j1/mt:rsp/rt:app/rn:%s/ad:1", oac.appName)
 	oac.syncClient.AddSubscription(responseTopic)

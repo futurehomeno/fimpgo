@@ -16,7 +16,7 @@ func TestNewBoolMessage(t *testing.T) {
 
 func TestNewFloatMessage(t *testing.T) {
 
-	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
+	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", 35.5, nil, nil, nil)
 	val, err := msg.GetFloatValue()
 	if err != nil {
 		t.Error(err)
@@ -33,15 +33,15 @@ func TestNewObjectMessage(t *testing.T) {
 		Field1 int
 		Field2 int
 	}
-	obj:= []Event{}
+	var obj []Event
 
-	obj = append(obj,Event{
+	obj = append(obj, Event{
 		Field1: 1,
 		Field2: 2,
 	})
-	msg := NewMessage("evt.timeline.report", "kind-owl",VTypeObject, obj, nil, nil, nil)
-	bObj ,_ :=  msg.SerializeToJson()
-	t.Log("ok",string(bObj))
+	msg := NewMessage("evt.timeline.report", "kind-owl", VTypeObject, obj, nil, nil, nil)
+	bObj, _ := msg.SerializeToJson()
+	t.Log("ok", string(bObj))
 }
 
 func TestFimpMessage_SerializeBool(t *testing.T) {
@@ -56,7 +56,7 @@ func TestFimpMessage_SerializeBool(t *testing.T) {
 func TestFimpMessage_SerializeFloat(t *testing.T) {
 	props := Props{}
 	props["unit"] = "C"
-	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), props, nil, nil)
+	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", 35.5, props, nil, nil)
 	serVal, err := msg.SerializeToJson()
 	if err != nil {
 		t.Error(err)
@@ -97,7 +97,7 @@ func TestNewMessageFromBytes_CorruptedPayload1(t *testing.T) {
 }
 
 func TestNewMessageFromBytes_BoolValue(t *testing.T) {
-	msgString := "{\"serv\":\"out_bin_switch\",\"type\":\"cmd.binary.set\",\"val_t\":\"bool\",\"val\":true,\"props\":{\"p1\":\"pv1\"},\"tags\":null}"
+	msgString := `{"serv":"out_bin_switch","type":"cmd.binary.set","val_t":"bool","val":true,"props":{"p1":"pv1"},"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -106,21 +106,34 @@ func TestNewMessageFromBytes_BoolValue(t *testing.T) {
 	if val != true {
 		t.Error("Wrong value")
 	}
-	if fimp.Properties["p1"]!="pv1" {
+	if fimp.Properties["p1"] != "pv1" {
 		t.Error("Wrong props value")
 	}
 	t.Log("ok")
 }
 
 func TestNewMessageFromBytes_BoolInt(t *testing.T) {
-	msgString := "{\"serv\":\"out_bin_switch\",\"type\":\"cmd.binary.set\",\"val_t\":\"int\",\"val\":1234,\"props\":null,\"tags\":null}"
+	msgString := `{"serv":"out_bin_switch","type":"cmd.binary.set","val_t":"int","val":1234,"props":null,"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
 	}
 	val, err := fimp.GetIntValue()
 	if val != 1234 {
-		t.Error("Wrong value ",val)
+		t.Error("Wrong value ", val)
+	}
+	t.Log("ok")
+}
+
+func TestNewMessageFromBytesWithProps(t *testing.T) {
+	msgString := `{"serv":"out_bin_switch","type":"cmd.binary.set","val_t":"int","val":1234,"props":{"prop1":"val1"},"tags":null}`
+	fimp, err := NewMessageFromBytes([]byte(msgString))
+	if err != nil {
+		t.Error(err)
+	}
+	val, err := fimp.GetIntValue()
+	if val != 1234 {
+		t.Error("Wrong value ", val)
 	}
 	t.Log("ok")
 }
@@ -137,7 +150,7 @@ func TestFimpMessage_GetStrArrayValue(t *testing.T) {
 		t.Error(err)
 	}
 	if val[1] != "val2" {
-		t.Error("Wrong map result : ",val[1])
+		t.Error("Wrong map result : ", val[1])
 	}
 }
 
@@ -153,7 +166,7 @@ func TestFimpMessage_GetIntArrayValue(t *testing.T) {
 		t.Error(err)
 	}
 	if val[1] != 1234 {
-		t.Error("Wrong map result : ",val[1])
+		t.Error("Wrong map result : ", val[1])
 	}
 }
 
@@ -169,7 +182,7 @@ func TestFimpMessage_GetFloatArrayValue(t *testing.T) {
 		t.Error(err)
 	}
 	if val[1] != 2.5 {
-		t.Error("Wrong map result : ",val[1])
+		t.Error("Wrong map result : ", val[1])
 	}
 }
 
@@ -185,7 +198,7 @@ func TestFimpMessage_GetBoolArrayValue(t *testing.T) {
 		t.Error(err)
 	}
 	if val[1] != true {
-		t.Error("Wrong map result : ",val[1])
+		t.Error("Wrong map result : ", val[1])
 	}
 }
 

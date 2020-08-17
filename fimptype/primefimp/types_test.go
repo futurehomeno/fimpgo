@@ -11,6 +11,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func clientId() string {
+	return strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
+}
+
 func TestMode(t *testing.T) {
 	tb, _ := ioutil.ReadFile("testdata/mode.json")
 
@@ -64,7 +68,7 @@ func TestTimerWithShortcut(t *testing.T) {
 	}
 }
 
-func TestPrimeFimp_SendFimpWithTopicResponse(t *testing.T) {
+func TestPrimeFimpSendFimpWithTopicResponse(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	mqtt := fimpgo.NewMqttTransport(brokerUrl, "fimpgotest", brokerUser, brokerPass, true, 1, 1)
 	err := mqtt.Start()
@@ -81,7 +85,7 @@ func TestPrimeFimp_SendFimpWithTopicResponse(t *testing.T) {
 	syncClient.AddSubscription(respAddr.Serialize())
 
 	param := RequestParam{Components: []string{"device"}}
-	req := Request{Cmd: "get", Param: param}
+	req := Request{Cmd: "get", Param: &param}
 
 	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimpgo.VTypeObject, req, nil, nil, nil)
 	msg.ResponseToTopic = respAddr.Serialize()
@@ -107,13 +111,10 @@ func TestPrimeFimp_SendFimpWithTopicResponse(t *testing.T) {
 	t.Log("Response test - OK , total number of devices = ", len(resp.GetDevices()))
 }
 
-func TestPrimeFimp_ClientApi_GetDevices(t *testing.T) {
+func TestPrimeFimpClientApiGetDevices(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
-	uuid := uuid.New().String()
-	validClientID := strings.ReplaceAll(uuid, "-", "")[0:22]
-
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, clientId(), brokerUser, brokerPass, true, 1, 1)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
@@ -134,15 +135,11 @@ func TestPrimeFimp_ClientApi_GetDevices(t *testing.T) {
 	client.Stop()
 }
 
-func TestPrimeFimp_ClientApi_GetShortcuts(t *testing.T) {
+func TestPrimeFimpClientApiGetShortcuts(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
-	uuid := uuid.New().String()
-	validClientID := strings.ReplaceAll(uuid, "-", "")[0:22]
-
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, clientId(), brokerUser, brokerPass, true, 1, 1)
 	mqtt.SetMessageHandler(func(topic string, addr *fimpgo.Address, iotMsg *fimpgo.FimpMessage, rawPayload []byte) {
-
 
 	})
 	client := NewApiClient("test-1", mqtt, false)
@@ -164,13 +161,10 @@ func TestPrimeFimp_ClientApi_GetShortcuts(t *testing.T) {
 	client.Stop()
 }
 
-func TestPrimeFimp_ClientApi_GetVincServices(t *testing.T) {
+func TestPrimeFimpClientApiGetVincServices(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
-	uuid := uuid.New().String()
-	validClientID := strings.ReplaceAll(uuid, "-", "")[0:22]
-
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, clientId(), brokerUser, brokerPass, true, 1, 1)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
@@ -190,13 +184,10 @@ func TestPrimeFimp_ClientApi_GetVincServices(t *testing.T) {
 	client.Stop()
 }
 
-func TestPrimeFimp_ClientApi_GetSite(t *testing.T) {
+func TestPrimeFimpClientApiGetSite(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
-	uuid := uuid.New().String()
-	validClientID := strings.ReplaceAll(uuid, "-", "")[0:22]
-
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, clientId(), brokerUser, brokerPass, true, 1, 1)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
