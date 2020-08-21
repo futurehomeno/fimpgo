@@ -274,65 +274,82 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 		fimpmsg.Value, err = jsonparser.GetFloat(msg, "val")
 	case VTypeBoolArray:
 		var val []bool
-		jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		if _, err := jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, _ := jsonparser.ParseBoolean(value)
 			val = append(val, item)
-		}, "val")
+		}, "val"); err != nil {
+			return nil, err
+		}
 
 		fimpmsg.Value = val
 	case VTypeStrArray:
 		var val []string
-		jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		if _, err := jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, _ := jsonparser.ParseString(value)
 			val = append(val, item)
-		}, "val")
+		}, "val"); err != nil {
+			return nil, err
+		}
 
 		fimpmsg.Value = val
 	case VTypeIntArray:
 		var val []int64
-		jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		if _, err := jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, _ := jsonparser.ParseInt(value)
 			val = append(val, item)
-		}, "val")
+
+		}, "val"); err != nil {
+			return nil, err
+		}
 		fimpmsg.Value = val
 	case VTypeFloatArray:
 		var val []float64
-		jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		if _, err := jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, _ := jsonparser.ParseFloat(value)
 			val = append(val, item)
-		}, "val")
+		}, "val"); err != nil {
+			return nil, err
+		}
 		fimpmsg.Value = val
 
 	case VTypeStrMap:
 		val := make(map[string]string)
-		jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+		if err := jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 			val[string(key)], err = jsonparser.ParseString(value)
 			return nil
-		}, "val")
+		}, "val"); err != nil {
+			return nil, err
+		}
 		fimpmsg.Value = val
 
 	case VTypeIntMap:
 		val := make(map[string]int64)
-		jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+		if err := jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 			val[string(key)], err = jsonparser.ParseInt(value)
 			return nil
-		}, "val")
+		}, "val"); err != nil {
+			return nil, err
+		}
 		fimpmsg.Value = val
 
 	case VTypeFloatMap:
 		val := make(map[string]float64)
-		jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+		if err := jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 			val[string(key)], err = jsonparser.ParseFloat(value)
 			return nil
-		}, "val")
+		}, "val"); err != nil {
+			return nil, err
+		}
 		fimpmsg.Value = val
 
 	case VTypeBoolMap:
 		val := make(map[string]bool)
-		jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+		if err := jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 			val[string(key)], err = jsonparser.ParseBoolean(value)
 			return nil
-		}, "val")
+		}, "val"); err != nil {
+			return nil, err
+		}
 		fimpmsg.Value = val
 
 	case VTypeBinary:
@@ -350,11 +367,15 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 		fimpmsg.ValueObj, _, _, err = jsonparser.Get(msg, "val")
 
 	}
-	fimpmsg.Properties = make(Props)
-	jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
-		fimpmsg.Properties[string(key)], err = jsonparser.ParseString(value)
-		return nil
-	}, "props")
+	if _, dt, _, err := jsonparser.Get(msg, "props"); dt != jsonparser.NotExist && dt != jsonparser.Null && err == nil {
+		fimpmsg.Properties = make(Props)
+		if err := jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+			fimpmsg.Properties[string(key)], err = jsonparser.ParseString(value)
+			return nil
+		}, "props"); err != nil {
+			return nil, err
+		}
+	}
 
 	return &fimpmsg, err
 

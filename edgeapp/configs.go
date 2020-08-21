@@ -13,23 +13,26 @@ import (
 
 type Configs struct {
 	path               string
-	WorkDir            string `json:"-"`
-	InstanceAddress    string `json:"instance_address"`
-	MqttServerURI      string `json:"mqtt_server_uri"`
-	MqttUsername       string `json:"mqtt_server_username"`
-	MqttPassword       string `json:"mqtt_server_password"`
-	MqttClientIdPrefix string `json:"mqtt_client_id_prefix"`
-	LogFile            string `json:"log_file"`
-	LogLevel           string `json:"log_level"`
-	LogFormat          string `json:"log_format"`
-	ConfiguredAt       string `json:"configured_at"`
-	ConfiguredBy       string `json:"configured_by"`
+	WorkDir            string      `json:"-"`
+	InstanceAddress    string      `json:"instance_address"`
+	MqttServerURI      string      `json:"mqtt_server_uri"`
+	MqttUsername       string      `json:"mqtt_server_username"`
+	MqttPassword       string      `json:"mqtt_server_password"`
+	MqttClientIdPrefix string      `json:"mqtt_client_id_prefix"`
+	LogFile            string      `json:"log_file"`
+	LogLevel           string      `json:"log_level"`
+	LogFormat          string      `json:"log_format"`
+	ConfiguredAt       string      `json:"configured_at"`
+	ConfiguredBy       string      `json:"configured_by"`
 	CustomConfigs      interface{} `json:"custom_configs"`
 }
+
 // NewConfigs stores main application configurations
 func NewConfigs(workDir string) *Configs {
 	conf := &Configs{WorkDir: workDir}
-	conf.initFiles()
+	if err := conf.initFiles(); err != nil {
+		log.Error(err)
+	}
 	return conf
 }
 
@@ -80,7 +83,9 @@ func (cf *Configs) GetDefaultDir() string {
 
 func (cf *Configs) LoadDefaults() error {
 	configFile := filepath.Join(cf.WorkDir, "data", "config.json")
-	os.Remove(configFile)
+	if err := os.Remove(configFile); err != nil {
+		log.Error(err)
+	}
 	log.Info("Config file doesn't exist.Loading default config")
 	defaultConfigFile := filepath.Join(cf.WorkDir, "defaults", "config.json")
 	return utils.CopyFile(defaultConfigFile, configFile)
@@ -90,9 +95,10 @@ func (cf *Configs) SetCustomConfigs(config interface{}) {
 	cf.CustomConfigs = config
 }
 
-func (cf *Configs) GetCustomConfigs()interface{} {
+func (cf *Configs) GetCustomConfigs() interface{} {
 	return cf.CustomConfigs
 }
+
 //func (cf *Configs) IsConfigured()bool {
 //	// TODO : Add logic here
 //	return true

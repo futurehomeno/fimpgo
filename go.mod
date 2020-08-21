@@ -10,6 +10,7 @@ require (
 	github.com/pkg/errors v0.0.0-20161029093637-248dadf4e906
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.3.0
+	github.com/stretchr/testify v1.6.1
 	golang.org/x/crypto v0.0.0-20181030102418-4d3f4d9ffa16 // indirect
 	golang.org/x/net v0.0.0-20170527060238-48359f4f600b // indirect
 	golang.org/x/sys v0.0.0-20181031143558-9b800f95dbbc // indirect
