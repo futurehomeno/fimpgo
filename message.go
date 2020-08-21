@@ -52,6 +52,7 @@ type FimpMessage struct {
 	Source          string      `json:"src,omitempty"`
 	CreationTime    string      `json:"ctime"`
 	UID             string      `json:"uid"`
+	Topic           string 		`json:"topic,omitempty"` // The field should be used to store original topic. It can be useful for converting message from MQTT to other transports.
 }
 
 func (msg *FimpMessage) SetValue(value interface{}, valType string) {

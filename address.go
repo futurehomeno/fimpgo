@@ -7,6 +7,8 @@ import (
 )
 
 const (
+	DefaultPayload      = "j1"
+	CompressedJsonPayload = "j1c1"
 	MsgTypeCmd          = "cmd"
 	MsgTypeEvt          = "evt"
 	MsgTypeRsp          = "rsp"
@@ -30,7 +32,7 @@ type Address struct {
 
 func (adr *Address) Serialize() string {
 	if adr.PayloadType == "" {
-		adr.PayloadType = "j1"
+		adr.PayloadType = DefaultPayload
 	}
 	result := ""
 

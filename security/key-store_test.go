@@ -18,7 +18,8 @@ func TestKeyStore_GetEcdsaKey(t *testing.T) {
 	if err != nil {
 		t.Fatal("signing error . Err:",err)
 	}
-	store.AddSerializedKey(user,devId,public,KeyTypePublic,AlgEcdsa256)
+	//store.AddSerializedKey(user,devId,public,KeyTypePublic,AlgEcdsa256)
+	store.UpsertSerializedKey(user,devId,public,KeyTypePublic,AlgEcdsa256)
 
 	store2 := NewKeyStore("test-key-store.json",false)
 	store2.LoadFromDisk()
