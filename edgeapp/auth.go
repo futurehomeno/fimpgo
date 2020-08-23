@@ -53,6 +53,10 @@ type FhOAuth2Client struct {
 	cbRetryDelay       time.Duration
 }
 
+func (oac *FhOAuth2Client) SetHubToken(hubToken string) {
+	oac.hubToken = hubToken
+}
+
 func (oac *FhOAuth2Client) AuthCodeApiUrl() string {
 	return oac.authCodeApiUrl
 }
