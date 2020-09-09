@@ -53,22 +53,24 @@ type FilterFunc func(topic string, addr *Address, iotMsg *FimpMessage) bool
 
 // MqttAdapter , mqtt adapter .
 type MqttTransport struct {
-	client              MQTT.Client
-	msgHandler          MessageHandler
-	subQos              byte
-	pubQos              byte
-	subs                map[string]byte
-	subChannels         map[string]MessageCh
-	subFilters          map[string]FimpFilter
-	subFilterFuncs      map[string]FilterFunc
-	globalTopicPrefix   string
-	startFailRetryCount int
-	certDir             string
-	mqttOptions         *MQTT.ClientOptions
-	receiveChTimeout    int
-	syncPublishTimeout  time.Duration
-	channelRegMux       sync.Mutex
-	subMutex            sync.Mutex
+	client         MQTT.Client
+	msgHandler     MessageHandler
+	subQos         byte
+	pubQos         byte
+	subs           map[string]byte
+	subChannels    map[string]MessageCh
+	subFilters     map[string]FimpFilter
+	subFilterFuncs map[string]FilterFunc
+
+	globalTopicPrefixMux sync.RWMutex
+	globalTopicPrefix    string
+	startFailRetryCount  int
+	certDir              string
+	mqttOptions          *MQTT.ClientOptions
+	receiveChTimeout     int
+	syncPublishTimeout   time.Duration
+	channelRegMux        sync.Mutex
+	subMutex             sync.Mutex
 }
 
 func (mh *MqttTransport) SetReceiveChTimeout(receiveChTimeout int) {
@@ -178,7 +180,15 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Optio
 }
 
 func (mh *MqttTransport) SetGlobalTopicPrefix(prefix string) {
+	mh.globalTopicPrefixMux.Lock()
 	mh.globalTopicPrefix = prefix
+	mh.globalTopicPrefixMux.Unlock()
+}
+
+func (mh *MqttTransport) getGlobalTopicPrefix() string {
+	mh.globalTopicPrefixMux.RLock()
+	defer mh.globalTopicPrefixMux.RUnlock()
+	return mh.globalTopicPrefix
 }
 
 // Set number of retries transport will attempt on startup . Default value is 10
@@ -264,7 +274,7 @@ func (mh *MqttTransport) Subscribe(topic string) error {
 
 	//subscribe to the topic /go-mqtt/sample and request messages to be delivered
 	//at a maximum qos of zero, wait for the receipt to confirm the subscription
-	topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
+	topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
 	log.Debug("<MqttAd> Subscribing to topic:", topic)
 	token := mh.client.Subscribe(topic, mh.subQos, nil)
 	isInTime := token.WaitTimeout(time.Second * 20)
@@ -285,7 +295,7 @@ func (mh *MqttTransport) Subscribe(topic string) error {
 func (mh *MqttTransport) Unsubscribe(topic string) error {
 	mh.subMutex.Lock()
 	defer mh.subMutex.Unlock()
-	topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
+	topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
 	log.Debug("<MqttAd> Unsubscribing from topic:", topic)
 	token := mh.client.Unsubscribe(topic)
 	isInTime := token.WaitTimeout(time.Second * 20)
@@ -414,7 +424,7 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 	bytm, err := fimpMsg.SerializeToJson()
 	topic := addr.Serialize()
 	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
-		topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
+		topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
 	}
 	if err == nil {
 		log.Trace("<MqttAd> Publishing msg to topic:", topic)
@@ -432,7 +442,7 @@ func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) erro
 	}
 
 	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
-		topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
+		topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
 	}
 
 	log.Trace("<MqttAd> Publishing msg to topic:", topic)
@@ -451,7 +461,7 @@ func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error 
 	bytm, err := fimpMsg.SerializeToJson()
 	topic := addr.Serialize()
 	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
-		topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix, topic)
+		topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
 	}
 	if err == nil {
 		log.Trace("<MqttAd> Publishing msg to topic:", topic)
@@ -488,6 +498,7 @@ func AddGlobalPrefixToTopic(domain string, topic string) string {
 	if topic[0] == 47 {
 		return domain + topic
 	}
+
 	if strings.TrimSpace(domain) == "" {
 		return topic
 	}
