@@ -13,19 +13,40 @@ import (
 	State
 */
 
-type State struct {
-	Devices []StateDevice `json:"devices"`
+type (
+	State struct {
+		Devices StateDevices `json:"devices"`
+	}
+
+	StateDeviceFilter func(*StateDevice) bool
+
+	StateDevice struct {
+		Id       int64           `json:"id"`
+		Services []*StateService `json:"services"`
+	}
+
+	StateService struct {
+		Name       string           `json:"name"`
+		Address    string           `json:"addr"`
+		Attributes []StateAttribute `json:"attributes"`
+	}
+
+	StateServiceFilter func(*StateService) bool
+
+	StateDevices []*StateDevice
+)
+
+func (s *State) WithFilteredDevices(filter StateDeviceFilter) {
+	s.Devices = s.Devices.FilterDevicesByFunc(filter)
 }
 
-type StateDeviceFilter func(StateDevice) bool
-
-func (s *State) FilterDevicesByService(service string) []StateDevice {
-	if len(s.Devices) == 0 {
+func (stateDevices StateDevices) FilterDevicesByService(service string) StateDevices {
+	if len(stateDevices) == 0 {
 		return nil
 	}
-	var result []StateDevice
+	var result []*StateDevice
 
-	for _, sd := range s.Devices {
+	for _, sd := range stateDevices {
 		if sd.ContainsService(service) {
 			result = append(result, sd)
 			continue
@@ -35,13 +56,13 @@ func (s *State) FilterDevicesByService(service string) []StateDevice {
 	return result
 }
 
-func (s *State) FilterDevicesByAttribute(attribute string) []StateDevice {
-	if len(s.Devices) == 0 {
+func (stateDevices StateDevices) FilterDevicesByAttribute(attribute string) StateDevices {
+	if len(stateDevices) == 0 {
 		return nil
 	}
-	var result []StateDevice
+	var result []*StateDevice
 
-	for _, sd := range s.Devices {
+	for _, sd := range stateDevices {
 		for _, ds := range sd.Services {
 			if _, ok := ds.FindAttribute(attribute); ok {
 				result = append(result, sd)
@@ -52,22 +73,14 @@ func (s *State) FilterDevicesByAttribute(attribute string) []StateDevice {
 	return result
 }
 
-func (s *State) FilterDevicesByFunc(filter StateDeviceFilter) []StateDevice {
-	var result []StateDevice
-	for _, sd := range s.Devices {
+func (stateDevices StateDevices) FilterDevicesByFunc(filter StateDeviceFilter) StateDevices {
+	var result []*StateDevice
+	for _, sd := range stateDevices {
 		if filter(sd) {
 			result = append(result, sd)
 		}
 	}
 	return result
-}
-
-/*
-	Device
-*/
-type StateDevice struct {
-	Id       int64          `json:"id"`
-	Services []StateService `json:"services"`
 }
 
 func (sd StateDevice) ContainsService(service string) bool {
@@ -81,8 +94,8 @@ func (sd StateDevice) ContainsService(service string) bool {
 	}
 	return false
 }
-func (sd StateDevice) FilterServices(serviceNames []string) []StateService {
-	var result []StateService
+func (sd StateDevice) FilterServices(serviceNames []string) []*StateService {
+	var result []*StateService
 	for _, sn := range serviceNames {
 		for _, stateService := range sd.Services {
 			if stateService.Name == sn {
@@ -93,14 +106,14 @@ func (sd StateDevice) FilterServices(serviceNames []string) []StateService {
 	}
 	return result
 }
-
-/*
-	Service
-*/
-type StateService struct {
-	Name       string           `json:"name"`
-	Address    string           `json:"addr"`
-	Attributes []StateAttribute `json:"attributes"`
+func (sd *StateDevice) WithFilteredServices(filter StateServiceFilter) {
+	var temp []*StateService
+	for _, ss := range sd.Services {
+		if filter(ss) {
+			temp = append(temp, ss)
+		}
+	}
+	sd.Services = temp
 }
 
 func (ss StateService) FindAttribute(attributeName string) (StateAttribute, bool) {
