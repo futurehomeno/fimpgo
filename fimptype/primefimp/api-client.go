@@ -61,7 +61,7 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSite
 			config.connectionPool.lifetime,
 			config.connectionPool.connectionConfiguration,
 			prefix)
-		api.sClient = fimpgo.NewSyncClientV3(connPool)
+		api.sClient = fimpgo.NewSyncClientV3(mqttTransport, connPool)
 	} else {
 		api.sClient = fimpgo.NewSyncClient(mqttTransport)
 	}

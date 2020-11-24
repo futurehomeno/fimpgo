@@ -40,9 +40,8 @@ func NewSyncClientV2(mqttTransport *MqttTransport, transactionPoolSize int, inbo
 }
 
 // NewSyncClientV3 Creates new sync client either using connections pool internal connection
-func NewSyncClientV3(connPool *MqttConnectionPool) *SyncClient {
-	sc := SyncClient{mqttConnPool: connPool, isConnPoolEnabled: true}
-	//TODO : Add current pool size
+func NewSyncClientV3(mqttTransport *MqttTransport, connPool *MqttConnectionPool) *SyncClient {
+	sc := SyncClient{mqttTransport: mqttTransport, mqttConnPool: connPool, isConnPoolEnabled: true}
 	sc.transactionPoolSize = 20
 	sc.inboundBufferSize = 10
 	sc.init()
