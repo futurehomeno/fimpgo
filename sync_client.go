@@ -121,6 +121,8 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 			conn.UnregisterChannel(chanName)
 			close(inboundCh)
 			if sc.isConnPoolEnabled {
+				// force unset global prefix
+				conn.SetGlobalTopicPrefix("")
 				sc.mqttConnPool.ReturnConnection(conId)
 			}
 		}
@@ -135,12 +137,17 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 		conn = sc.mqttTransport
 	}
 	conn.RegisterChannel(chanName, inboundCh)
+
 	responseChannel = sc.startResponseListener(fimpMsg, responseMsgType, responseService, responseTopic, inboundCh, timeout)
 	if autoSubscribe && responseTopic != "" {
 		if err := conn.Subscribe(responseTopic); err != nil {
 			log.Error("<SyncClient> error subscribing to topic:", err)
 		}
 	}
+
+	// force the global prefix
+	conn.SetGlobalTopicPrefix(sc.mqttTransport.getGlobalTopicPrefix())
+
 	if err := conn.PublishToTopic(topic, fimpMsg); err != nil {
 		log.Error("<SyncClient> error publishing to topic:", err)
 	}
