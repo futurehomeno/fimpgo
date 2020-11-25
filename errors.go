@@ -5,7 +5,9 @@ import (
 )
 
 var (
-	errTimeout = errors.New("request timed out")
+	errTimeout   = errors.New("request timed out")
+	errSubscribe = errors.New("subscription failed")
+	errPublish   = errors.New("publishing failed")
 )
 
 func IsTimeout(err error) bool {
