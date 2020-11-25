@@ -140,6 +140,10 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 
 	responseChannel = sc.startResponseListener(fimpMsg, responseMsgType, responseService, responseTopic, inboundCh, timeout)
 
+	// force the global prefix -> this is useful for per-site operations, as it's currently the only way to
+	// inject a site id
+	conn.SetGlobalTopicPrefix(sc.mqttTransport.getGlobalTopicPrefix())
+
 	// this if statement is currently dead code, as the autoSubscribe parameter is only called with false
 	if autoSubscribe && responseTopic != "" {
 		if err := conn.Subscribe(responseTopic); err != nil {
@@ -151,9 +155,6 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 			return nil, errSubscribe
 		}
 	}
-
-	// force the global prefix
-	conn.SetGlobalTopicPrefix(sc.mqttTransport.getGlobalTopicPrefix())
 
 	if err := conn.PublishToTopic(topic, fimpMsg); err != nil {
 		log.Error("<SyncClient> error publishing to topic:", err)
