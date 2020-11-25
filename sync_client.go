@@ -139,9 +139,16 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	conn.RegisterChannel(chanName, inboundCh)
 
 	responseChannel = sc.startResponseListener(fimpMsg, responseMsgType, responseService, responseTopic, inboundCh, timeout)
+
+	// this if statement is currently dead code, as the autoSubscribe parameter is only called with false
 	if autoSubscribe && responseTopic != "" {
 		if err := conn.Subscribe(responseTopic); err != nil {
 			log.Error("<SyncClient> error subscribing to topic:", err)
+		}
+	} else if responseTopic != "" {
+		if err := conn.Subscribe(responseTopic); err != nil {
+			log.Error("<SyncClient> error subscribing to topic:", err)
+			return nil, errSubscribe
 		}
 	}
 
@@ -150,6 +157,7 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 
 	if err := conn.PublishToTopic(topic, fimpMsg); err != nil {
 		log.Error("<SyncClient> error publishing to topic:", err)
+		return nil, errPublish
 	}
 
 	select {
