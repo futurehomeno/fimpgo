@@ -1,6 +1,9 @@
 package fimpgo
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestNewBoolMessage(t *testing.T) {
 	msg := NewBoolMessage("cmd.binary.set", "out_bin_switch", true, nil, nil, nil)
@@ -235,7 +238,7 @@ func TestFimpMessage_GetIntMapValue(t *testing.T) {
 }
 
 func TestFimpMessage_GetFloatMapValue(t *testing.T) {
-	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"float_map","val":{"param1":0.5,"param2":2.5},"props":null,"tags":null}`
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"float_map","val":{"param1":0.5,"param2":2.5,"param3":5},"props":null,"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -247,6 +250,9 @@ func TestFimpMessage_GetFloatMapValue(t *testing.T) {
 	}
 	if val["param2"] != 2.5 {
 		t.Error("Wrong map result")
+	}
+	if val["param3"] == 5 {
+		t.Log("OK")
 	}
 }
 
@@ -303,6 +309,18 @@ func TestFimpMessage_GetObjectValue(t *testing.T) {
 	if config.Param2 != "val2" {
 		t.Error("Wrong map result")
 	}
+	binMsg , err := fimp.SerializeToJson()
+	if err != nil {
+		t.Error(err)
+	}
+	strMsg := string(binMsg)
+	t.Log(strMsg)
+	if strings.Contains(strMsg,"\"param2\":\"val2\"") {
+		t.Log("All good")
+	}else {
+		t.Error("Something wrong witgh serialization")
+	}
+
 }
 
 func BenchmarkFimpMessage_GetObjectValue(b *testing.B) {

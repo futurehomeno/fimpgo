@@ -96,6 +96,7 @@ func NewMqttTransport(serverURI, clientID, username, password string, cleanSessi
 	mh.mqttOptions.SetAutoReconnect(true)
 	mh.mqttOptions.SetConnectionLostHandler(mh.onConnectionLost)
 	mh.mqttOptions.SetOnConnectHandler(mh.onConnect)
+	mh.mqttOptions.SetWriteTimeout(time.Second*30)
 	//create and start a client using the above ClientOptions
 	mh.client = MQTT.NewClient(mh.mqttOptions)
 	mh.pubQos = pubQos
