@@ -7,7 +7,11 @@ import (
 
 const (
 	SystemEventTypeEvent = "EVENT"
-	SystemEventTypeState = "STATE"
+	SystemEventTypeState = "STATE" // APP state
+	SystemEventTypeAuthState = "AUTH_STATE" // AUTH state
+	SystemEventTypeConfigState = "CONFIG_STATE" // configuration state
+	SystemEventTypeConnectionState = "CONNECTION_STATE" // Connection state
+
 
 	AppStateStarting      = "STARTING"
 	AppStateStartupError  = "STARTUP_ERROR"
@@ -51,8 +55,8 @@ type AppStates struct {
 }
 
 type SystemEvent struct {
-	Type   string
-	Name   string
+	Type   string // Event or State
+	Name   string //
 	State  State
 	Info   string
 	Params map[string]string
@@ -99,6 +103,13 @@ func (al *Lifecycle) ConfigState() State {
 func (al *Lifecycle) SetConfigState(configState State) {
 	log.Debug("<sysEvt> New CONFIG state = ", configState)
 	al.configState = configState
+	for i := range al.systemEventBus {
+		select {
+		case al.systemEventBus[i] <- SystemEvent{Type: SystemEventTypeConfigState, State: configState, Info: "sys", Params: nil}:
+		default:
+			log.Debugf("<sysEvt> Config state listener %s is busy , event dropped", i)
+		}
+	}
 }
 
 func (al *Lifecycle) AuthState() State {
@@ -108,6 +119,14 @@ func (al *Lifecycle) AuthState() State {
 func (al *Lifecycle) SetAuthState(authState State) {
 	log.Debug("<sysEvt> New AUTH state = ", authState)
 	al.authState = authState
+
+	for i := range al.systemEventBus {
+		select {
+		case al.systemEventBus[i] <- SystemEvent{Type: SystemEventTypeAuthState, State: authState, Info: "sys", Params: nil}:
+		default:
+			log.Debugf("<sysEvt> Auth state listener %s is busy , event dropped", i)
+		}
+	}
 }
 
 func (al *Lifecycle) ConnectionState() State {
@@ -117,6 +136,13 @@ func (al *Lifecycle) ConnectionState() State {
 func (al *Lifecycle) SetConnectionState(connectivityState State) {
 	log.Debug("<sysEvt> New CONNECTION state = ", connectivityState)
 	al.connectionState = connectivityState
+	for i := range al.systemEventBus {
+		select {
+		case al.systemEventBus[i] <- SystemEvent{Type: SystemEventTypeConnectionState, State: connectivityState, Info: "sys", Params: nil}:
+		default:
+			log.Debugf("<sysEvt> Auth state listener %s is busy , event dropped", i)
+		}
+	}
 }
 
 func (al *Lifecycle) AppState() State {
@@ -147,6 +173,7 @@ func (al *Lifecycle) SetAppState(currentState State, params map[string]string) {
 	al.busMux.Unlock()
 }
 
+//PublishSystemEvent - published Application system events
 func (al *Lifecycle) PublishSystemEvent(name, src string, params map[string]string) {
 	event := SystemEvent{Name: name}
 	al.Publish(event, src, params)
@@ -158,17 +185,17 @@ func (al *Lifecycle) Publish(event SystemEvent, src string, params map[string]st
 	event.State = al.AppState()
 	event.Params = params
 	for i := range al.systemEventBus {
-		select {
-		case al.systemEventBus[i] <- event:
-		default:
-			log.Warnf("<sysEvt> Event listener %s is busy , event dropped", i)
-		}
+			select {
+			case al.systemEventBus[i] <- event:
+			default:
+				log.Warnf("<sysEvt> Event listener %s is busy , event dropped", i)
+			}
 
 	}
-	al.busMux.Unlock()
+	defer al.busMux.Unlock()
 }
 
-// Subscribe for app events
+// Subscribe for lifecycle events
 func (al *Lifecycle) Subscribe(subId string, bufSize int) SystemEventChannel {
 	msgChan := make(SystemEventChannel, bufSize)
 	al.busMux.Lock()
@@ -177,7 +204,7 @@ func (al *Lifecycle) Subscribe(subId string, bufSize int) SystemEventChannel {
 	return msgChan
 }
 
-// Unsubscribe from APP events
+// Unsubscribe from for lifecycle events
 func (al *Lifecycle) Unsubscribe(subId string) {
 	al.busMux.Lock()
 	delete(al.systemEventBus, subId)
@@ -185,14 +212,17 @@ func (al *Lifecycle) Unsubscribe(subId string) {
 }
 
 // WaitForState blocks until target state is reached
-func (al *Lifecycle) WaitForState(subId string, targetState State) {
+func (al *Lifecycle) WaitForState(subId string,stateType string , targetState State) {
 	log.Debugf("<sysEvt> Waiting for state = %s , current state = %s", targetState, al.AppState())
-	if al.AppState() == targetState {
+	if al.AppState() == targetState && stateType == SystemEventTypeState ||
+	   al.ConfigState() == targetState && stateType == SystemEventTypeConfigState ||
+	   al.AuthState() == targetState && stateType == SystemEventTypeAuthState ||
+	   al.ConnectionState() == targetState && stateType == SystemEventTypeConnectionState {
 		return
 	}
 	ch := al.Subscribe(subId, 5)
 	for evt := range ch {
-		if evt.Type == SystemEventTypeState && evt.State == targetState {
+		if evt.Type == stateType && evt.State == targetState {
 			al.Unsubscribe(subId)
 			return
 		}

@@ -21,6 +21,7 @@ func TestNewFloatMessage(t *testing.T) {
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", 35.5, nil, nil, nil)
 	val, err := msg.GetFloatValue()
+
 	if err != nil {
 		t.Error(err)
 	}
@@ -301,6 +302,7 @@ func TestFimpMessage_GetObjectValue(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	fimp.Properties["test"] = "1"
 	config := Config{}
 	err = fimp.GetObjectValue(&config)
 	if err != nil {
