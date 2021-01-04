@@ -44,7 +44,9 @@ func NewBufferedStream(bufferSizeLimit int, bufferInterval time.Duration,compres
 		su.ticker = time.NewTicker(time.Second * su.bufferInterval)
 		go func() {
 			for _ = range su.ticker.C {
-				su.FlushBuffer()
+				if su.Size()>0 {
+					su.FlushBuffer()
+				}
 			}
 		}()
 	}
