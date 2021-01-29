@@ -35,6 +35,8 @@ const (
 	Val = "val"
 )
 
+var defaultMessageSource = ""
+
 type Props map[string]string
 type Tags []string
 
@@ -186,6 +188,7 @@ func NewMessage(type_ string, service string, valueType string, value interface{
 		Version:      "1",
 		CreationTime: time.Now().Format(TimeFormat),
 		UID:          uuid.NewV4().String(),
+		Source:       defaultMessageSource,
 	}
 
 	if requestMessage != nil {
@@ -385,5 +388,9 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	}
 
 	return &fimpmsg, err
+}
 
+// SetMessageSource sets the default message source to be used when the source is not explicitly specified
+func SetMessageSource(source string) {
+	defaultMessageSource = source
 }
