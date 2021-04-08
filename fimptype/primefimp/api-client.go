@@ -30,7 +30,7 @@ type ApiClient struct {
 	isNotifyRouterStarted bool
 	notifChMux            sync.RWMutex
 	isVincAppsSyncEnabled bool
-
+    isConnPoolEnabled     bool
 	cloudService string
 }
 
@@ -41,12 +41,6 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSite
 	api.subFilters = make(map[string]NotifyFilter)
 
 	api.notifChMux = sync.RWMutex{}
-	if loadSiteIntoCache {
-		if err := api.ReloadSiteToCache(3); err != nil {
-			log.Error("<PF-API> Error reloading cache: ", err)
-		}
-	}
-
 	config := apiClientConfig{}
 	for _, o := range options {
 		o.apply(&config)
@@ -54,6 +48,7 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSite
 
 	api.cloudService = config.cloudService
 	if config.connectionPool != nil {
+		api.isConnPoolEnabled = true
 		prefix := fmt.Sprintf("%s_", config.connectionPool.connectionConfiguration.ClientID)
 		connPool := fimpgo.NewMqttConnectionPool(config.connectionPool.initialSize,
 			config.connectionPool.minSize,
@@ -64,6 +59,12 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSite
 		api.sClient = fimpgo.NewSyncClientV3(mqttTransport, connPool)
 	} else {
 		api.sClient = fimpgo.NewSyncClient(mqttTransport)
+	}
+
+	if loadSiteIntoCache {
+		if err := api.ReloadSiteToCache(3); err != nil {
+			log.Error("<PF-API> Error reloading cache: ", err)
+		}
 	}
 
 	return api
@@ -341,8 +342,8 @@ func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, e
 
 	responseAddress := respAddr.Serialize()
 
-	mh.sClient.AddSubscription(responseAddress)
-	defer mh.sClient.RemoveSubscription(responseAddress)
+	//mh.sClient.AddSubscription(responseAddress)  // Can't be used combined with connection polling , subscribe/unsubscribe and publish/receive can be executed on different connections
+	//defer mh.sClient.RemoveSubscription(responseAddress)
 
 	param := RequestParam{Components: components}
 	req := Request{Cmd: CmdGet, Param: &param}
@@ -350,7 +351,7 @@ func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, e
 	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimpgo.VTypeObject, req, nil, nil, nil)
 	msg.ResponseToTopic = responseAddress
 	msg.Source = mh.clientID
-	return mh.sClient.SendFimpWithTopicResponse(reqAddr.Serialize(), msg, responseAddress, "", "", 5)
+	return mh.sClient.SendReqRespFimp(reqAddr.Serialize(),responseAddress,msg,5,true)
 }
 
 func (mh *ApiClient) sendSetRequest(component string, value interface{}) (*fimpgo.FimpMessage, error) {
@@ -358,15 +359,15 @@ func (mh *ApiClient) sendSetRequest(component string, value interface{}) (*fimpg
 	respAddr := mh.responseAddress()
 	responseAddress := respAddr.Serialize()
 
-	mh.sClient.AddSubscription(responseAddress)
-	defer mh.sClient.RemoveSubscription(responseAddress)
+	//mh.sClient.AddSubscription(responseAddress) // Can't be used combined with connection polling , subscribe/unsubscribe and publish/receive can be executed on different connections
+	//defer mh.sClient.RemoveSubscription(responseAddress)
 
 	req := Request{Cmd: CmdSet, Component: component, Id: value}
 
 	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimpgo.VTypeObject, req, nil, nil, nil)
 	msg.ResponseToTopic = responseAddress
 	msg.Source = mh.clientID
-	return mh.sClient.SendFimpWithTopicResponse(reqAddr.Serialize(), msg, responseAddress, "", "", 5)
+	return mh.sClient.SendReqRespFimp(reqAddr.Serialize(),responseAddress,msg,5,true)
 }
 
 // GetDevices Gets the devices
