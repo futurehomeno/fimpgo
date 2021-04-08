@@ -14,7 +14,6 @@ type connection struct {
 	isIdle       bool
 	startedAt    time.Time
 	idleSince    time.Time
-
 }
 
 // Connection pool starts at initSize connections and can grow up to maxSize , the pool can shrink back to size defined in "size" variable
@@ -24,17 +23,17 @@ type MqttConnectionPool struct {
 	connTemplate   MqttConnectionConfigs
 	connPool       map[int]*connection
 	clientIdPrefix string
-	initSize       int // init size
-	size           int // normal size
-	maxSize        int // max size
+	initSize       int           // init size
+	size           int           // normal size
+	maxSize        int           // max size
 	maxIdleAge     time.Duration // Defines how long idle connection can stay in the pool before it gets destroyed
 	poolCheckTick  *time.Ticker
 	isActive       bool
 }
 
-func NewMqttConnectionPool(initSize, size, maxSize int,maxAge time.Duration, connTemplate MqttConnectionConfigs, clientIdPrefix string) *MqttConnectionPool {
+func NewMqttConnectionPool(initSize, size, maxSize int, maxAge time.Duration, connTemplate MqttConnectionConfigs, clientIdPrefix string) *MqttConnectionPool {
 	if maxAge == 0 {
-		maxAge = 30*time.Second  // age in seconds
+		maxAge = 30 * time.Second // age in seconds
 	}
 	if maxSize == 0 {
 		maxSize = 20
@@ -45,12 +44,12 @@ func NewMqttConnectionPool(initSize, size, maxSize int,maxAge time.Duration, con
 	if initSize > maxSize {
 		initSize = 0
 	}
-	pool := &MqttConnectionPool{connPool: make(map[int]*connection), connTemplate: connTemplate, clientIdPrefix: clientIdPrefix, initSize: initSize, size: size, maxSize: maxSize,maxIdleAge:maxAge}
+	pool := &MqttConnectionPool{connPool: make(map[int]*connection), connTemplate: connTemplate, clientIdPrefix: clientIdPrefix, initSize: initSize, size: size, maxSize: maxSize, maxIdleAge: maxAge}
 	pool.Start()
 	return pool
 }
 
-func (cp *MqttConnectionPool)Start() {
+func (cp *MqttConnectionPool) Start() {
 	if !cp.isActive {
 		cp.isActive = true
 		cp.poolCheckTick = time.NewTicker(10 * time.Second)
@@ -58,7 +57,7 @@ func (cp *MqttConnectionPool)Start() {
 	}
 }
 
-func (cp *MqttConnectionPool)Stop() {
+func (cp *MqttConnectionPool) Stop() {
 	cp.isActive = false
 }
 
@@ -96,7 +95,7 @@ func (cp *MqttConnectionPool) createConnection() (int, error) {
 		isIdle:       false,
 		startedAt:    time.Now(),
 	}
-	log.Debugf("New connection %d created . Pool size = %d",connId,len(cp.connPool))
+	log.Debugf("New connection %d created . Pool size = %d", connId, len(cp.connPool))
 	return connId, err
 }
 
@@ -109,7 +108,7 @@ func (cp *MqttConnectionPool) BorrowConnection() (int, *MqttTransport, error) {
 			if cp.connPool[i].mqConnection.Client().IsConnected() {
 				cp.connPool[i].isIdle = false
 				return i, cp.connPool[i].mqConnection, nil
-			}else {
+			} else {
 				break
 			}
 		}
@@ -122,12 +121,12 @@ func (cp *MqttConnectionPool) BorrowConnection() (int, *MqttTransport, error) {
 func (cp *MqttConnectionPool) ReturnConnection(connId int) {
 	defer cp.mux.RUnlock()
 	cp.mux.RLock()
-	con ,ok := cp.connPool[connId]
+	con, ok := cp.connPool[connId]
 	if ok {
 		con.mqConnection.UnsubscribeAll()
 		con.isIdle = true
 		con.idleSince = time.Now()
-		log.Debugf("Connection %d returned to pool.",connId)
+		log.Debugf("Connection %d returned to pool.", connId)
 	}
 }
 
@@ -140,12 +139,11 @@ func (cp *MqttConnectionPool) getConnectionById(connId int) *MqttTransport {
 	return nil
 }
 
-
 func (cp *MqttConnectionPool) genConnId() int {
 	rand.Seed(int64(time.Now().Nanosecond()))
 	for {
 		id := rand.Int()
-		if _,ok:=cp.connPool[id];!ok {
+		if _, ok := cp.connPool[id]; !ok {
 			return id
 		}
 	}
@@ -158,15 +156,15 @@ func (cp *MqttConnectionPool) cleanupProcess() {
 			break
 		}
 		cp.mux.Lock()
-		if len(cp.connPool)>cp.size {
+		if len(cp.connPool) > cp.size {
 			for i := range cp.connPool {
 				if cp.connPool[i].isIdle {
-					if (time.Since(cp.connPool[i].idleSince) > (cp.maxIdleAge)) && (len(cp.connPool)>cp.size) {
+					if (time.Since(cp.connPool[i].idleSince) > (cp.maxIdleAge)) && (len(cp.connPool) > cp.size) {
 						log.Debugf("<conn-pool> Destroying old connection")
 						conn := cp.getConnectionById(i)
 						conn.Stop()
-						delete(cp.connPool,i) // it is safe to delete map element in the loop
-					}else {
+						delete(cp.connPool, i) // it is safe to delete map element in the loop
+					} else {
 						//log.Debugf("<conn-pool> Nothing to clean")
 					}
 
@@ -176,5 +174,3 @@ func (cp *MqttConnectionPool) cleanupProcess() {
 		cp.mux.Unlock()
 	}
 }
-
-

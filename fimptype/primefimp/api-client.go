@@ -2,6 +2,7 @@ package primefimp
 
 import (
 	"errors"
+	"fmt"
 	"github.com/futurehomeno/fimpgo"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -38,7 +39,7 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSite
 	api := &ApiClient{clientID: clientID, mqttTransport: mqttTransport}
 	api.notifySubChannels = make(map[string]chan Notify)
 	api.subFilters = make(map[string]NotifyFilter)
-	api.sClient = fimpgo.NewSyncClient(mqttTransport)
+
 	api.notifChMux = sync.RWMutex{}
 	if loadSiteIntoCache {
 		if err := api.ReloadSiteToCache(3); err != nil {
@@ -52,6 +53,18 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSite
 	}
 
 	api.cloudService = config.cloudService
+	if config.connectionPool != nil {
+		prefix := fmt.Sprintf("%s_", config.connectionPool.connectionConfiguration.ClientID)
+		connPool := fimpgo.NewMqttConnectionPool(config.connectionPool.initialSize,
+			config.connectionPool.minSize,
+			config.connectionPool.maxSize,
+			config.connectionPool.lifetime,
+			config.connectionPool.connectionConfiguration,
+			prefix)
+		api.sClient = fimpgo.NewSyncClientV3(mqttTransport, connPool)
+	} else {
+		api.sClient = fimpgo.NewSyncClient(mqttTransport)
+	}
 
 	return api
 }
@@ -325,28 +338,35 @@ func (mh *ApiClient) responseAddress() fimpgo.Address {
 func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, error) {
 	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
 	respAddr := mh.responseAddress()
-	mh.sClient.AddSubscription(respAddr.Serialize())
+
+	responseAddress := respAddr.Serialize()
+
+	mh.sClient.AddSubscription(responseAddress)
+	defer mh.sClient.RemoveSubscription(responseAddress)
 
 	param := RequestParam{Components: components}
 	req := Request{Cmd: CmdGet, Param: &param}
 
 	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimpgo.VTypeObject, req, nil, nil, nil)
-	msg.ResponseToTopic = respAddr.Serialize()
+	msg.ResponseToTopic = responseAddress
 	msg.Source = mh.clientID
-	return mh.sClient.SendFimpWithTopicResponse(reqAddr.Serialize(), msg, respAddr.Serialize(), "", "", 5)
+	return mh.sClient.SendFimpWithTopicResponse(reqAddr.Serialize(), msg, responseAddress, "", "", 5)
 }
 
 func (mh *ApiClient) sendSetRequest(component string, value interface{}) (*fimpgo.FimpMessage, error) {
 	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
 	respAddr := mh.responseAddress()
-	mh.sClient.AddSubscription(respAddr.Serialize())
+	responseAddress := respAddr.Serialize()
+
+	mh.sClient.AddSubscription(responseAddress)
+	defer mh.sClient.RemoveSubscription(responseAddress)
 
 	req := Request{Cmd: CmdSet, Component: component, Id: value}
 
 	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimpgo.VTypeObject, req, nil, nil, nil)
-	msg.ResponseToTopic = respAddr.Serialize()
+	msg.ResponseToTopic = responseAddress
 	msg.Source = mh.clientID
-	return mh.sClient.SendFimpWithTopicResponse(reqAddr.Serialize(), msg, respAddr.Serialize(), "", "", 5)
+	return mh.sClient.SendFimpWithTopicResponse(reqAddr.Serialize(), msg, responseAddress, "", "", 5)
 }
 
 // GetDevices Gets the devices

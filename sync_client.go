@@ -40,9 +40,8 @@ func NewSyncClientV2(mqttTransport *MqttTransport, transactionPoolSize int, inbo
 }
 
 // NewSyncClientV3 Creates new sync client either using connections pool internal connection
-func NewSyncClientV3(connPool *MqttConnectionPool) *SyncClient {
-	sc := SyncClient{mqttConnPool: connPool, isConnPoolEnabled: true}
-	//TODO : Add current pool size
+func NewSyncClientV3(mqttTransport *MqttTransport, connPool *MqttConnectionPool) *SyncClient {
+	sc := SyncClient{mqttTransport: mqttTransport, mqttConnPool: connPool, isConnPoolEnabled: true}
 	sc.transactionPoolSize = 20
 	sc.inboundBufferSize = 10
 	sc.init()
@@ -122,6 +121,8 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 			conn.UnregisterChannel(chanName)
 			close(inboundCh)
 			if sc.isConnPoolEnabled {
+				// force unset global prefix
+				conn.SetGlobalTopicPrefix("")
 				sc.mqttConnPool.ReturnConnection(conId)
 			}
 		}
@@ -136,14 +137,28 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 		conn = sc.mqttTransport
 	}
 	conn.RegisterChannel(chanName, inboundCh)
+
 	responseChannel = sc.startResponseListener(fimpMsg, responseMsgType, responseService, responseTopic, inboundCh, timeout)
+
+	// force the global prefix -> this is useful for per-site operations, as it's currently the only way to
+	// inject a site id
+	conn.SetGlobalTopicPrefix(sc.mqttTransport.getGlobalTopicPrefix())
+
+	// this if statement is currently dead code, as the autoSubscribe parameter is only called with false
 	if autoSubscribe && responseTopic != "" {
 		if err := conn.Subscribe(responseTopic); err != nil {
 			log.Error("<SyncClient> error subscribing to topic:", err)
 		}
+	} else if responseTopic != "" {
+		if err := conn.Subscribe(responseTopic); err != nil {
+			log.Error("<SyncClient> error subscribing to topic:", err)
+			return nil, errSubscribe
+		}
 	}
+
 	if err := conn.PublishToTopic(topic, fimpMsg); err != nil {
 		log.Error("<SyncClient> error publishing to topic:", err)
+		return nil, errPublish
 	}
 
 	select {
