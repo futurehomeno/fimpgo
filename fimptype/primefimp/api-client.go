@@ -31,13 +31,15 @@ type ApiClient struct {
 	notifChMux            sync.RWMutex
 	isVincAppsSyncEnabled bool
     isConnPoolEnabled     bool
-	cloudService string
+	cloudService          string
+	responsePayloadType   string
 }
 
 // NewApiClient Creates a new api client. If isCacheEnabled it set to true , it will try to sync entire site on startup.
 func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSiteIntoCache bool, options ...Option) *ApiClient {
 	api := &ApiClient{clientID: clientID, mqttTransport: mqttTransport}
 	api.notifySubChannels = make(map[string]chan Notify)
+	api.responsePayloadType = "j1"
 	api.subFilters = make(map[string]NotifyFilter)
 
 	api.notifChMux = sync.RWMutex{}
@@ -69,6 +71,11 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSite
 
 	return api
 }
+
+func (mh *ApiClient) SetResponsePayloadType(responsePayloadType string) {
+	mh.responsePayloadType = responsePayloadType
+}
+
 
 func (mh *ApiClient) IsCacheEnabled() bool {
 	return mh.isCacheEnabled
@@ -355,7 +362,8 @@ func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, e
 }
 
 func (mh *ApiClient) sendSetRequest(component string, value interface{}) (*fimpgo.FimpMessage, error) {
-	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
+
+	reqAddr := fimpgo.Address{PayloadType: mh.responsePayloadType,MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
 	respAddr := mh.responseAddress()
 	responseAddress := respAddr.Serialize()
 
