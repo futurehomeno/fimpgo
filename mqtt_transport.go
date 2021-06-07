@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
+	"github.com/futurehomeno/fimpgo/transport"
 	"github.com/futurehomeno/fimpgo/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -51,7 +52,6 @@ type FimpFilter struct {
 
 type FilterFunc func(topic string, addr *Address, iotMsg *FimpMessage) bool
 
-// MqttAdapter , mqtt adapter .
 type MqttTransport struct {
 	client         MQTT.Client
 	msgHandler     MessageHandler
@@ -71,6 +71,7 @@ type MqttTransport struct {
 	syncPublishTimeout   time.Duration
 	channelRegMux        sync.Mutex
 	subMutex             sync.Mutex
+	compressor          *transport.MsgCompressor
 }
 
 func (mh *MqttTransport) SetReceiveChTimeout(receiveChTimeout int) {
@@ -83,8 +84,7 @@ func (mh *MqttTransport) SetCertDir(certDir string) {
 
 type MessageHandler func(topic string, addr *Address, iotMsg *FimpMessage, rawPayload []byte)
 
-// NewMqttAdapter constructor
-//serverUri="tcp://localhost:1883"
+// NewMqttTransport constructor. serverUri="tcp://localhost:1883"
 func NewMqttTransport(serverURI, clientID, username, password string, cleanSession bool, subQos byte, pubQos byte) *MqttTransport {
 	mh := MqttTransport{}
 	mh.mqttOptions = MQTT.NewClientOptions().AddBroker(serverURI)
@@ -192,7 +192,7 @@ func (mh *MqttTransport) getGlobalTopicPrefix() string {
 	return mh.globalTopicPrefix
 }
 
-// Set number of retries transport will attempt on startup . Default value is 10
+// SetStartAutoRetryCount Set number of retries transport will attempt on startup . Default value is 10
 func (mh *MqttTransport) SetStartAutoRetryCount(count int) {
 	mh.startFailRetryCount = count
 }
@@ -219,7 +219,7 @@ func (mh *MqttTransport) UnregisterChannel(channelId string) {
 	mh.channelRegMux.Unlock()
 }
 
-// RegisterChannel should be used if new message has to be sent to channel instead of callback.
+// RegisterChannelWithFilter should be used if new message has to be sent to channel instead of callback.
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannelWithFilter(channelId string, messageCh MessageCh, filter FimpFilter) {
 	mh.channelRegMux.Lock()
@@ -228,7 +228,7 @@ func (mh *MqttTransport) RegisterChannelWithFilter(channelId string, messageCh M
 	mh.channelRegMux.Unlock()
 }
 
-// RegisterChannel should be used if new message has to be sent to channel instead of callback.
+// RegisterChannelWithFilterFunc should be used if new message has to be sent to channel instead of callback.
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannelWithFilterFunc(channelId string, messageCh MessageCh, filterFunc FilterFunc) {
 	mh.channelRegMux.Lock()
@@ -259,7 +259,7 @@ func (mh *MqttTransport) Start() error {
 	return err
 }
 
-// Stops adapter . Adapter can't be started again using Start . In order to start adapter it has to be re-initialized
+// Stop stops adapter . Adapter can't be started again using Start . In order to start adapter it has to be re-initialized
 func (mh *MqttTransport) Stop() {
 	mh.client.Disconnect(250)
 }
@@ -355,7 +355,6 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 		topic = msg.Topic()
 	}
 
-	// log.Debug("MSG: %s\n", msg.Payload())
 	addr, err := NewAddressFromString(topic)
 	if err != nil {
 		log.Error("<MqttAd> Error processing address :", err)
@@ -363,9 +362,12 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	}
 	var fimpMsg *FimpMessage
 
-	if addr.PayloadType == DefaultPayload {
+	switch addr.PayloadType {
+	case DefaultPayload:
 		fimpMsg, err = NewMessageFromBytes(msg.Payload())
-	} else {
+	case CompressedJsonPayload:
+		fimpMsg,err = mh.compressor.DecompressFimpMsg(msg.Payload())
+	default:
 		// This means binary payload , for instance compressed message
 	}
 
@@ -373,7 +375,7 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 		if err == nil  {
 			mh.msgHandler(topic, addr, fimpMsg, msg.Payload())
 		} else {
-			log.Debug(string(msg.Payload()))
+			log.Trace(string(msg.Payload()))
 			log.Error("<MqttAd> Error processing payload :", err)
 			return
 		}
@@ -438,9 +440,17 @@ func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr
 	return false
 }
 
-// Publish  to FIMP address
+// Publish publishes message to FIMP address
 func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
-	bytm, err := fimpMsg.SerializeToJson()
+	var bytm []byte
+	var err error
+	switch addr.PayloadType {
+	case DefaultPayload:
+		bytm, err = fimpMsg.SerializeToJson()
+	case CompressedJsonPayload:
+		bytm, err = mh.compressor.CompressFimpMsg(fimpMsg)
+
+	}
 	topic := addr.Serialize()
 	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
 		topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
@@ -453,7 +463,7 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 	return err
 }
 
-// Publish iotMsg to string topic
+// PublishToTopic publishes iotMsg to string topic
 func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) error {
 	byteMessage, err := fimpMsg.SerializeToJson()
 	if err != nil {
@@ -477,7 +487,15 @@ func (mh *MqttTransport) RespondToRequest(requestMsg *FimpMessage, responseMsg *
 }
 
 func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error {
-	bytm, err := fimpMsg.SerializeToJson()
+	var bytm []byte
+	var err error
+	switch addr.PayloadType {
+	case DefaultPayload:
+		bytm, err = fimpMsg.SerializeToJson()
+	case CompressedJsonPayload:
+		bytm, err = mh.compressor.CompressFimpMsg(fimpMsg)
+
+	}
 	topic := addr.Serialize()
 	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
 		topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
@@ -541,7 +559,7 @@ func DetachGlobalPrefixFromTopic(topic string) (string, string) {
 	return globalPrefix, resultTopic
 }
 
-// The method should be used to configure mutual TLS , like AwS IoT core is using . Also it configures TLS protocol switch .
+// ConfigureTls The method should be used to configure mutual TLS , like AwS IoT core is using . Also it configures TLS protocol switch .
 // Cert dir should contains all CA root certificates .
 // IsAws flag controls AWS specific TLS protocol switch.
 func (mh *MqttTransport) ConfigureTls(privateKeyFileName, certFileName, certDir string, isAws bool) error {

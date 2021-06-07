@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"github.com/futurehomeno/fimpgo"
 	log "github.com/sirupsen/logrus"
+	"sync"
 )
 
 
@@ -13,6 +14,7 @@ type MsgCompressor struct {
 	decompressor      *gzip.Reader
 	compressionBuffer bytes.Buffer
 	decompressorBuffer bytes.Buffer
+	mux                sync.Mutex
 }
 
 func NewMsgCompressor(alg,compLevel string ) *MsgCompressor {
@@ -26,8 +28,10 @@ func NewMsgCompressor(alg,compLevel string ) *MsgCompressor {
 	return comp
 }
 
-//CompressBinMsg - compresses binary message and return compressed byte array.Operation is not thread safe.
+//CompressBinMsg - compresses binary message and return compressed byte array.
 func (c *MsgCompressor) CompressBinMsg(msg []byte) ([]byte, error) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
 	c.compressor.Reset(&c.compressionBuffer)
 	_ , err := c.compressor.Write(msg)
 	if err != nil {
@@ -42,6 +46,8 @@ func (c *MsgCompressor) CompressBinMsg(msg []byte) ([]byte, error) {
 }
 
 func (c *MsgCompressor) DecompressBinMsg(binMsg []byte) ([]byte, error) {
+	c.mux.Lock()
+	defer c.mux.Unlock()
 	if c.decompressor == nil {
 		var err error
 		c.decompressorBuffer.Write(binMsg)
