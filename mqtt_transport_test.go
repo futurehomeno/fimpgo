@@ -142,7 +142,7 @@ func TestMqttTransport_SubUnsub(t *testing.T) {
 	t.Log("Publishing message")
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
-	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
+	adr := Address{PayloadType: DefaultPayload,MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
 	mqtt.PublishSync(&adr,msg)
 
 	t.Log("Waiting for new message")
@@ -181,7 +181,7 @@ func TestMqttTransport_PublishTls(t *testing.T) {
 	t.Log("Publishing message")
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
-	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
+	adr := Address{PayloadType: DefaultPayload,MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
 	mqtt.Publish(&adr,msg)
 
 	t.Log("Waiting for new message")
@@ -232,7 +232,7 @@ func TestMqttTransport_PublishTls_2(t *testing.T) {
 	t.Log("Publishing message")
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
-	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
+	adr := Address{PayloadType: DefaultPayload,MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
 	mqtt.Publish(&adr,msg)
 
 	t.Log("Waiting for new message")
@@ -277,7 +277,7 @@ func TestMqttTransport_TestChannels(t *testing.T) {
 	}(chan2)
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
-	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
+	adr := Address{PayloadType: DefaultPayload,MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
 	mqtt.Publish(&adr,msg)
 	time.Sleep(time.Second*1)
 	mqtt.UnregisterChannel("chan1")
@@ -292,7 +292,7 @@ func TestMqttTransport_TestChannels(t *testing.T) {
 
 func TestMqttTransport_TestResponder(t *testing.T) {
 
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.TraceLevel)
 	var isResponseReceived bool
 	mqtt := NewMqttTransport("tcp://localhost:1883","fimpgotest-1","","",true,1,1)
 	err := mqtt.Start()
@@ -304,7 +304,7 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 	err = mqtt2.Start()
 	t.Log("Connected")
 	time.Sleep(time.Second*1)
-	mqtt2.Subscribe("pt:j1/mt:rsp/rt:app/rn:response_tester/ad:1")
+	mqtt2.Subscribe("pt:j1c1/mt:rsp/rt:app/rn:response_tester/ad:1")
 
 
 	if err != nil {
@@ -316,24 +316,31 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 	mqtt2.RegisterChannel("chan2",chan2)
 	// responder
 	go func(msgChan MessageCh) {
-		newMsg :=<- chan1
-		if newMsg.Payload.Service == "tester" {
-			mqtt.RespondToRequest(newMsg.Payload,NewFloatMessage("evt.test.response", "test_responder", float64(35.5), nil, nil, nil))
+		for {
+			newMsg :=<- chan1
+			t.Log("New message for responder. Service = "+newMsg.Payload.Service)
+			if newMsg.Payload.Service == "tester" {
+				mqtt.RespondToRequest(newMsg.Payload,NewFloatMessage("evt.test.response", "test_responder", 35.5, nil, nil, nil))
+			}
 		}
+
 	}(chan1)
 
 	go func(msgChan MessageCh) {
+		for {
 			newMsg :=<- chan2
 			t.Log("Service = "+newMsg.Payload.Service)
-			if newMsg.Payload.Service == "test_responder" && newMsg.Topic == "pt:j1/mt:rsp/rt:app/rn:response_tester/ad:1" {
+			if newMsg.Payload.Service == "test_responder" && newMsg.Topic == "pt:j1c1/mt:rsp/rt:app/rn:response_tester/ad:1" {
 				isResponseReceived = true
 			}
+		}
+
 
 	}(chan2)
 
 	msg := NewFloatMessage("cmd.test.get_response", "tester", float64(35.5), nil, nil, nil)
-	msg.ResponseToTopic = "pt:j1/mt:rsp/rt:app/rn:response_tester/ad:1"
-	adr := Address{MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "test", ResourceAddress: "1"}
+	msg.ResponseToTopic = "pt:j1c1/mt:rsp/rt:app/rn:response_tester/ad:1"
+	adr := Address{PayloadType: DefaultPayload,MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "test", ResourceAddress: "1"}
 	mqtt.Publish(&adr,msg)
 	time.Sleep(time.Second*2)
 	mqtt.UnregisterChannel("chan1")

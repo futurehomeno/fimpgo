@@ -1,10 +1,10 @@
-package transport
+package fimpgo
 
 import (
 	"bytes"
 	"compress/gzip"
-	"github.com/futurehomeno/fimpgo"
 	log "github.com/sirupsen/logrus"
+	"io/ioutil"
 	"sync"
 )
 
@@ -46,30 +46,21 @@ func (c *MsgCompressor) CompressBinMsg(msg []byte) ([]byte, error) {
 }
 
 func (c *MsgCompressor) DecompressBinMsg(binMsg []byte) ([]byte, error) {
-	c.mux.Lock()
-	defer c.mux.Unlock()
-	if c.decompressor == nil {
-		var err error
-		c.decompressorBuffer.Write(binMsg)
-		c.decompressor,err = gzip.NewReader(&c.decompressorBuffer)
-		if err != nil {
-			log.Error("Decompressor can't be initiated .Err:",err)
-			return nil, err
-		}
-	}else {
-		c.decompressorBuffer.Reset()
-		c.decompressorBuffer.Write(binMsg)
-	}
-	var resB bytes.Buffer
-	_, err := resB.ReadFrom(c.decompressor)
+	var err error
+	var decompressorBuffer bytes.Buffer
+	decompressorBuffer.Write(binMsg)
+	decompressor,err := gzip.NewReader(&decompressorBuffer)
 	if err != nil {
-		log.Error("Decompression error .Err:",err.Error())
+		log.Error("Decompression error 1 .Err:",err)
 		return nil, err
 	}
-	return resB.Bytes(),nil
+	response, err := ioutil.ReadAll(decompressor)
+	decompressor.Close()
+	decompressorBuffer.Reset()
+	return response ,err
 }
 
-func (c *MsgCompressor) CompressFimpMsg(msg *fimpgo.FimpMessage) ([]byte, error) {
+func (c *MsgCompressor) CompressFimpMsg(msg *FimpMessage) ([]byte, error) {
 	binMsg,err := msg.SerializeToJson()
 	if err != nil {
 		return nil, err
@@ -77,12 +68,12 @@ func (c *MsgCompressor) CompressFimpMsg(msg *fimpgo.FimpMessage) ([]byte, error)
 	return c.CompressBinMsg(binMsg)
 }
 
-func (c MsgCompressor) DecompressFimpMsg(compBinMsg []byte) (*fimpgo.FimpMessage, error) {
+func (c MsgCompressor) DecompressFimpMsg(compBinMsg []byte) (*FimpMessage, error) {
 	binMsg,err := c.DecompressBinMsg(compBinMsg)
 	if err != nil {
 		return nil, err
 	}
-	return fimpgo.NewMessageFromBytes(binMsg)
+	return NewMessageFromBytes(binMsg)
 }
 
 

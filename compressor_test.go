@@ -1,14 +1,13 @@
-package transport
+package fimpgo
 
 import (
-	"github.com/futurehomeno/fimpgo"
 	"github.com/futurehomeno/fimpgo/fimptype"
 	"testing"
 )
 
 func TestNewMsgCompressor(t *testing.T) {
 
-	msg := fimpgo.NewFloatMessage("evt.sensor.report", "temp_sensor", 35.5, nil, nil, nil)
+	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", 35.5, nil, nil, nil)
 
 	comp :=  NewMsgCompressor("","")
 	decomp := NewMsgCompressor("","")
@@ -21,10 +20,10 @@ func TestNewMsgCompressor(t *testing.T) {
 		if err != nil {
 			t.Fatal("Compressor error :",err)
 		}
-		t.Log("Compressed message size = ",len(compMsg))
+
 		fimpMsg , err := decomp.DecompressFimpMsg(compMsg)
 		if err != nil {
-			t.Fatal("Compressor error :",err)
+			t.Fatal("Compressor error 2 :",err)
 		}
 		if fimpMsg.Service != "temp_sensor" {
 			t.Fatal("Incorrect service name ")
@@ -37,7 +36,7 @@ func TestNewMsgCompressor(t *testing.T) {
 func TestNewMsgCompressor2(t *testing.T) {
 	val := fimptype.ThingInclusionReport{}
 	val.Alias= "test_alias"
-	msg0 := fimpgo.NewObjectMessage("evt.inclusion.report", "test", val, nil, nil, nil)
+	msg0 := NewObjectMessage("evt.inclusion.report", "test", val, nil, nil, nil)
 	bmsg0,_ := msg0.SerializeToJson()
 
 
@@ -46,12 +45,13 @@ func TestNewMsgCompressor2(t *testing.T) {
 	decomp := NewMsgCompressor("","")
 
 	for i:=0;i<10;i++ {
-		msg,err := fimpgo.NewMessageFromBytes(bmsg0)
+
+		msg,err := NewMessageFromBytes(bmsg0)
 		if err != nil {
 			t.Fatal("Desirialization error")
 		}
 		msg.Topic = "some/topic"
-		if msg.ValueType == fimpgo.VTypeObject {
+		if msg.ValueType == VTypeObject {
 			err := msg.GetObjectValue(&msg.Value)
 			if err != nil {
 				t.Fatal("<ses> Compression fimp error:",err.Error())
@@ -59,14 +59,20 @@ func TestNewMsgCompressor2(t *testing.T) {
 		}
 		bmsg,_:=msg.SerializeToJson()
 		t.Log("Uncompressed message size = ",len(bmsg))
-		compMsg,err := comp.CompressFimpMsg(msg)
+		compMsg,err := comp.CompressBinMsg(bmsg)
 		if err != nil {
 			t.Fatal("Compressor error :",err)
 		}
-		t.Log("Compressed message size = ",len(compMsg))
-		fimpMsg , err := decomp.DecompressFimpMsg(compMsg)
+		t.Log("Compressed message size 1 = ",len(compMsg))
+		fimpMsgBin , err := decomp.DecompressBinMsg(compMsg)
 		if err != nil {
-			t.Fatal("Compressor error :",err)
+			t.Fatal("Compressor error 1:",err)
+		}
+		//t.Log("Compressed message size 2 = ",len(fimpMsgBin))
+		fimpMsg , err := NewMessageFromBytes(fimpMsgBin)
+		//fimpMsg , err := decomp.DecompressFimpMsg(compMsg)
+		if err != nil {
+			t.Fatal("Compressor error 2:",err)
 		}
 		v1 := fimptype.ThingInclusionReport{}
 		fimpMsg.GetObjectValue(&v1)
