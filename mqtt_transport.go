@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
-	"github.com/futurehomeno/fimpgo/transport"
 	"github.com/futurehomeno/fimpgo/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -71,7 +70,7 @@ type MqttTransport struct {
 	syncPublishTimeout   time.Duration
 	channelRegMux        sync.Mutex
 	subMutex             sync.Mutex
-	compressor          *transport.MsgCompressor
+	compressor           *MsgCompressor
 }
 
 func (mh *MqttTransport) SetReceiveChTimeout(receiveChTimeout int) {
@@ -108,6 +107,7 @@ func NewMqttTransport(serverURI, clientID, username, password string, cleanSessi
 	mh.startFailRetryCount = 10
 	mh.receiveChTimeout = 10
 	mh.syncPublishTimeout = time.Second * 5
+	mh.compressor = NewMsgCompressor("","")
 	return &mh
 }
 
@@ -340,7 +340,7 @@ func (mh *MqttTransport) onConnect(_ MQTT.Client) {
 	}
 }
 
-//define a function for the default message handler
+//onMessage default message handler
 func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -368,7 +368,8 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	case CompressedJsonPayload:
 		fimpMsg,err = mh.compressor.DecompressFimpMsg(msg.Payload())
 	default:
-		// This means binary payload , for instance compressed message
+		// This means unknown binary payload , for instance compressed message
+		log.Trace("<MqttAd> Unknown binary payload :", addr.PayloadType)
 	}
 
 	if mh.msgHandler != nil {
@@ -389,7 +390,7 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 			continue
 		}
 		var fmsg Message
-		if addr.PayloadType == DefaultPayload {
+		if addr.PayloadType == DefaultPayload || addr.PayloadType == CompressedJsonPayload {
 			fmsg = Message{Topic: topic, Addr: addr, Payload: fimpMsg}
 		}else {
 			// message receiver should do decompressions
@@ -444,12 +445,20 @@ func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr
 func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 	var bytm []byte
 	var err error
+	if addr.PayloadType == "" {
+		addr.PayloadType = DefaultPayload
+	}
 	switch addr.PayloadType {
 	case DefaultPayload:
 		bytm, err = fimpMsg.SerializeToJson()
 	case CompressedJsonPayload:
 		bytm, err = mh.compressor.CompressFimpMsg(fimpMsg)
-
+	default:
+		// This means unknown binary payload , for instance compressed message
+		log.Trace("<MqttAd> Publish - unknown binary payload :", addr.PayloadType)
+	}
+	if err != nil {
+		return err
 	}
 	topic := addr.Serialize()
 	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
@@ -465,9 +474,19 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 
 // PublishToTopic publishes iotMsg to string topic
 func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) error {
+
 	byteMessage, err := fimpMsg.SerializeToJson()
 	if err != nil {
 		return err
+	}
+	addr,err := NewAddressFromString(topic)
+	if err == nil {
+		if addr.PayloadType == CompressedJsonPayload {
+			byteMessage,err = mh.compressor.CompressBinMsg(byteMessage)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
@@ -489,6 +508,9 @@ func (mh *MqttTransport) RespondToRequest(requestMsg *FimpMessage, responseMsg *
 func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error {
 	var bytm []byte
 	var err error
+	if addr.PayloadType == "" {
+		addr.PayloadType = DefaultPayload
+	}
 	switch addr.PayloadType {
 	case DefaultPayload:
 		bytm, err = fimpMsg.SerializeToJson()
