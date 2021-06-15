@@ -127,6 +127,7 @@ func NewMqttTransportFromConnection(client MQTT.Client, subQos byte, pubQos byte
 	mh.startFailRetryCount = 10
 	mh.receiveChTimeout = 10
 	mh.syncPublishTimeout = time.Second * 5
+	mh.compressor = NewMsgCompressor("","")
 	return &mh
 }
 
@@ -163,6 +164,7 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Optio
 	mh.syncPublishTimeout = time.Second * 5
 	mh.certDir = configs.CertDir
 	mh.globalTopicPrefix = configs.GlobalTopicPrefix
+	mh.compressor = NewMsgCompressor("","")
 	if configs.StartFailRetryCount == 0 {
 		mh.startFailRetryCount = 10
 	} else {
@@ -180,7 +182,6 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Optio
 			log.Error("Certificate loading error :", err.Error())
 		}
 	}
-
 	return &mh
 }
 

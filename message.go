@@ -303,7 +303,7 @@ func NewObjectMessage(type_ string, service string, value interface{}, props Pro
 	return NewMessage(type_, service, VTypeObject, value, props, tags, requestMessage)
 }
 
-// transport message is meant to carry original message using either encryption , signing or
+// NewBinaryMessage transport message is meant to carry original message using either encryption , signing or
 func NewBinaryMessage(type_, service string, value []byte, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
 	valEnc := base64.StdEncoding.EncodeToString(value)
 	return NewMessage(type_, service, VTypeBinary, valEnc, props, tags, requestMessage)
@@ -321,6 +321,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	fimpmsg.ResponseToTopic, _ = jsonparser.GetString(msg, "resp_to")
 	fimpmsg.Source, _ = jsonparser.GetString(msg, "src")
 	fimpmsg.Topic, _ = jsonparser.GetString(msg, "topic")
+	fimpmsg.Version,_ = jsonparser.GetString(msg, "ver")
 
 	switch fimpmsg.ValueType {
 	case VTypeString:

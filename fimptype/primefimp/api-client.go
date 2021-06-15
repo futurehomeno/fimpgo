@@ -2,7 +2,6 @@ package primefimp
 
 import (
 	"errors"
-	"fmt"
 	"github.com/futurehomeno/fimpgo"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -33,9 +32,11 @@ type ApiClient struct {
     isConnPoolEnabled     bool
 	cloudService          string
 	responsePayloadType   string
+	globalPrefix          string
 }
 
-// NewApiClient Creates a new api client. If isCacheEnabled it set to true , it will try to sync entire site on startup.
+// NewApiClient Creates a new Vinculum API client. If isCacheEnabled it set to true , it will try to sync entire site on startup.
+// If the library is used for backend services , new client instance must be created for each smarthub.
 func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSiteIntoCache bool, options ...Option) *ApiClient {
 	api := &ApiClient{clientID: clientID, mqttTransport: mqttTransport}
 	api.notifySubChannels = make(map[string]chan Notify)
@@ -49,20 +50,12 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSite
 	}
 
 	api.cloudService = config.cloudService
-	if config.connectionPool != nil {
-		api.isConnPoolEnabled = true
-		prefix := fmt.Sprintf("%s_", config.connectionPool.connectionConfiguration.ClientID)
-		connPool := fimpgo.NewMqttConnectionPool(config.connectionPool.initialSize,
-			config.connectionPool.minSize,
-			config.connectionPool.maxSize,
-			config.connectionPool.lifetime,
-			config.connectionPool.connectionConfiguration,
-			prefix)
-		api.sClient = fimpgo.NewSyncClientV3(mqttTransport, connPool)
-	} else {
-		api.sClient = fimpgo.NewSyncClient(mqttTransport)
-	}
+	api.globalPrefix = config.globalPrefix
 
+	api.sClient = fimpgo.NewSyncClient(mqttTransport)
+	if api.globalPrefix != "" {
+		api.sClient.SetGlobalPrefix(api.globalPrefix)
+	}
 	if loadSiteIntoCache {
 		if err := api.ReloadSiteToCache(3); err != nil {
 			log.Error("<PF-API> Error reloading cache: ", err)
@@ -85,7 +78,7 @@ func (mh *ApiClient) SetIsCacheEnabled(isCacheEnabled bool) {
 	mh.isCacheEnabled = isCacheEnabled
 }
 
-// if not enabled only rooms,areas,things and devices are synced
+// EnableVincAppsSync if not enabled only rooms,areas,things and devices are synced
 func (mh *ApiClient) EnableVincAppsSync(flag bool) {
 	mh.isVincAppsSyncEnabled = flag
 }
@@ -97,7 +90,7 @@ func (mh *ApiClient) IsCacheEmpty() bool {
 	return false
 }
 
-// ValidateSiteCache validates cache , if empty it makes one reload attempt. The method can be used for cache lazy loading.
+// ValidateAndReloadSiteCache validates cache , if empty it makes one reload attempt. The method can be used for cache lazy loading.
 func (mh *ApiClient) ValidateAndReloadSiteCache() bool {
 	if mh.IsCacheEmpty() {
 		log.Debug("<PF-API> Empty site cache.Reloading...")
@@ -111,7 +104,7 @@ func (mh *ApiClient) ValidateAndReloadSiteCache() bool {
 	return true
 }
 
-//ReloadSiteToCache loads cache from vinculum and sets isCacheEnabled flag to true if operation was successful.
+// ReloadSiteToCache loads cache from vinculum and sets isCacheEnabled flag to true if operation was successful.
 func (mh *ApiClient) ReloadSiteToCache(retry int) error {
 	retry++
 	var site *Site
@@ -138,7 +131,7 @@ func (mh *ApiClient) ReloadSiteToCache(retry int) error {
 	return nil
 }
 
-// Loads site from file . File should be in exactly the same format as vinculum response
+// LoadVincResponseFromFile Loads site from file . File should be in exactly the same format as vinculum response
 func (mh *ApiClient) LoadVincResponseFromFile(fileName string) error {
 	bSite, err := ioutil.ReadFile(fileName)
 	if err != nil {
