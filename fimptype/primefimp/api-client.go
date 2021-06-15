@@ -334,7 +334,7 @@ func (mh *ApiClient) notifyRouter() {
 }
 
 func (mh *ApiClient) responseAddress() fimpgo.Address {
-	respAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeRsp, ResourceType: fimpgo.ResourceTypeApp, ResourceName: mh.clientID, ResourceAddress: "1"}
+	respAddr := fimpgo.Address{PayloadType: mh.responsePayloadType,MsgType: fimpgo.MsgTypeRsp, ResourceType: fimpgo.ResourceTypeApp, ResourceName: mh.clientID, ResourceAddress: "1"}
 	if mh.cloudService != "" {
 		respAddr.ResourceType = fimpgo.ResourceTypeCloud
 		respAddr.ResourceName = "backend-service"
@@ -346,7 +346,6 @@ func (mh *ApiClient) responseAddress() fimpgo.Address {
 func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, error) {
 	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
 	respAddr := mh.responseAddress()
-
 	responseAddress := respAddr.Serialize()
 
 	//mh.sClient.AddSubscription(responseAddress)  // Can't be used combined with connection polling , subscribe/unsubscribe and publish/receive can be executed on different connections
@@ -363,7 +362,7 @@ func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, e
 
 func (mh *ApiClient) sendSetRequest(component string, value interface{}) (*fimpgo.FimpMessage, error) {
 
-	reqAddr := fimpgo.Address{PayloadType: mh.responsePayloadType,MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
+	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
 	respAddr := mh.responseAddress()
 	responseAddress := respAddr.Serialize()
 
