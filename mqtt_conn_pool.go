@@ -99,7 +99,7 @@ func (cp *MqttConnectionPool) createConnection() (int, error) {
 	return connId, err
 }
 
-// getConnectionById returns first available connection from the pool or creates new connection
+// BorrowConnection returns first available connection from the pool or creates new connection
 func (cp *MqttConnectionPool) BorrowConnection() (int, *MqttTransport, error) {
 	defer cp.mux.Unlock()
 	cp.mux.Lock()

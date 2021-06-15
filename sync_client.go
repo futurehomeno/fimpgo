@@ -17,12 +17,19 @@ type SyncClient struct {
 	inboundChannelName    string
 	stopSignalCh          chan bool
 	isStartedUsingConnect bool
+	globalPrefix          string
+}
+
+// SetGlobalPrefix configures global prefix/site_id . Most be used from backend services.
+func (sc *SyncClient) SetGlobalPrefix(globalPrefix string) {
+	sc.globalPrefix = globalPrefix
 }
 
 func (sc *SyncClient) SetTransactionPoolSize(transactionPoolSize int) {
 	sc.transactionPoolSize = transactionPoolSize
 }
 
+// NewSyncClient creates sync client using existing mqtt connection
 func NewSyncClient(mqttTransport *MqttTransport) *SyncClient {
 	sc := SyncClient{mqttTransport: mqttTransport}
 	sc.transactionPoolSize = 20
@@ -31,6 +38,7 @@ func NewSyncClient(mqttTransport *MqttTransport) *SyncClient {
 	return &sc
 }
 
+// NewSyncClientV2 creates new sync client using existing mqtt connection and configures transactionPool size and inboundBufferSize
 func NewSyncClientV2(mqttTransport *MqttTransport, transactionPoolSize int, inboundBuffSize int) *SyncClient {
 	sc := SyncClient{mqttTransport: mqttTransport}
 	sc.transactionPoolSize = transactionPoolSize
@@ -39,14 +47,14 @@ func NewSyncClientV2(mqttTransport *MqttTransport, transactionPoolSize int, inbo
 	return &sc
 }
 
-// NewSyncClientV3 Creates new sync client either using connections pool internal connection
-func NewSyncClientV3(mqttTransport *MqttTransport, connPool *MqttConnectionPool) *SyncClient {
-	sc := SyncClient{mqttTransport: mqttTransport, mqttConnPool: connPool, isConnPoolEnabled: true}
-	sc.transactionPoolSize = 20
-	sc.inboundBufferSize = 10
-	sc.init()
-	return &sc
-}
+// NewSyncClientV3 (DISCONTINUED) Creates new sync client either using connections pool internal connection
+//func NewSyncClientV3(mqttTransport *MqttTransport, connPool *MqttConnectionPool) *SyncClient {
+//	sc := SyncClient{mqttTransport: mqttTransport, mqttConnPool: connPool, isConnPoolEnabled: true}
+//	sc.transactionPoolSize = 20
+//	sc.inboundBufferSize = 10
+//	sc.init()
+//	return &sc
+//}
 
 func (sc *SyncClient) SetConfigs(transactionPoolSize int, inboundBuffSize int) {
 	if transactionPoolSize == 0 {
@@ -89,13 +97,12 @@ func (sc *SyncClient) Stop() {
 }
 
 // AddSubscription has to be invoked before Send methods
-// MUST NOT be used with connection pool as subscribe and publish operation might be executed against different connections.
 func (sc *SyncClient) AddSubscription(topic string) {
 	if err := sc.mqttTransport.Subscribe(topic); err != nil {
 		log.Error("<SyncClient> error subscribing to topic:", err)
 	}
 }
-// RemoveSubscription MUST NOT be used with connection pool
+// RemoveSubscription
 func (sc *SyncClient) RemoveSubscription(topic string) {
 	if err := sc.mqttTransport.Unsubscribe(topic); err != nil {
 		log.Error("<SyncClient> error unsubscribing from topic:", err)
@@ -141,11 +148,11 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 
 	responseChannel = sc.startResponseListener(fimpMsg, responseMsgType, responseService, responseTopic, inboundCh, timeout)
 
-	// force the global prefix -> this is useful for per-site operations, as it's currently the only way to
-	// inject a site id
-	conn.SetGlobalTopicPrefix(sc.mqttTransport.getGlobalTopicPrefix())
+	// force the global prefix -> this is useful for per-site operations
+	if sc.globalPrefix != "" {
+		conn.SetGlobalTopicPrefix(sc.globalPrefix)
+	}
 
-	// this if statement is currently dead code, as the autoSubscribe parameter is only called with false
 	if autoSubscribe && responseTopic != "" {
 		if err := conn.Subscribe(responseTopic); err != nil {
 			log.Error("<SyncClient> error subscribing to topic:", err)
@@ -171,15 +178,13 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	}
 }
 
-// SendReqRespFimp sends msg to topic and expects to receive response on response topic . If autoSubscribe is set to true , the system will automatically subscribe and unsubscribe from response topic
-// If connection pool is used autoSubscribe MUST be set to true.
+// SendReqRespFimp sends msg to topic and expects to receive response on response topic . If autoSubscribe is set to true , the system will automatically subscribe and unsubscribe from response topic.
 func (sc *SyncClient) SendReqRespFimp(cmdTopic, responseTopic string, reqMsg *FimpMessage, timeout int64, autoSubscribe bool) (*FimpMessage, error) {
 	return sc.sendFimpWithTopicResponse(cmdTopic, reqMsg, responseTopic, "", "", timeout, autoSubscribe)
 }
 
 // SendFimp sends message over mqtt and blocks until request is received or timeout is reached .
 // messages are correlated using uid->corid
-// The method MUST NOT be used with connection pool
 func (sc *SyncClient) SendFimp(topic string, fimpMsg *FimpMessage, timeout int64) (*FimpMessage, error) {
 	return sc.SendFimpWithTopicResponse(topic, fimpMsg, "", "", "", timeout)
 }
@@ -189,18 +194,18 @@ func (sc *SyncClient) SendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	return sc.sendFimpWithTopicResponse(topic, fimpMsg, responseTopic, responseService, responseMsgType, timeout, false)
 }
 
+// startResponseListener starts response listener , it blocks callers proc until response is received or timeout.
 func (sc *SyncClient) startResponseListener(requestMsg *FimpMessage, respMsgType, respService, respTopic string, inboundCh MessageCh, timeout int64) chan *FimpMessage {
 	log.Debug("<SyncClient> Msg listener is started")
 	respChan := make(chan *FimpMessage)
 	go func() {
 		for msg := range inboundCh {
-			//log.Debug(msg.Payload.Value)
 			if (respMsgType == msg.Payload.Type && respService == msg.Payload.Service && respTopic == msg.Topic) || requestMsg.UID == msg.Payload.CorrelationID {
-				//log.Debug("Match")
 				select {
 				case respChan <- msg.Payload:
 				case <-time.After(time.Second * time.Duration(timeout)):
 				}
+				return
 			}
 		}
 	}()
