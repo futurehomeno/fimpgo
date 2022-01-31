@@ -205,13 +205,17 @@ func (mh *MqttTransport) SetDefaultSource(source string) {
 	mh.defaultSource = source
 }
 
-// getDefaultSource safely gets default source name for all outgoing messages.
+// ensureDefaultSource safely sets default source name for an outgoing message.
 // Default source is used only if it was not set explicitly before.
-func (mh *MqttTransport) getDefaultSource() string {
+func (mh *MqttTransport) ensureDefaultSource(message *FimpMessage) {
+	if message.Source != "" {
+		return
+	}
+
 	mh.defaultSourceLock.RLock()
 	defer mh.globalTopicPrefixMux.RUnlock()
 
-	return mh.defaultSource
+	message.Source = mh.defaultSource
 }
 
 // Set number of retries transport will attempt on startup . Default value is 10
@@ -462,9 +466,7 @@ func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr
 
 // Publish  to FIMP address
 func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
-	if fimpMsg.Source == "" {
-		fimpMsg.Source = mh.getDefaultSource()
-	}
+	mh.ensureDefaultSource(fimpMsg)
 
 	bytm, err := fimpMsg.SerializeToJson()
 	topic := addr.Serialize()
@@ -481,6 +483,8 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 
 // Publish iotMsg to string topic
 func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) error {
+	mh.ensureDefaultSource(fimpMsg)
+
 	byteMessage, err := fimpMsg.SerializeToJson()
 	if err != nil {
 		return err
@@ -503,9 +507,7 @@ func (mh *MqttTransport) RespondToRequest(requestMsg *FimpMessage, responseMsg *
 }
 
 func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error {
-	if fimpMsg.Source == "" {
-		fimpMsg.Source = mh.getDefaultSource()
-	}
+	mh.ensureDefaultSource(fimpMsg)
 
 	bytm, err := fimpMsg.SerializeToJson()
 	topic := addr.Serialize()
