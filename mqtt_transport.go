@@ -213,7 +213,7 @@ func (mh *MqttTransport) ensureDefaultSource(message *FimpMessage) {
 	}
 
 	mh.defaultSourceLock.RLock()
-	defer mh.globalTopicPrefixMux.RUnlock()
+	defer mh.defaultSourceLock.RUnlock()
 
 	message.Source = mh.defaultSource
 }
