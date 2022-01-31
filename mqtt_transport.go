@@ -4,15 +4,17 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	MQTT "github.com/eclipse/paho.mqtt.golang"
-	"github.com/futurehomeno/fimpgo/utils"
-	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	MQTT "github.com/eclipse/paho.mqtt.golang"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/futurehomeno/fimpgo/utils"
 )
 
 type MessageCh chan *Message
@@ -64,6 +66,8 @@ type MqttTransport struct {
 
 	globalTopicPrefixMux sync.RWMutex
 	globalTopicPrefix    string
+	defaultSourceLock    sync.RWMutex
+	defaultSource        string
 	startFailRetryCount  int
 	certDir              string
 	mqttOptions          *MQTT.ClientOptions
@@ -190,6 +194,24 @@ func (mh *MqttTransport) getGlobalTopicPrefix() string {
 	mh.globalTopicPrefixMux.RLock()
 	defer mh.globalTopicPrefixMux.RUnlock()
 	return mh.globalTopicPrefix
+}
+
+// SetDefaultSource safely sets default source name for all outgoing messages.
+// Default source is used only if it was not set explicitly before.
+func (mh *MqttTransport) SetDefaultSource(source string) {
+	mh.defaultSourceLock.Lock()
+	defer mh.defaultSourceLock.Unlock()
+
+	mh.defaultSource = source
+}
+
+// getDefaultSource safely gets default source name for all outgoing messages.
+// Default source is used only if it was not set explicitly before.
+func (mh *MqttTransport) getDefaultSource() string {
+	mh.defaultSourceLock.RLock()
+	defer mh.globalTopicPrefixMux.RUnlock()
+
+	return mh.defaultSource
 }
 
 // Set number of retries transport will attempt on startup . Default value is 10
@@ -440,6 +462,10 @@ func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr
 
 // Publish  to FIMP address
 func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
+	if fimpMsg.Source == "" {
+		fimpMsg.Source = mh.getDefaultSource()
+	}
+
 	bytm, err := fimpMsg.SerializeToJson()
 	topic := addr.Serialize()
 	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
@@ -477,6 +503,10 @@ func (mh *MqttTransport) RespondToRequest(requestMsg *FimpMessage, responseMsg *
 }
 
 func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error {
+	if fimpMsg.Source == "" {
+		fimpMsg.Source = mh.getDefaultSource()
+	}
+
 	bytm, err := fimpMsg.SerializeToJson()
 	topic := addr.Serialize()
 	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
