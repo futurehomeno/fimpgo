@@ -46,6 +46,12 @@ func (s *Service) PropertyStrings(name string) []string {
 	return values
 }
 
+// Constants defining type of interface.
+const (
+	TypeIn  = "in"
+	TypeOut = "out"
+)
+
 // Interface represents a supported communication interface with the service.
 type Interface struct {
 	Type      string `json:"intf_t"`
@@ -53,3 +59,5 @@ type Interface struct {
 	ValueType string `json:"val_t"`
 	Version   string `json:"ver"`
 }
+
+
