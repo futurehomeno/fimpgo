@@ -13,6 +13,24 @@ type Service struct {
 	Interfaces       []Interface            `json:"interfaces"`
 }
 
+// EnsureInterfaces makes sure that service definition contains provided interfaces and adds them if they are missing.
+func (s *Service) EnsureInterfaces(interfaces ...Interface) {
+	for _, i := range interfaces {
+		s.ensureInterface(i)
+	}
+}
+
+// ensureInterface makes sure that service definition contains provided interface and adds it if it is missing.
+func (s *Service) ensureInterface(i Interface) {
+	for _, existing := range s.Interfaces {
+		if existing == i {
+			return
+		}
+	}
+
+	s.Interfaces = append(s.Interfaces, i)
+}
+
 // PropertyStrings is a helper that extracts property settings out of the service specification.
 func (s *Service) PropertyStrings(name string) []string {
 	value, ok := s.Props[name]
