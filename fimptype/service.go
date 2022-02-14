@@ -59,5 +59,3 @@ type Interface struct {
 	ValueType string `json:"val_t"`
 	Version   string `json:"ver"`
 }
-
-
