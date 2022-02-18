@@ -156,7 +156,7 @@ func (s *Service) PropertyObject(name string, object interface{}) bool {
 }
 
 // cast is a helper allowing simple casting of interfaces to destination type using marshalling and unmarshalling in the process.
-func (s *Service) cast(dst interface{}, src interface{}) bool {
+func (s *Service) cast(dst, src interface{}) bool {
 	b, err := json.Marshal(src)
 	if err != nil {
 		return false
