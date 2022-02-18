@@ -1,5 +1,9 @@
 package fimptype
 
+import (
+	"encoding/json"
+)
+
 // Service represents a specification of the service supported by the thing.
 type Service struct {
 	Name             string                 `json:"name" storm:"index"`
@@ -38,12 +42,132 @@ func (s *Service) PropertyStrings(name string) []string {
 		return nil
 	}
 
-	values, ok := value.([]string)
+	v, ok := value.([]string)
+	if ok {
+		return v
+	}
+
+	if s.cast(&v, value) {
+		return v
+	}
+
+	return v
+}
+
+// PropertyString is a helper that extracts property settings out of the service specification.
+func (s *Service) PropertyString(name string) string {
+	value, ok := s.Props[name]
+	if !ok {
+		return ""
+	}
+
+	v, ok := value.(string)
+	if !ok {
+		return ""
+	}
+
+	return v
+}
+
+// PropertyFloats is a helper that extracts property settings out of the service specification.
+func (s *Service) PropertyFloats(name string) []float64 {
+	value, ok := s.Props[name]
 	if !ok {
 		return nil
 	}
 
-	return values
+	v, ok := value.([]float64)
+	if ok {
+		return v
+	}
+
+	if s.cast(&v, value) {
+		return v
+	}
+
+	return nil
+}
+
+// PropertyFloat is a helper that extracts property settings out of the service specification.
+func (s *Service) PropertyFloat(name string) (float64, bool) {
+	value, ok := s.Props[name]
+	if !ok {
+		return 0, false
+	}
+
+	v, ok := value.(float64)
+	if ok {
+		return v, true
+	}
+
+	if s.cast(&v, value) {
+		return v, true
+	}
+
+	return 0, false
+}
+
+// PropertyIntegers is a helper that extracts property settings out of the service specification.
+func (s *Service) PropertyIntegers(name string) []int64 {
+	value, ok := s.Props[name]
+	if !ok {
+		return nil
+	}
+
+	v, ok := value.([]int64)
+	if ok {
+		return v
+	}
+
+	if s.cast(&v, value) {
+		return v
+	}
+
+	return nil
+}
+
+// PropertyInteger is a helper that extracts property settings out of the service specification.
+func (s *Service) PropertyInteger(name string) (int64, bool) {
+	value, ok := s.Props[name]
+	if !ok {
+		return 0, false
+	}
+
+	v, ok := value.(int64)
+	if ok {
+		return v, true
+	}
+
+	if s.cast(&v, value) {
+		return v, true
+	}
+
+	return 0, false
+}
+
+// PropertyObject is a helper that extracts property settings out of the service specification.
+func (s *Service) PropertyObject(name string, object interface{}) bool {
+	value, ok := s.Props[name]
+	if !ok {
+		return false
+	}
+
+	return s.cast(object, value)
+}
+
+// cast is a helper allowing simple casting of interfaces to destination type using marshalling and unmarshalling in the process.
+func (s *Service) cast(dst, src interface{}) bool {
+	b, err := json.Marshal(src)
+	if err != nil {
+		return false
+	}
+
+	err = json.Unmarshal(b, dst)
+	if err != nil {
+		return false
+	}
+
+	return true
 }
 
 // Constants defining type of interface.
