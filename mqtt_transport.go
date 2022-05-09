@@ -1,6 +1,8 @@
 package fimpgo
 
 import (
+	"bytes"
+	"compress/gzip"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -64,17 +66,17 @@ type MqttTransport struct {
 	subFilters     map[string]FimpFilter
 	subFilterFuncs map[string]FilterFunc
 
-	globalTopicPrefixMux sync.RWMutex
-	globalTopicPrefix    string
-	defaultSourceLock    sync.RWMutex
-	defaultSource        string
-	startFailRetryCount  int
-	certDir              string
-	mqttOptions          *MQTT.ClientOptions
-	receiveChTimeout     int
-	syncPublishTimeout   time.Duration
-	channelRegMux        sync.Mutex
-	subMutex             sync.Mutex
+	cfgLock             sync.RWMutex
+	globalTopicPrefix   string
+	defaultSource       string
+	autoDecompression   bool
+	startFailRetryCount int
+	certDir             string
+	mqttOptions         *MQTT.ClientOptions
+	receiveChTimeout    int
+	syncPublishTimeout  time.Duration
+	channelRegMux       sync.Mutex
+	subMutex            sync.Mutex
 }
 
 func (mh *MqttTransport) SetReceiveChTimeout(receiveChTimeout int) {
@@ -185,22 +187,24 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Optio
 }
 
 func (mh *MqttTransport) SetGlobalTopicPrefix(prefix string) {
-	mh.globalTopicPrefixMux.Lock()
+	mh.cfgLock.Lock()
+	defer mh.cfgLock.Unlock()
+
 	mh.globalTopicPrefix = prefix
-	mh.globalTopicPrefixMux.Unlock()
 }
 
 func (mh *MqttTransport) getGlobalTopicPrefix() string {
-	mh.globalTopicPrefixMux.RLock()
-	defer mh.globalTopicPrefixMux.RUnlock()
+	mh.cfgLock.RLock()
+	defer mh.cfgLock.RUnlock()
+
 	return mh.globalTopicPrefix
 }
 
 // SetDefaultSource safely sets default source name for all outgoing messages.
 // Default source is used only if it was not set explicitly before.
 func (mh *MqttTransport) SetDefaultSource(source string) {
-	mh.defaultSourceLock.Lock()
-	defer mh.defaultSourceLock.Unlock()
+	mh.cfgLock.Lock()
+	defer mh.cfgLock.Unlock()
 
 	mh.defaultSource = source
 }
@@ -212,10 +216,27 @@ func (mh *MqttTransport) ensureDefaultSource(message *FimpMessage) {
 		return
 	}
 
-	mh.defaultSourceLock.RLock()
-	defer mh.defaultSourceLock.RUnlock()
+	mh.cfgLock.RLock()
+	defer mh.cfgLock.RUnlock()
 
 	message.Source = mh.defaultSource
+}
+
+// SetAutoDecompression safely sets auto decompression behavior.
+// If enabled messages from compressed topics will be automatically decompressed.
+func (mh *MqttTransport) SetAutoDecompression(autoDecompression bool) {
+	mh.cfgLock.Lock()
+	defer mh.cfgLock.Unlock()
+
+	mh.autoDecompression = autoDecompression
+}
+
+// getAutoDecompression safely returns whether auto decompression behavior is enabled.
+func (mh *MqttTransport) getAutoDecompression() bool {
+	mh.cfgLock.RLock()
+	defer mh.cfgLock.RUnlock()
+
+	return mh.autoDecompression
 }
 
 // Set number of retries transport will attempt on startup . Default value is 10
@@ -389,11 +410,7 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	}
 	var fimpMsg *FimpMessage
 
-	if addr.PayloadType == DefaultPayload {
-		fimpMsg, err = NewMessageFromBytes(msg.Payload())
-	} else {
-		// This means binary payload , for instance compressed message
-	}
+	fimpMsg, err = mh.newMessageFromPayload(addr.PayloadType, msg.Payload())
 
 	if mh.msgHandler != nil {
 		if err == nil  {
@@ -413,10 +430,10 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 			continue
 		}
 		var fmsg Message
-		if addr.PayloadType == DefaultPayload {
+		if addr.PayloadType == DefaultPayload || (addr.PayloadType == CompressedJsonPayload && mh.getAutoDecompression()) {
 			fmsg = Message{Topic: topic, Addr: addr, Payload: fimpMsg}
-		}else {
-			// message receiver should do decompressions
+		} else {
+			// message receiver should do decompression if auto decompression has not been enabled
 			fmsg = Message{Topic: topic, Addr: addr, RawPayload: msg.Payload()}
 		}
 		timer := time.NewTimer(time.Second * time.Duration(mh.receiveChTimeout))
@@ -429,6 +446,29 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 		}
 	}
 
+}
+
+// newMessageFromPayload creates new message from payload and decompress if required and configured to do so.
+func (mh *MqttTransport) newMessageFromPayload(payloadType string, payload []byte) (*FimpMessage, error) {
+	if payloadType == DefaultPayload {
+		return NewMessageFromBytes(payload)
+	}
+
+	if payloadType == CompressedJsonPayload && mh.getAutoDecompression() {
+		reader, err := gzip.NewReader(bytes.NewReader(payload))
+		if err != nil {
+			return nil, errors.Errorf("failed to read gzipped payload: %s", payloadType)
+		}
+
+		raw, err := ioutil.ReadAll(reader)
+		if err != nil {
+			return nil, errors.Errorf("failed to decompress gzipped payload: %s", payloadType)
+		}
+
+		return NewMessageFromBytes(raw)
+	}
+
+	return nil, nil
 }
 
 // isChannelInterested validates if channel is interested in message. Filtering is executed against either static filters or filter function
