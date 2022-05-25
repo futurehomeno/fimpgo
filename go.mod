@@ -2,7 +2,7 @@ module github.com/futurehomeno/fimpgo
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
-	github.com/buger/jsonparser v1.0.0
+	github.com/buger/jsonparser v1.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/google/uuid v1.1.1
