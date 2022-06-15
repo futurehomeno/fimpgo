@@ -2,14 +2,14 @@ package fimpgo
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"time"
-)
-import (
-	"encoding/json"
+
 	"github.com/buger/jsonparser"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -36,6 +36,23 @@ const (
 )
 
 type Props map[string]string
+
+func (props *Props) GetIntValue(key string) (int64, error) {
+	val, ok := (*props)[key]
+	if !ok {
+		return 0, fmt.Errorf("property %s not found", key)
+	}
+	return strconv.ParseInt(val, 10, 64)
+}
+
+func (props *Props) GetStringValue(key string) (string, error) {
+	val, ok := (*props)[key]
+	if !ok {
+		return "", fmt.Errorf("property %s not found", key)
+	}
+	return val, nil
+}
+
 type Tags []string
 
 type FimpMessage struct {
@@ -52,7 +69,7 @@ type FimpMessage struct {
 	Source          string      `json:"src,omitempty"`
 	CreationTime    string      `json:"ctime"`
 	UID             string      `json:"uid"`
-	Topic           string 		`json:"topic,omitempty"` // The field should be used to store original topic. It can be useful for converting message from MQTT to other transports.
+	Topic           string      `json:"topic,omitempty"` // The field should be used to store original topic. It can be useful for converting message from MQTT to other transports.
 }
 
 func (msg *FimpMessage) SetValue(value interface{}, valType string) {
@@ -167,9 +184,9 @@ func (msg *FimpMessage) GetObjectValue(objectBindVar interface{}) error {
 func (msg *FimpMessage) SerializeToJson() ([]byte, error) {
 	jsonBA, err := json.Marshal(msg)
 	if msg.ValueType == VTypeObject {
-		if msg.Value == nil && msg.ValueObj != nil  {
+		if msg.Value == nil && msg.ValueObj != nil {
 			// This is for object pass though.
-			jsonBA , err = jsonparser.Set(jsonBA,msg.ValueObj,"val")
+			jsonBA, err = jsonparser.Set(jsonBA, msg.ValueObj, "val")
 		}
 	}
 	return jsonBA, err
