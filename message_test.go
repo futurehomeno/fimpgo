@@ -281,7 +281,7 @@ func TestProps_GetIntValue(t *testing.T) {
 	}
 
 	props := fimp.Properties
-	val, err := props.GetIntValue("param1")
+	val, _, err := props.GetIntValue("param1")
 	if err != nil {
 		t.Error(err)
 	}
@@ -303,6 +303,40 @@ func TestProps_GetStringValue(t *testing.T) {
 		t.Error(err)
 	}
 	if val != "val1" {
+		t.Error("Wrong map result")
+	}
+}
+
+func TestProps_GetFloatValue(t *testing.T) {
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"float","val":1.5,"props":{"param1":1.5,"param2":2.5},"tags":null}`
+	fimp, err := NewMessageFromBytes([]byte(msgString))
+	if err != nil {
+		t.Error(err)
+	}
+
+	props := fimp.Properties
+	val, _, err := props.GetFloatValue("param1")
+	if err != nil {
+		t.Error(err)
+	}
+	if val != 1.5 {
+		t.Error("Wrong map result")
+	}
+}
+
+func TestProps_GetBoolValue(t *testing.T) {
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"bool","val":true,"props":{"param1":true,"param2":false},"tags":null}`
+	fimp, err := NewMessageFromBytes([]byte(msgString))
+	if err != nil {
+		t.Error(err)
+	}
+
+	props := fimp.Properties
+	val, _, err := props.GetBoolValue("param1")
+	if err != nil {
+		t.Error(err)
+	}
+	if val != true {
 		t.Error("Wrong map result")
 	}
 }

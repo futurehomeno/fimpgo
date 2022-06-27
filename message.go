@@ -37,20 +37,55 @@ const (
 
 type Props map[string]string
 
-func (props *Props) GetIntValue(key string) (int64, error) {
-	val, ok := (*props)[key]
+func (p Props) GetIntValue(key string) (int64, bool, error) {
+	val, ok := p[key]
 	if !ok {
-		return 0, fmt.Errorf("property %s not found", key)
+		return 0, false, fmt.Errorf("property %s not found", key)
 	}
-	return strconv.ParseInt(val, 10, 64)
+
+	i, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
+		return 0, true, fmt.Errorf("property %s has wrong value type. expected int, got %s", key, val)
+	}
+
+	return i, true, nil
 }
 
-func (props *Props) GetStringValue(key string) (string, error) {
-	val, ok := (*props)[key]
+func (p Props) GetStringValue(key string) (string, error) {
+	val, ok := p[key]
 	if !ok {
 		return "", fmt.Errorf("property %s not found", key)
 	}
+
 	return val, nil
+}
+
+func (p Props) GetFloatValue(key string) (float64, bool, error) {
+	val, ok := p[key]
+	if !ok {
+		return 0, false, fmt.Errorf("property %s not found", key)
+	}
+
+	f, err := strconv.ParseFloat(val, 64)
+	if err != nil {
+		return 0, true, fmt.Errorf("property %s has wrong value type. expected float, got %s", key, val)
+	}
+
+	return f, true, nil
+}
+
+func (p Props) GetBoolValue(key string) (bool, bool, error) {
+	val, ok := p[key]
+	if !ok {
+		return false, false, fmt.Errorf("property %s not found", key)
+	}
+
+	b, err := strconv.ParseBool(val)
+	if err != nil {
+		return false, true, fmt.Errorf("property %s has wrong value type. expected bool, got %s", key, val)
+	}
+
+	return b, true, nil
 }
 
 type Tags []string
