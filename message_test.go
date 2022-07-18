@@ -298,10 +298,8 @@ func TestProps_GetStringValue(t *testing.T) {
 	}
 
 	props := fimp.Properties
-	val, err := props.GetStringValue("param1")
-	if err != nil {
-		t.Error(err)
-	}
+	val, _ := props.GetStringValue("param1")
+
 	if val != "val1" {
 		t.Error("Wrong map result")
 	}

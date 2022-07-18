@@ -40,7 +40,7 @@ type Props map[string]string
 func (p Props) GetIntValue(key string) (int64, bool, error) {
 	val, ok := p[key]
 	if !ok {
-		return 0, false, fmt.Errorf("property %s not found", key)
+		return 0, false, nil
 	}
 
 	i, err := strconv.ParseInt(val, 10, 64)
@@ -51,19 +51,19 @@ func (p Props) GetIntValue(key string) (int64, bool, error) {
 	return i, true, nil
 }
 
-func (p Props) GetStringValue(key string) (string, error) {
+func (p Props) GetStringValue(key string) (string, bool) {
 	val, ok := p[key]
 	if !ok {
-		return "", fmt.Errorf("property %s not found", key)
+		return "", false
 	}
 
-	return val, nil
+	return val, true
 }
 
 func (p Props) GetFloatValue(key string) (float64, bool, error) {
 	val, ok := p[key]
 	if !ok {
-		return 0, false, fmt.Errorf("property %s not found", key)
+		return 0, false, nil
 	}
 
 	f, err := strconv.ParseFloat(val, 64)
@@ -77,7 +77,7 @@ func (p Props) GetFloatValue(key string) (float64, bool, error) {
 func (p Props) GetBoolValue(key string) (bool, bool, error) {
 	val, ok := p[key]
 	if !ok {
-		return false, false, fmt.Errorf("property %s not found", key)
+		return false, false, nil
 	}
 
 	b, err := strconv.ParseBool(val)
