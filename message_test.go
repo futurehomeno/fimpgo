@@ -363,12 +363,11 @@ func TestFimpMessage_GetObjectValue(t *testing.T) {
 		Param1 string
 		Param2 string
 	}
-	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"object","val":{"param1":"val1","param2":"val2"},"props":null,"tags":null}`
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"object","val":{"param1":"val1","param2":"val2"},"props":{"test":"1"},"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
 	}
-	fimp.Properties["test"] = "1"
 	config := Config{}
 	err = fimp.GetObjectValue(&config)
 	if err != nil {
