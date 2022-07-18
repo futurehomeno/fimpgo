@@ -273,6 +273,72 @@ func TestFimpMessage_GetBoolMapValue(t *testing.T) {
 	}
 }
 
+func TestProps_GetIntValue(t *testing.T) {
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"int","val":1234,"props":{"param1":1,"param2":2},"tags":null}`
+	fimp, err := NewMessageFromBytes([]byte(msgString))
+	if err != nil {
+		t.Error(err)
+	}
+
+	props := fimp.Properties
+	val, _, err := props.GetIntValue("param1")
+	if err != nil {
+		t.Error(err)
+	}
+	if val != 1 {
+		t.Error("Wrong map result")
+	}
+}
+
+func TestProps_GetStringValue(t *testing.T) {
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"str","val":"val1","props":{"param1":"val1","param2":"val2"},"tags":null}`
+	fimp, err := NewMessageFromBytes([]byte(msgString))
+	if err != nil {
+		t.Error(err)
+	}
+
+	props := fimp.Properties
+	val, _ := props.GetStringValue("param1")
+
+	if val != "val1" {
+		t.Error("Wrong map result")
+	}
+}
+
+func TestProps_GetFloatValue(t *testing.T) {
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"float","val":1.5,"props":{"param1":1.5,"param2":2.5},"tags":null}`
+	fimp, err := NewMessageFromBytes([]byte(msgString))
+	if err != nil {
+		t.Error(err)
+	}
+
+	props := fimp.Properties
+	val, _, err := props.GetFloatValue("param1")
+	if err != nil {
+		t.Error(err)
+	}
+	if val != 1.5 {
+		t.Error("Wrong map result")
+	}
+}
+
+func TestProps_GetBoolValue(t *testing.T) {
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"bool","val":true,"props":{"param1":true,"param2":false},"tags":null}`
+	fimp, err := NewMessageFromBytes([]byte(msgString))
+	if err != nil {
+		t.Error(err)
+	}
+
+	props := fimp.Properties
+	val, _, err := props.GetBoolValue("param1")
+	if err != nil {
+		t.Error(err)
+	}
+	if val != true {
+		t.Error("Wrong map result")
+	}
+}
+
 func BenchmarkFimpMessage_GetStrMapValue(b *testing.B) {
 	msgString := []byte(`{"serv":"dev_sys","type":"cmd.config.set","val_t":"str_map","val":{"param1":"val1","param2":"val2"},"props":null,"tags":null}`)
 	b.ResetTimer()
@@ -297,12 +363,11 @@ func TestFimpMessage_GetObjectValue(t *testing.T) {
 		Param1 string
 		Param2 string
 	}
-	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"object","val":{"param1":"val1","param2":"val2"},"props":null,"tags":null}`
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"object","val":{"param1":"val1","param2":"val2"},"props":{"test":"1"},"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
 	}
-	fimp.Properties["test"] = "1"
 	config := Config{}
 	err = fimp.GetObjectValue(&config)
 	if err != nil {
@@ -311,15 +376,15 @@ func TestFimpMessage_GetObjectValue(t *testing.T) {
 	if config.Param2 != "val2" {
 		t.Error("Wrong map result")
 	}
-	binMsg , err := fimp.SerializeToJson()
+	binMsg, err := fimp.SerializeToJson()
 	if err != nil {
 		t.Error(err)
 	}
 	strMsg := string(binMsg)
 	t.Log(strMsg)
-	if strings.Contains(strMsg,"\"param2\":\"val2\"") {
+	if strings.Contains(strMsg, "\"param2\":\"val2\"") {
 		t.Log("All good")
-	}else {
+	} else {
 		t.Error("Something wrong witgh serialization")
 	}
 

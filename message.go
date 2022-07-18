@@ -2,14 +2,14 @@ package fimpgo
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 	"time"
-)
-import (
-	"encoding/json"
+
 	"github.com/buger/jsonparser"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 )
 
 const (
@@ -36,6 +36,58 @@ const (
 )
 
 type Props map[string]string
+
+func (p Props) GetIntValue(key string) (int64, bool, error) {
+	val, ok := p[key]
+	if !ok {
+		return 0, false, nil
+	}
+
+	i, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
+		return 0, true, fmt.Errorf("property %s has wrong value type. expected int, got %s", key, val)
+	}
+
+	return i, true, nil
+}
+
+func (p Props) GetStringValue(key string) (string, bool) {
+	val, ok := p[key]
+	if !ok {
+		return "", false
+	}
+
+	return val, true
+}
+
+func (p Props) GetFloatValue(key string) (float64, bool, error) {
+	val, ok := p[key]
+	if !ok {
+		return 0, false, nil
+	}
+
+	f, err := strconv.ParseFloat(val, 64)
+	if err != nil {
+		return 0, true, fmt.Errorf("property %s has wrong value type. expected float, got %s", key, val)
+	}
+
+	return f, true, nil
+}
+
+func (p Props) GetBoolValue(key string) (bool, bool, error) {
+	val, ok := p[key]
+	if !ok {
+		return false, false, nil
+	}
+
+	b, err := strconv.ParseBool(val)
+	if err != nil {
+		return false, true, fmt.Errorf("property %s has wrong value type. expected bool, got %s", key, val)
+	}
+
+	return b, true, nil
+}
+
 type Tags []string
 
 type FimpMessage struct {
@@ -52,7 +104,7 @@ type FimpMessage struct {
 	Source          string      `json:"src,omitempty"`
 	CreationTime    string      `json:"ctime"`
 	UID             string      `json:"uid"`
-	Topic           string 		`json:"topic,omitempty"` // The field should be used to store original topic. It can be useful for converting message from MQTT to other transports.
+	Topic           string      `json:"topic,omitempty"` // The field should be used to store original topic. It can be useful for converting message from MQTT to other transports.
 }
 
 func (msg *FimpMessage) SetValue(value interface{}, valType string) {
@@ -167,9 +219,9 @@ func (msg *FimpMessage) GetObjectValue(objectBindVar interface{}) error {
 func (msg *FimpMessage) SerializeToJson() ([]byte, error) {
 	jsonBA, err := json.Marshal(msg)
 	if msg.ValueType == VTypeObject {
-		if msg.Value == nil && msg.ValueObj != nil  {
+		if msg.Value == nil && msg.ValueObj != nil {
 			// This is for object pass though.
-			jsonBA , err = jsonparser.Set(jsonBA,msg.ValueObj,"val")
+			jsonBA, err = jsonparser.Set(jsonBA, msg.ValueObj, "val")
 		}
 	}
 	return jsonBA, err
