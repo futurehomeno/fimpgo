@@ -1,11 +1,11 @@
 package fimpgo
 
 import (
-	"github.com/futurehomeno/fimpgo/utils"
-	log "github.com/sirupsen/logrus"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func TestSyncClient_Connect(t *testing.T) {
@@ -177,102 +177,5 @@ func TestSyncClient_SendFimpWithTopicResponse(t *testing.T) {
 		t.Fail()
 	}
 	t.Log("SyncClient test - OK")
-
-}
-
-func TestNewSyncClientV3(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
-
-	connConfig := MqttConnectionConfigs{
-		ServerURI:    "tcp://localhost:1883",
-		CleanSession: true,
-		SubQos:       1,
-		PubQos:       1,
-	}
-
-	tr := NewMqttTransportFromConfigs(connConfig)
-
-	connPool := NewMqttConnectionPool(0, 2, 100, 20, connConfig, "fimpgo_")
-
-	_, responderConn, _ := connPool.BorrowConnection()
-	responderConn.SetMessageHandler(func(topic string, addr *Address, iotMsg *FimpMessage, rawPayload []byte) {
-		log.Info("New mqtt msg ")
-		val, _ := iotMsg.GetStringValue()
-		response := NewStringMessage("evt.test.response", "tester", val, nil, nil, iotMsg)
-		responderConn.RespondToRequest(iotMsg, response)
-	})
-	responderConn.Subscribe("pt:j1/mt:cmd/rt:app/rn:conn_pool_tester/ad:1")
-
-	//-----------------------T-E-S-T----------------------------------------------------
-	syncC := NewSyncClientV3(tr, connPool)
-
-	msg1 := NewStringMessage("cmd.test.get_response", "tester", "test-1", nil, nil, nil)
-	msg1.ResponseToTopic = "pt:j1/mt:rsp/rt:app/rn:goland/ad:1"
-
-	msg2 := NewStringMessage("cmd.test.get_response", "tester", "test-2", nil, nil, nil)
-	msg2.ResponseToTopic = "pt:j1/mt:rsp/rt:app/rn:goland/ad:2"
-
-	msg3 := NewStringMessage("cmd.test.get_response", "tester", "test-3", nil, nil, nil)
-	msg3.ResponseToTopic = "pt:j1/mt:rsp/rt:app/rn:goland/ad:1"
-	var response3 *FimpMessage
-	readyCh := make(chan bool, 5)
-	go func() {
-		log.Info("----Response 3 Start ")
-		response3, _ = syncC.SendReqRespFimp("pt:j1/mt:cmd/rt:app/rn:conn_pool_tester/ad:1", "pt:j1/mt:rsp/rt:app/rn:goland/ad:1", msg3, 5, true)
-		log.Info("----Response 3 End")
-		readyCh <- true
-	}()
-	log.Info("----Response 1 Start")
-	response, _ := syncC.SendReqRespFimp("pt:j1/mt:cmd/rt:app/rn:conn_pool_tester/ad:1", "pt:j1/mt:rsp/rt:app/rn:goland/ad:1", msg1, 5, true)
-	log.Info("----Response 1")
-	response2, _ := syncC.SendReqRespFimp("pt:j1/mt:cmd/rt:app/rn:conn_pool_tester/ad:1", "pt:j1/mt:rsp/rt:app/rn:goland/ad:2", msg2, 5, true)
-	log.Info("----Response 2")
-	// waiting response from goroutine
-	<-readyCh
-	respVal, _ := response.GetStringValue()
-	respVal2, _ := response2.GetStringValue()
-	respVal3, _ := response3.GetStringValue()
-
-	if respVal == "test-1" && respVal2 == "test-2" && respVal3 == "test-3" {
-		t.Log("SUCCESS")
-	} else {
-		t.Error("Wrong response")
-		t.Fail()
-	}
-
-}
-
-func TestNewSyncClientV3_FhButlerAPI(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
-	conf := utils.GetTestConfig("./testdata/awsiot/cloud-test.json")
-	connConfig := MqttConnectionConfigs{
-		ServerURI:          conf.BrokerURI,
-		CleanSession:       true,
-		SubQos:             1,
-		PubQos:             1,
-		CertDir:            "./testdata/awsiot/full-access-policy",
-		PrivateKeyFileName: "awsiot.private.key",
-		CertFileName:       "awsiot.crt",
-		IsAws:              true,
-	}
-
-	connPool := NewMqttConnectionPool(0, 2, 10, 20, connConfig, "fimpgo")
-
-	syncC := NewSyncClientV3(NewMqttTransportFromConfigs(connConfig), connPool)
-
-	msg := NewStringMessage("cmd.vinc.get_alarm_service", "fhbutler", "all", nil, nil, nil)
-	msg.ResponseToTopic = "pt:j1/mt:rsp/rt:cloud/rn:backend-service/ad:fimpgotest"
-
-	siteId := conf.SiteId
-	response, _ := syncC.SendReqRespFimp(siteId+"/pt:j1/mt:cmd/rt:app/rn:fhbutler/ad:1", siteId+"/pt:j1/mt:rsp/rt:cloud/rn:backend-service/ad:fimpgotest", msg, 5, true)
-
-	if response == nil {
-		t.FailNow()
-	}
-
-	var respObj interface{}
-	response.GetObjectValue(&respObj)
-
-	log.Info(respObj)
 
 }
