@@ -1,8 +1,6 @@
 package fimpgo
 
 import (
-	"bytes"
-	"compress/gzip"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -55,7 +53,6 @@ type FimpFilter struct {
 
 type FilterFunc func(topic string, addr *Address, iotMsg *FimpMessage) bool
 
-// MqttAdapter , mqtt adapter .
 type MqttTransport struct {
 	client         MQTT.Client
 	msgHandler     MessageHandler
@@ -66,17 +63,18 @@ type MqttTransport struct {
 	subFilters     map[string]FimpFilter
 	subFilterFuncs map[string]FilterFunc
 
-	cfgLock             sync.RWMutex
-	globalTopicPrefix   string
-	defaultSource       string
-	autoDecompression   bool
-	startFailRetryCount int
-	certDir             string
-	mqttOptions         *MQTT.ClientOptions
-	receiveChTimeout    int
-	syncPublishTimeout  time.Duration
-	channelRegMux       sync.Mutex
-	subMutex            sync.Mutex
+	globalTopicPrefixMux sync.RWMutex
+	globalTopicPrefix    string
+	defaultSourceLock    sync.RWMutex
+	defaultSource        string
+	startFailRetryCount  int
+	certDir              string
+	mqttOptions          *MQTT.ClientOptions
+	receiveChTimeout     int
+	syncPublishTimeout   time.Duration
+	channelRegMux        sync.Mutex
+	subMutex             sync.Mutex
+	compressor           *MsgCompressor
 }
 
 func (mh *MqttTransport) SetReceiveChTimeout(receiveChTimeout int) {
@@ -89,8 +87,7 @@ func (mh *MqttTransport) SetCertDir(certDir string) {
 
 type MessageHandler func(topic string, addr *Address, iotMsg *FimpMessage, rawPayload []byte)
 
-// NewMqttAdapter constructor
-//serverUri="tcp://localhost:1883"
+// NewMqttTransport constructor. serverUri="tcp://localhost:1883"
 func NewMqttTransport(serverURI, clientID, username, password string, cleanSession bool, subQos byte, pubQos byte) *MqttTransport {
 	mh := MqttTransport{}
 	mh.mqttOptions = MQTT.NewClientOptions().AddBroker(serverURI)
@@ -114,6 +111,7 @@ func NewMqttTransport(serverURI, clientID, username, password string, cleanSessi
 	mh.startFailRetryCount = 10
 	mh.receiveChTimeout = 10
 	mh.syncPublishTimeout = time.Second * 5
+	mh.compressor = NewMsgCompressor("","")
 	return &mh
 }
 
@@ -129,6 +127,7 @@ func NewMqttTransportFromConnection(client MQTT.Client, subQos byte, pubQos byte
 	mh.startFailRetryCount = 10
 	mh.receiveChTimeout = 10
 	mh.syncPublishTimeout = time.Second * 5
+	mh.compressor = NewMsgCompressor("","")
 	return &mh
 }
 
@@ -165,6 +164,7 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Optio
 	mh.syncPublishTimeout = time.Second * 5
 	mh.certDir = configs.CertDir
 	mh.globalTopicPrefix = configs.GlobalTopicPrefix
+	mh.compressor = NewMsgCompressor("","")
 	if configs.StartFailRetryCount == 0 {
 		mh.startFailRetryCount = 10
 	} else {
@@ -182,29 +182,26 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Optio
 			log.Error("Certificate loading error :", err.Error())
 		}
 	}
-
 	return &mh
 }
 
 func (mh *MqttTransport) SetGlobalTopicPrefix(prefix string) {
-	mh.cfgLock.Lock()
-	defer mh.cfgLock.Unlock()
-
+	mh.globalTopicPrefixMux.Lock()
 	mh.globalTopicPrefix = prefix
+	mh.globalTopicPrefixMux.Unlock()
 }
 
 func (mh *MqttTransport) getGlobalTopicPrefix() string {
-	mh.cfgLock.RLock()
-	defer mh.cfgLock.RUnlock()
-
+	mh.globalTopicPrefixMux.RLock()
+	defer mh.globalTopicPrefixMux.RUnlock()
 	return mh.globalTopicPrefix
 }
 
 // SetDefaultSource safely sets default source name for all outgoing messages.
 // Default source is used only if it was not set explicitly before.
 func (mh *MqttTransport) SetDefaultSource(source string) {
-	mh.cfgLock.Lock()
-	defer mh.cfgLock.Unlock()
+	mh.defaultSourceLock.Lock()
+	defer mh.defaultSourceLock.Unlock()
 
 	mh.defaultSource = source
 }
@@ -216,30 +213,13 @@ func (mh *MqttTransport) ensureDefaultSource(message *FimpMessage) {
 		return
 	}
 
-	mh.cfgLock.RLock()
-	defer mh.cfgLock.RUnlock()
+	mh.defaultSourceLock.RLock()
+	defer mh.defaultSourceLock.RUnlock()
 
 	message.Source = mh.defaultSource
 }
 
-// SetAutoDecompression safely sets auto decompression behavior.
-// If enabled messages from compressed topics will be automatically decompressed.
-func (mh *MqttTransport) SetAutoDecompression(autoDecompression bool) {
-	mh.cfgLock.Lock()
-	defer mh.cfgLock.Unlock()
-
-	mh.autoDecompression = autoDecompression
-}
-
-// getAutoDecompression safely returns whether auto decompression behavior is enabled.
-func (mh *MqttTransport) getAutoDecompression() bool {
-	mh.cfgLock.RLock()
-	defer mh.cfgLock.RUnlock()
-
-	return mh.autoDecompression
-}
-
-// Set number of retries transport will attempt on startup . Default value is 10
+// SetStartAutoRetryCount Set number of retries transport will attempt on startup . Default value is 10
 func (mh *MqttTransport) SetStartAutoRetryCount(count int) {
 	mh.startFailRetryCount = count
 }
@@ -266,7 +246,7 @@ func (mh *MqttTransport) UnregisterChannel(channelId string) {
 	mh.channelRegMux.Unlock()
 }
 
-// RegisterChannel should be used if new message has to be sent to channel instead of callback.
+// RegisterChannelWithFilter should be used if new message has to be sent to channel instead of callback.
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannelWithFilter(channelId string, messageCh MessageCh, filter FimpFilter) {
 	mh.channelRegMux.Lock()
@@ -275,7 +255,7 @@ func (mh *MqttTransport) RegisterChannelWithFilter(channelId string, messageCh M
 	mh.channelRegMux.Unlock()
 }
 
-// RegisterChannel should be used if new message has to be sent to channel instead of callback.
+// RegisterChannelWithFilterFunc should be used if new message has to be sent to channel instead of callback.
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannelWithFilterFunc(channelId string, messageCh MessageCh, filterFunc FilterFunc) {
 	mh.channelRegMux.Lock()
@@ -306,7 +286,7 @@ func (mh *MqttTransport) Start() error {
 	return err
 }
 
-// Stops adapter . Adapter can't be started again using Start . In order to start adapter it has to be re-initialized
+// Stop stops adapter . Adapter can't be started again using Start . In order to start adapter it has to be re-initialized
 func (mh *MqttTransport) Stop() {
 	mh.client.Disconnect(250)
 }
@@ -387,7 +367,7 @@ func (mh *MqttTransport) onConnect(_ MQTT.Client) {
 	}
 }
 
-//define a function for the default message handler
+//onMessage default message handler
 func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -402,7 +382,6 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 		topic = msg.Topic()
 	}
 
-	// log.Debug("MSG: %s\n", msg.Payload())
 	addr, err := NewAddressFromString(topic)
 	if err != nil {
 		log.Error("<MqttAd> Error processing address :", err)
@@ -410,13 +389,21 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	}
 	var fimpMsg *FimpMessage
 
-	fimpMsg, err = mh.newMessageFromPayload(addr.PayloadType, msg.Payload())
+	switch addr.PayloadType {
+	case DefaultPayload:
+		fimpMsg, err = NewMessageFromBytes(msg.Payload())
+	case CompressedJsonPayload:
+		fimpMsg,err = mh.compressor.DecompressFimpMsg(msg.Payload())
+	default:
+		// This means unknown binary payload , for instance compressed message
+		log.Trace("<MqttAd> Unknown binary payload :", addr.PayloadType)
+	}
 
 	if mh.msgHandler != nil {
 		if err == nil  {
 			mh.msgHandler(topic, addr, fimpMsg, msg.Payload())
 		} else {
-			log.Debug(string(msg.Payload()))
+			log.Trace(string(msg.Payload()))
 			log.Error("<MqttAd> Error processing payload :", err)
 			return
 		}
@@ -430,10 +417,10 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 			continue
 		}
 		var fmsg Message
-		if addr.PayloadType == DefaultPayload || (addr.PayloadType == CompressedJsonPayload && mh.getAutoDecompression()) {
+		if addr.PayloadType == DefaultPayload || addr.PayloadType == CompressedJsonPayload {
 			fmsg = Message{Topic: topic, Addr: addr, Payload: fimpMsg}
-		} else {
-			// message receiver should do decompression if auto decompression has not been enabled
+		}else {
+			// message receiver should do decompressions
 			fmsg = Message{Topic: topic, Addr: addr, RawPayload: msg.Payload()}
 		}
 		timer := time.NewTimer(time.Second * time.Duration(mh.receiveChTimeout))
@@ -446,29 +433,6 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 		}
 	}
 
-}
-
-// newMessageFromPayload creates new message from payload and decompress if required and configured to do so.
-func (mh *MqttTransport) newMessageFromPayload(payloadType string, payload []byte) (*FimpMessage, error) {
-	if payloadType == DefaultPayload {
-		return NewMessageFromBytes(payload)
-	}
-
-	if payloadType == CompressedJsonPayload && mh.getAutoDecompression() {
-		reader, err := gzip.NewReader(bytes.NewReader(payload))
-		if err != nil {
-			return nil, errors.Errorf("failed to read gzipped payload: %s", payloadType)
-		}
-
-		raw, err := ioutil.ReadAll(reader)
-		if err != nil {
-			return nil, errors.Errorf("failed to decompress gzipped payload: %s", payloadType)
-		}
-
-		return NewMessageFromBytes(raw)
-	}
-
-	return nil, nil
 }
 
 // isChannelInterested validates if channel is interested in message. Filtering is executed against either static filters or filter function
@@ -504,11 +468,27 @@ func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr
 	return false
 }
 
-// Publish  to FIMP address
+// Publish publishes message to FIMP address
 func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 	mh.ensureDefaultSource(fimpMsg)
 
-	bytm, err := fimpMsg.SerializeToJson()
+	var bytm []byte
+	var err error
+	if addr.PayloadType == "" {
+		addr.PayloadType = DefaultPayload
+	}
+	switch addr.PayloadType {
+	case DefaultPayload:
+		bytm, err = fimpMsg.SerializeToJson()
+	case CompressedJsonPayload:
+		bytm, err = mh.compressor.CompressFimpMsg(fimpMsg)
+	default:
+		// This means unknown binary payload , for instance compressed message
+		log.Trace("<MqttAd> Publish - unknown binary payload :", addr.PayloadType)
+	}
+	if err != nil {
+		return err
+	}
 	topic := addr.Serialize()
 	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
 		topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
@@ -521,13 +501,22 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 	return err
 }
 
-// Publish iotMsg to string topic
+// PublishToTopic publishes iotMsg to string topic
 func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) error {
 	mh.ensureDefaultSource(fimpMsg)
 
 	byteMessage, err := fimpMsg.SerializeToJson()
 	if err != nil {
 		return err
+	}
+	addr,err := NewAddressFromString(topic)
+	if err == nil {
+		if addr.PayloadType == CompressedJsonPayload {
+			byteMessage,err = mh.compressor.CompressBinMsg(byteMessage)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
@@ -549,7 +538,18 @@ func (mh *MqttTransport) RespondToRequest(requestMsg *FimpMessage, responseMsg *
 func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error {
 	mh.ensureDefaultSource(fimpMsg)
 
-	bytm, err := fimpMsg.SerializeToJson()
+	var bytm []byte
+	var err error
+	if addr.PayloadType == "" {
+		addr.PayloadType = DefaultPayload
+	}
+	switch addr.PayloadType {
+	case DefaultPayload:
+		bytm, err = fimpMsg.SerializeToJson()
+	case CompressedJsonPayload:
+		bytm, err = mh.compressor.CompressFimpMsg(fimpMsg)
+
+	}
 	topic := addr.Serialize()
 	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
 		topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
@@ -613,7 +613,7 @@ func DetachGlobalPrefixFromTopic(topic string) (string, string) {
 	return globalPrefix, resultTopic
 }
 
-// The method should be used to configure mutual TLS , like AwS IoT core is using . Also it configures TLS protocol switch .
+// ConfigureTls The method should be used to configure mutual TLS , like AwS IoT core is using . Also it configures TLS protocol switch .
 // Cert dir should contains all CA root certificates .
 // IsAws flag controls AWS specific TLS protocol switch.
 func (mh *MqttTransport) ConfigureTls(privateKeyFileName, certFileName, certDir string, isAws bool) error {

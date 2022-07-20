@@ -8,7 +8,7 @@ import (
 
 const (
 	DefaultPayload      = "j1"
-	CompressedJsonPayload = "j1c1"
+	CompressedJsonPayload = "j1c1" // Compressed json payload. c1 - defines compression method. The type must be used only between edge <-> Cloud or edge <- Cloud -> edge/mobile
 	MsgTypeCmd          = "cmd"
 	MsgTypeEvt          = "evt"
 	MsgTypeRsp          = "rsp"

@@ -15,6 +15,8 @@ import (
 var brokerUrl = "tcp://cube.local:1883"
 var brokerUser = ""
 var brokerPass = ""
+var testSiteGuid = ""
+var awsIotEndpoint = "ssl://xxxxxxxxxx.iot.xxxxxxx.amazonaws.com:443"
 
 func TestPrimeFimp_ClientApi_Update(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
@@ -127,6 +129,108 @@ func TestPrimeFimp_SiteLazyLoading(t *testing.T) {
 	_, err = client.GetSite(true)
 	if err != nil || client.IsCacheEmpty() {
 		t.Error("Cache is empty. Cache must contain data.")
+	}
+
+}
+
+func TestPrimeFimp_LoadStates(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+
+	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
+	mqtt := fimpgo.NewMqttTransport(awsIotEndpoint, validClientID, brokerUser, brokerPass, true, 1, 1)
+	mqtt.ConfigureTls("awsiot.private.key","awsiot.crt","./datatools/certs",true)
+	mqtt.SetGlobalTopicPrefix(testSiteGuid)
+	err := mqtt.Start()
+	t.Log("Connected")
+	if err != nil {
+		t.Error("Error connecting to broker ", err)
+	}
+
+	// Actual test
+	apiclientid := uuid.New().String()[0:12]
+	client := NewApiClient(apiclientid, mqtt, false,WithCloudService("test-proc-1"))
+	client.SetResponsePayloadType(fimpgo.CompressedJsonPayload)
+	state, err := client.GetState()
+	if err != nil || len(state.Devices)==0 {
+		t.Error("Cache is empty. Cache must contain data.")
+	}else {
+		t.Log("STATES - All Good .Number of states = ",len(state.Devices))
+	}
+	shortcuts, err := client.GetShortcuts(false)
+	if err != nil || len(shortcuts)==0 {
+		t.Error("Cache is empty. Cache must contain data.")
+	}else {
+		t.Log("SHORTCUTS - All Good . Number of shortcuts = ",len(shortcuts))
+	}
+}
+
+func TestPrimeFimp_LoadStatesWithConnPool(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+
+	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
+	transportConfigs := fimpgo.MqttConnectionConfigs{
+		ServerURI:           awsIotEndpoint,
+		ClientID:            validClientID,
+		CleanSession:        true,
+		SubQos:              1,
+		PubQos:              1,
+		GlobalTopicPrefix:   "",
+		CertDir:             "./datatools/certs",
+		PrivateKeyFileName:  "awsiot.private.key",
+		CertFileName:        "awsiot.crt",
+		IsAws:               true,
+		StartFailRetryCount: 5,
+	}
+
+	connPool := fimpgo.NewMqttConnectionPool(3,5,20,time.Minute*3,transportConfigs,"lib_code_test_pool")
+	connPool.Start()
+
+	var successCounter int
+
+	go func() {
+		for i := 0; i < 3; i++ {
+			connId, conn,err := connPool.BorrowConnection()
+			if err != nil {
+				t.Fatal("Connection pool error , Err:",err.Error())
+			}
+			client := NewApiClient(validClientID, conn, false, WithCloudService("test-proc-1"),WithGlobalPrefix(testSiteGuid))
+			client.SetResponsePayloadType(fimpgo.CompressedJsonPayload)
+			state, err := client.GetState()
+			if err != nil || len(state.Devices)==0 {
+				t.Fatal("Cache is empty. Cache must contain data.")
+			}else {
+				t.Log("STATES - All Good .Number of states = ",len(state.Devices))
+				successCounter++
+			}
+			connPool.ReturnConnection(connId)
+		}
+	}()
+
+	go func() {
+		for i := 0; i < 3; i++ {
+			connId, conn, err := connPool.BorrowConnection()
+			if err != nil {
+				t.Fatal("Connection pool error , Err:", err.Error())
+			}
+			client := NewApiClient(validClientID, conn, false, WithCloudService("test-proc-1"), WithGlobalPrefix(testSiteGuid))
+			client.SetResponsePayloadType(fimpgo.CompressedJsonPayload)
+			shortcuts, err := client.GetShortcuts(false)
+			if err != nil || len(shortcuts) == 0 {
+				t.Fatal("Cache is empty. Cache must contain data.")
+			} else {
+				t.Log("SHORTCUTS - All Good . Number of shortcuts = ", len(shortcuts))
+				successCounter++
+			}
+			connPool.ReturnConnection(connId)
+		}
+	}()
+
+	time.Sleep(time.Second*10)
+
+	if successCounter != 6 {
+		t.Fatal("something went wrong")
+	}else {
+		t.Log("______ALL____GOOOD_______")
 	}
 
 }
@@ -264,16 +368,15 @@ func TestPrimefimp_LoadStateFromFile(t *testing.T) {
 
 	// the current state.json file has 7 devices with the "meter_elec" service
 	const meterElecDevices = 7
-	filteredDevices := state.FilterDevicesByService("meter_elec")
+	filteredDevices := state.Devices.FilterDevicesByService("meter_elec")
 	if len(filteredDevices) != meterElecDevices {
 		t.Fatal(fmt.Sprintf("meter_elec devices count does not match. expected %d, got %d", meterElecDevices, len(filteredDevices)))
 	}
 
 	// tue current state.json file has 6 attributes with the "meter" name
 	const meterAttributes = 7
-	filteredDevices = state.FilterDevicesByAttribute("meter")
+	filteredDevices = state.Devices.FilterDevicesByAttribute("meter")
 	if len(filteredDevices) != meterAttributes {
 		t.Fatal(fmt.Sprintf("meter_elec devices count does not match. expected %d, got %d", meterAttributes, len(filteredDevices)))
 	}
-
 }

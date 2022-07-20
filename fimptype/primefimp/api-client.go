@@ -2,11 +2,13 @@ package primefimp
 
 import (
 	"errors"
-	"github.com/futurehomeno/fimpgo"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
+
+	"github.com/futurehomeno/fimpgo"
 )
 
 const VincEventTopic = "pt:j1/mt:evt/rt:app/rn:vinculum/ad:1"
@@ -29,31 +31,44 @@ type ApiClient struct {
 	isNotifyRouterStarted bool
 	notifChMux            sync.RWMutex
 	isVincAppsSyncEnabled bool
-
-	cloudService string
+	isConnPoolEnabled     bool
+	cloudService          string
+	responsePayloadType   string
+	globalPrefix          string
 }
 
-// NewApiClient Creates a new api client. If isCacheEnabled it set to true , it will try to sync entire site on startup.
+// NewApiClient Creates a new Vinculum API client. If isCacheEnabled it set to true , it will try to sync entire site on startup.
+// If the library is used for backend services , new client instance must be created for each smarthub.
 func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSiteIntoCache bool, options ...Option) *ApiClient {
 	api := &ApiClient{clientID: clientID, mqttTransport: mqttTransport}
 	api.notifySubChannels = make(map[string]chan Notify)
+	api.responsePayloadType = "j1"
 	api.subFilters = make(map[string]NotifyFilter)
-	api.sClient = fimpgo.NewSyncClient(mqttTransport)
-	api.notifChMux = sync.RWMutex{}
-	if loadSiteIntoCache {
-		if err := api.ReloadSiteToCache(3); err != nil {
-			log.Error("<PF-API> Error reloading cache: ", err)
-		}
-	}
 
+	api.notifChMux = sync.RWMutex{}
 	config := apiClientConfig{}
 	for _, o := range options {
 		o.apply(&config)
 	}
 
 	api.cloudService = config.cloudService
+	api.globalPrefix = config.globalPrefix
+
+	api.sClient = fimpgo.NewSyncClient(mqttTransport)
+	if api.globalPrefix != "" {
+		api.sClient.SetGlobalPrefix(api.globalPrefix)
+	}
+	if loadSiteIntoCache {
+		if err := api.ReloadSiteToCache(3); err != nil {
+			log.Error("<PF-API> Error reloading cache: ", err)
+		}
+	}
 
 	return api
+}
+
+func (mh *ApiClient) SetResponsePayloadType(responsePayloadType string) {
+	mh.responsePayloadType = responsePayloadType
 }
 
 func (mh *ApiClient) IsCacheEnabled() bool {
@@ -64,7 +79,7 @@ func (mh *ApiClient) SetIsCacheEnabled(isCacheEnabled bool) {
 	mh.isCacheEnabled = isCacheEnabled
 }
 
-// if not enabled only rooms,areas,things and devices are synced
+// EnableVincAppsSync if not enabled only rooms,areas,things and devices are synced
 func (mh *ApiClient) EnableVincAppsSync(flag bool) {
 	mh.isVincAppsSyncEnabled = flag
 }
@@ -76,7 +91,7 @@ func (mh *ApiClient) IsCacheEmpty() bool {
 	return false
 }
 
-// ValidateSiteCache validates cache , if empty it makes one reload attempt. The method can be used for cache lazy loading.
+// ValidateAndReloadSiteCache validates cache , if empty it makes one reload attempt. The method can be used for cache lazy loading.
 func (mh *ApiClient) ValidateAndReloadSiteCache() bool {
 	if mh.IsCacheEmpty() {
 		log.Debug("<PF-API> Empty site cache.Reloading...")
@@ -90,7 +105,7 @@ func (mh *ApiClient) ValidateAndReloadSiteCache() bool {
 	return true
 }
 
-//ReloadSiteToCache loads cache from vinculum and sets isCacheEnabled flag to true if operation was successful.
+// ReloadSiteToCache loads cache from vinculum and sets isCacheEnabled flag to true if operation was successful.
 func (mh *ApiClient) ReloadSiteToCache(retry int) error {
 	retry++
 	var site *Site
@@ -117,7 +132,7 @@ func (mh *ApiClient) ReloadSiteToCache(retry int) error {
 	return nil
 }
 
-// Loads site from file . File should be in exactly the same format as vinculum response
+// LoadVincResponseFromFile Loads site from file . File should be in exactly the same format as vinculum response
 func (mh *ApiClient) LoadVincResponseFromFile(fileName string) error {
 	bSite, err := ioutil.ReadFile(fileName)
 	if err != nil {
@@ -239,21 +254,7 @@ func (mh *ApiClient) UpdateSite(notif *Notify) {
 	case CmdSet:
 		switch notif.Component {
 		case ComponentRoom:
-			//roomIdx := mh.siteCache.FindIndex(ComponentRoom, int(notif.Id.(float64)))
-			//if roomIdx != -1 {
-			//	log.Infof("Change in room id:%d", int(notif.Id.(float64)))
-			//} else {
-			//	log.Errorf("Room with ID:%d not found. Adding", int(notif.Id.(float64)))
-			//}
 		case ComponentHub:
-			//if notif.Id == "mode" {
-			//	modeChange := notif.GetModeChange()
-			//	if modeChange.Current != modeChange.Prev {
-			//		log.Infof("Mode is changed from %s to %s", modeChange.Prev, modeChange.Current)
-			//	} else {
-			//		log.Infof("Mode is same again as %s", modeChange.Current)
-			//	}
-			//}
 		}
 	}
 
@@ -313,7 +314,7 @@ func (mh *ApiClient) notifyRouter() {
 }
 
 func (mh *ApiClient) responseAddress() fimpgo.Address {
-	respAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeRsp, ResourceType: fimpgo.ResourceTypeApp, ResourceName: mh.clientID, ResourceAddress: "1"}
+	respAddr := fimpgo.Address{PayloadType: mh.responsePayloadType, MsgType: fimpgo.MsgTypeRsp, ResourceType: fimpgo.ResourceTypeApp, ResourceName: mh.clientID, ResourceAddress: "1"}
 	if mh.cloudService != "" {
 		respAddr.ResourceType = fimpgo.ResourceTypeCloud
 		respAddr.ResourceName = "backend-service"
@@ -325,28 +326,29 @@ func (mh *ApiClient) responseAddress() fimpgo.Address {
 func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, error) {
 	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
 	respAddr := mh.responseAddress()
-	mh.sClient.AddSubscription(respAddr.Serialize())
+	responseAddress := respAddr.Serialize()
 
 	param := RequestParam{Components: components}
 	req := Request{Cmd: CmdGet, Param: &param}
 
 	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimpgo.VTypeObject, req, nil, nil, nil)
-	msg.ResponseToTopic = respAddr.Serialize()
+	msg.ResponseToTopic = responseAddress
 	msg.Source = mh.clientID
-	return mh.sClient.SendFimpWithTopicResponse(reqAddr.Serialize(), msg, respAddr.Serialize(), "", "", 5)
+	return mh.sClient.SendReqRespFimp(reqAddr.Serialize(), responseAddress, msg, 5, true)
 }
 
 func (mh *ApiClient) sendSetRequest(component string, value interface{}) (*fimpgo.FimpMessage, error) {
+
 	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
 	respAddr := mh.responseAddress()
-	mh.sClient.AddSubscription(respAddr.Serialize())
+	responseAddress := respAddr.Serialize()
 
 	req := Request{Cmd: CmdSet, Component: component, Id: value}
 
 	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimpgo.VTypeObject, req, nil, nil, nil)
-	msg.ResponseToTopic = respAddr.Serialize()
+	msg.ResponseToTopic = responseAddress
 	msg.Source = mh.clientID
-	return mh.sClient.SendFimpWithTopicResponse(reqAddr.Serialize(), msg, respAddr.Serialize(), "", "", 5)
+	return mh.sClient.SendReqRespFimp(reqAddr.Serialize(), responseAddress, msg, 5, true)
 }
 
 // GetDevices Gets the devices

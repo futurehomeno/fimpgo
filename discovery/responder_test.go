@@ -2,6 +2,7 @@ package discovery
 
 import (
 	"github.com/futurehomeno/fimpgo"
+	log "github.com/sirupsen/logrus"
 	"testing"
 )
 
@@ -28,7 +29,7 @@ func SecondResponder() {
 }
 
 func TestServiceDiscoveryResponder_Start(t *testing.T) {
-
+	log.SetLevel(log.DebugLevel)
 	go SecondResponder()
 
 	mqt := fimpgo.NewMqttTransport("tcp://localhost:1883", "fimpgotest-1", "", "", true, 1, 1)
@@ -52,13 +53,22 @@ func TestServiceDiscoveryResponder_Start(t *testing.T) {
 	responder.RegisterResource(resource)
 	responder.Start()
 
-	t.Log("Sending discovery request")
-	discoveredResource := DiscoverResources(mqt, 5)
+	t.Log("Sending discovery request 1 ")
+	discoveredResource,_ := DiscoverResources(mqt, 2)
 	for _, r := range discoveredResource {
 		t.Log("Discovered resource = " + r.ResourceName)
 	}
 	if len(discoveredResource) != 2 {
-		t.Error("number of discovered resources doesn't match ")
+		t.Fatal("number of discovered resources doesn't match ")
+	}
+
+	t.Log("Sending discovery request 2 ")
+	discoveredResource,_ = DiscoverResources(mqt, 2)
+	for _, r := range discoveredResource {
+		t.Log("Discovered resource = " + r.ResourceName)
+	}
+	if len(discoveredResource) != 2 {
+		t.Fatal("number of discovered resources doesn't match ")
 	}
 
 }
