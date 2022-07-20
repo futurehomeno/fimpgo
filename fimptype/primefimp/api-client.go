@@ -2,11 +2,13 @@ package primefimp
 
 import (
 	"errors"
-	"github.com/futurehomeno/fimpgo"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
+
+	"github.com/futurehomeno/fimpgo"
 )
 
 const VincEventTopic = "pt:j1/mt:evt/rt:app/rn:vinculum/ad:1"
@@ -29,7 +31,7 @@ type ApiClient struct {
 	isNotifyRouterStarted bool
 	notifChMux            sync.RWMutex
 	isVincAppsSyncEnabled bool
-    isConnPoolEnabled     bool
+	isConnPoolEnabled     bool
 	cloudService          string
 	responsePayloadType   string
 	globalPrefix          string
@@ -68,7 +70,6 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSite
 func (mh *ApiClient) SetResponsePayloadType(responsePayloadType string) {
 	mh.responsePayloadType = responsePayloadType
 }
-
 
 func (mh *ApiClient) IsCacheEnabled() bool {
 	return mh.isCacheEnabled
@@ -253,21 +254,7 @@ func (mh *ApiClient) UpdateSite(notif *Notify) {
 	case CmdSet:
 		switch notif.Component {
 		case ComponentRoom:
-			//roomIdx := mh.siteCache.FindIndex(ComponentRoom, int(notif.Id.(float64)))
-			//if roomIdx != -1 {
-			//	log.Infof("Change in room id:%d", int(notif.Id.(float64)))
-			//} else {
-			//	log.Errorf("Room with ID:%d not found. Adding", int(notif.Id.(float64)))
-			//}
 		case ComponentHub:
-			//if notif.Id == "mode" {
-			//	modeChange := notif.GetModeChange()
-			//	if modeChange.Current != modeChange.Prev {
-			//		log.Infof("Mode is changed from %s to %s", modeChange.Prev, modeChange.Current)
-			//	} else {
-			//		log.Infof("Mode is same again as %s", modeChange.Current)
-			//	}
-			//}
 		}
 	}
 
@@ -327,7 +314,7 @@ func (mh *ApiClient) notifyRouter() {
 }
 
 func (mh *ApiClient) responseAddress() fimpgo.Address {
-	respAddr := fimpgo.Address{PayloadType: mh.responsePayloadType,MsgType: fimpgo.MsgTypeRsp, ResourceType: fimpgo.ResourceTypeApp, ResourceName: mh.clientID, ResourceAddress: "1"}
+	respAddr := fimpgo.Address{PayloadType: mh.responsePayloadType, MsgType: fimpgo.MsgTypeRsp, ResourceType: fimpgo.ResourceTypeApp, ResourceName: mh.clientID, ResourceAddress: "1"}
 	if mh.cloudService != "" {
 		respAddr.ResourceType = fimpgo.ResourceTypeCloud
 		respAddr.ResourceName = "backend-service"
@@ -341,16 +328,13 @@ func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, e
 	respAddr := mh.responseAddress()
 	responseAddress := respAddr.Serialize()
 
-	//mh.sClient.AddSubscription(responseAddress)  // Can't be used combined with connection polling , subscribe/unsubscribe and publish/receive can be executed on different connections
-	//defer mh.sClient.RemoveSubscription(responseAddress)
-
 	param := RequestParam{Components: components}
 	req := Request{Cmd: CmdGet, Param: &param}
 
 	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimpgo.VTypeObject, req, nil, nil, nil)
 	msg.ResponseToTopic = responseAddress
 	msg.Source = mh.clientID
-	return mh.sClient.SendReqRespFimp(reqAddr.Serialize(),responseAddress,msg,5,true)
+	return mh.sClient.SendReqRespFimp(reqAddr.Serialize(), responseAddress, msg, 5, true)
 }
 
 func (mh *ApiClient) sendSetRequest(component string, value interface{}) (*fimpgo.FimpMessage, error) {
@@ -359,15 +343,12 @@ func (mh *ApiClient) sendSetRequest(component string, value interface{}) (*fimpg
 	respAddr := mh.responseAddress()
 	responseAddress := respAddr.Serialize()
 
-	//mh.sClient.AddSubscription(responseAddress) // Can't be used combined with connection polling , subscribe/unsubscribe and publish/receive can be executed on different connections
-	//defer mh.sClient.RemoveSubscription(responseAddress)
-
 	req := Request{Cmd: CmdSet, Component: component, Id: value}
 
 	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimpgo.VTypeObject, req, nil, nil, nil)
 	msg.ResponseToTopic = responseAddress
 	msg.Source = mh.clientID
-	return mh.sClient.SendReqRespFimp(reqAddr.Serialize(),responseAddress,msg,5,true)
+	return mh.sClient.SendReqRespFimp(reqAddr.Serialize(), responseAddress, msg, 5, true)
 }
 
 // GetDevices Gets the devices

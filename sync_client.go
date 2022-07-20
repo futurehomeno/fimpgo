@@ -1,9 +1,10 @@
 package fimpgo
 
 import (
+	"time"
+
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 // SyncClient allows sync interaction over async channel.
@@ -46,15 +47,6 @@ func NewSyncClientV2(mqttTransport *MqttTransport, transactionPoolSize int, inbo
 	sc.init()
 	return &sc
 }
-
-// NewSyncClientV3 (DISCONTINUED) Creates new sync client either using connections pool internal connection
-//func NewSyncClientV3(mqttTransport *MqttTransport, connPool *MqttConnectionPool) *SyncClient {
-//	sc := SyncClient{mqttTransport: mqttTransport, mqttConnPool: connPool, isConnPoolEnabled: true}
-//	sc.transactionPoolSize = 20
-//	sc.inboundBufferSize = 10
-//	sc.init()
-//	return &sc
-//}
 
 func (sc *SyncClient) SetConfigs(transactionPoolSize int, inboundBuffSize int) {
 	if transactionPoolSize == 0 {
@@ -102,6 +94,7 @@ func (sc *SyncClient) AddSubscription(topic string) {
 		log.Error("<SyncClient> error subscribing to topic:", err)
 	}
 }
+
 // RemoveSubscription
 func (sc *SyncClient) RemoveSubscription(topic string) {
 	if err := sc.mqttTransport.Unsubscribe(topic); err != nil {
