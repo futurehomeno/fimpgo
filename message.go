@@ -35,6 +35,13 @@ const (
 	Val = "val"
 )
 
+var timestampFormats = []string{
+	time.RFC3339Nano,
+	"2006-01-02T15:04:05.999999999Z0700",
+	"2006-01-02 15:04:05.999999999 Z0700",
+	"2006-01-02 15:04:05.999999999 Z07:00",
+}
+
 type Props map[string]string
 
 func (p Props) GetIntValue(key string) (int64, bool, error) {
@@ -228,6 +235,11 @@ func (msg *FimpMessage) SerializeToJson() ([]byte, error) {
 
 }
 
+// GetCreationTime returns parsed creation time of the message.
+func (msg *FimpMessage) GetCreationTime() time.Time {
+	return ParseTime(msg.CreationTime)
+}
+
 func NewMessage(type_ string, service string, valueType string, value interface{}, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
 	msg := FimpMessage{Type: type_,
 		Service:      service,
@@ -321,7 +333,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	fimpmsg.ResponseToTopic, _ = jsonparser.GetString(msg, "resp_to")
 	fimpmsg.Source, _ = jsonparser.GetString(msg, "src")
 	fimpmsg.Topic, _ = jsonparser.GetString(msg, "topic")
-	fimpmsg.Version,_ = jsonparser.GetString(msg, "ver")
+	fimpmsg.Version, _ = jsonparser.GetString(msg, "ver")
 
 	switch fimpmsg.ValueType {
 	case VTypeString:
@@ -438,5 +450,16 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	}
 
 	return &fimpmsg, err
+}
 
+// ParseTime is a helper function to parse a timestamp from a string from various variations of RFC3339.
+func ParseTime(timestamp string) time.Time {
+	for _, format := range timestampFormats {
+		t, err := time.Parse(format, timestamp)
+		if err == nil {
+			return t
+		}
+	}
+
+	return time.Time{}
 }

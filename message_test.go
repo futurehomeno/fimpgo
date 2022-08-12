@@ -3,6 +3,9 @@ package fimpgo
 import (
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewBoolMessage(t *testing.T) {
@@ -410,5 +413,40 @@ func BenchmarkFimpMessage_GetObjectValue(b *testing.B) {
 		if config.Param2 != "val2" {
 			b.Error("Wrong map result")
 		}
+	}
+}
+
+func TestParseTime(t *testing.T) {
+	t.Parallel()
+
+	tt := []struct {
+		timestamp string
+		want      time.Time
+	}{
+		{timestamp: "2022-08-12T06:58:50.551867Z", want: time.Date(2022, 8, 12, 6, 58, 50, 551867000, time.UTC)},
+		{timestamp: "2022-08-12T06:58:50Z", want: time.Date(2022, 8, 12, 6, 58, 50, 0, time.UTC)},
+		{timestamp: "2022-08-12T08:58:53.383+02:00", want: time.Date(2022, 8, 12, 8, 58, 53, 383000000, time.FixedZone("", 7200))},
+		{timestamp: "2022-08-12T08:58:53+02:00", want: time.Date(2022, 8, 12, 8, 58, 53, 0, time.FixedZone("", 7200))},
+		{timestamp: "2022-08-12T08:58:53.551867+02:00", want: time.Date(2022, 8, 12, 8, 58, 53, 551867000, time.FixedZone("", 7200))},
+		{timestamp: "2022-08-12T08:58:51+0200", want: time.Date(2022, 8, 12, 8, 58, 51, 0, time.FixedZone("", 7200))},
+		{timestamp: "2022-08-12T08:58:51.383+0200", want: time.Date(2022, 8, 12, 8, 58, 51, 383000000, time.FixedZone("", 7200))},
+		{timestamp: "2022-07-21 12:09:49 +0200", want: time.Date(2022, 7, 21, 12, 9, 49, 0, time.FixedZone("", 7200))},
+		{timestamp: "2022-07-21 12:09:49.383 +0200", want: time.Date(2022, 7, 21, 12, 9, 49, 383000000, time.FixedZone("", 7200))},
+		{timestamp: "2022-07-21 12:09:49 +02:00", want: time.Date(2022, 7, 21, 12, 9, 49, 0, time.FixedZone("", 7200))},
+		{timestamp: "2022-07-21 12:09:49.383 +02:00", want: time.Date(2022, 7, 21, 12, 9, 49, 383000000, time.FixedZone("", 7200))},
+		{timestamp: "invalid_format", want: time.Time{}},
+		{timestamp: "", want: time.Time{}},
+	}
+
+	for _, tc := range tt {
+		tc := tc
+
+		t.Run(tc.timestamp, func(t *testing.T) {
+			t.Parallel()
+
+			got := ParseTime(tc.timestamp)
+
+			assert.True(t, tc.want.Equal(got))
+		})
 	}
 }
