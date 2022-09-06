@@ -345,7 +345,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	case VTypeFloat:
 		fimpmsg.Value, err = jsonparser.GetFloat(msg, "val")
 	case VTypeBoolArray:
-		var val []bool
+		val := make([]bool, 0)
 		if _, err := jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, _ := jsonparser.ParseBoolean(value)
 			val = append(val, item)
@@ -355,7 +355,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 
 		fimpmsg.Value = val
 	case VTypeStrArray:
-		var val []string
+		val := make([]string, 0)
 		if _, err := jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, _ := jsonparser.ParseString(value)
 			val = append(val, item)
@@ -365,7 +365,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 
 		fimpmsg.Value = val
 	case VTypeIntArray:
-		var val []int64
+		val := make([]int64, 0)
 		if _, err := jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, _ := jsonparser.ParseInt(value)
 			val = append(val, item)
@@ -375,7 +375,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 		}
 		fimpmsg.Value = val
 	case VTypeFloatArray:
-		var val []float64
+		val := make([]float64, 0)
 		if _, err := jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, _ := jsonparser.ParseFloat(value)
 			val = append(val, item)
