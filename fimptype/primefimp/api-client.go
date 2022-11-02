@@ -3,6 +3,7 @@ package primefimp
 import (
 	"errors"
 	"io/ioutil"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -265,6 +266,7 @@ func (mh *ApiClient) notifyRouter() {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Error("<PF-API> notify router CRASHED with error :", r)
+			log.Error(string(debug.Stack()))
 		}
 	}()
 
@@ -285,31 +287,31 @@ func (mh *ApiClient) notifyRouter() {
 		if err != nil {
 			log.Debug("<PF-API> Can't cast to Notify. Err:", err)
 			continue
-		} else {
-			mh.UpdateSite(notif)
-			if mh.isNotifyRouterStarted { // make sure notify router is started
-				mh.notifChMux.RLock()
-				for cid, nfCh := range mh.notifySubChannels { // check all subfilters
-					nfFilter, ok := mh.subFilters[cid]
-					var send bool
-					if ok {
-						if nfFilter.Cmd == notif.Cmd && nfFilter.Component == notif.Component {
-							send = true
-						}
-					} else {
+		}
+		mh.UpdateSite(notif)
+		if mh.isNotifyRouterStarted { // make sure notify router is started
+			mh.notifChMux.RLock()
+			for cid, nfCh := range mh.notifySubChannels { // check all subfilters
+				nfFilter, ok := mh.subFilters[cid]
+				var send bool
+				if ok {
+					if nfFilter.Cmd == notif.Cmd && nfFilter.Component == notif.Component {
 						send = true
 					}
-					if send {
-						select {
-						case nfCh <- *notif: // send notification to corresponding subchannel if there is match
-						default:
-							log.Warnf("<PF-API> Send channel %s is blocked ", cid)
-						}
+				} else {
+					send = true
+				}
+				if send {
+					select {
+					case nfCh <- *notif: // send notification to corresponding subchannel if there is match
+					default:
+						log.Warnf("<PF-API> Send channel %s is blocked ", cid)
 					}
 				}
-				mh.notifChMux.RUnlock()
 			}
+			mh.notifChMux.RUnlock()
 		}
+
 	}
 }
 
