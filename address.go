@@ -2,21 +2,23 @@ package fimpgo
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 const (
-	DefaultPayload      = "j1"
-	CompressedJsonPayload = "j1c1" // Compressed json payload. c1 - defines compression method. The type must be used only between edge <-> Cloud or edge <- Cloud -> edge/mobile
-	MsgTypeCmd          = "cmd"
-	MsgTypeEvt          = "evt"
-	MsgTypeRsp          = "rsp"
-	ResourceTypeDevice  = "dev"
-	ResourceTypeApp     = "app"
-	ResourceTypeAdapter = "ad"
-	ResourceTypeCloud   = "cloud"
+	DefaultPayload        = "j1"
+	CompressedJsonPayload = "j1c1"
+	MsgTypeCmd            = "cmd"
+	MsgTypeEvt            = "evt"
+	MsgTypeRsp            = "rsp"
+	ResourceTypeDevice    = "dev"
+	ResourceTypeApp       = "app"
+	ResourceTypeAdapter   = "ad"
+	ResourceTypeCloud     = "cloud"
 	ResourceTypeDiscovery = "discovery"
+	ResourceTypeLocation  = "loc"
 )
 
 type Address struct {
