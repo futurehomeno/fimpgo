@@ -97,6 +97,22 @@ func (p Props) GetBoolValue(key string) (bool, bool, error) {
 
 type Tags []string
 
+// Storage is used to define optional message storage strategy.
+type Storage struct {
+	Strategy StorageStrategy `json:"strategy,omitempty"`
+	SubValue string          `json:"sub_value,omitempty"`
+}
+
+// StorageStrategy defines message storage strategy.
+type StorageStrategy string
+
+// Constants defining storage strategies.
+const (
+	StorageStrategyAggregate StorageStrategy = "aggregate"
+	StorageStrategySkip      StorageStrategy = "skip"
+	StorageStrategySplit     StorageStrategy = "split"
+)
+
 type FimpMessage struct {
 	Type            string      `json:"type"`
 	Service         string      `json:"serv"`
@@ -105,6 +121,7 @@ type FimpMessage struct {
 	ValueObj        []byte      `json:"-"`
 	Tags            Tags        `json:"tags"`
 	Properties      Props       `json:"props"`
+	Storage         *Storage    `json:"storage,omitempty"`
 	Version         string      `json:"ver"`
 	CorrelationID   string      `json:"corid"`
 	ResponseToTopic string      `json:"resp_to,omitempty"`
@@ -238,6 +255,31 @@ func (msg *FimpMessage) SerializeToJson() ([]byte, error) {
 // GetCreationTime returns parsed creation time of the message.
 func (msg *FimpMessage) GetCreationTime() time.Time {
 	return ParseTime(msg.CreationTime)
+}
+
+// WithStorageStrategy sets storage strategy for the message.
+func (msg *FimpMessage) WithStorageStrategy(strategy StorageStrategy, subValue string) *FimpMessage {
+	msg.Storage = &Storage{Strategy: strategy, SubValue: subValue}
+
+	return msg
+}
+
+// WithProperty sets property for the message.
+func (msg *FimpMessage) WithProperty(property, value string) *FimpMessage {
+	if msg.Properties == nil {
+		msg.Properties = make(Props)
+	}
+
+	msg.Properties[property] = value
+
+	return msg
+}
+
+// WithTag adds tag to the message.
+func (msg *FimpMessage) WithTag(tag string) *FimpMessage {
+	msg.Tags = append(msg.Tags, tag)
+
+	return msg
 }
 
 func NewMessage(type_ string, service string, valueType string, value interface{}, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
@@ -439,12 +481,24 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 		fimpmsg.ValueObj, _, _, err = jsonparser.Get(msg, "val")
 
 	}
-	if _, dt, _, err := jsonparser.Get(msg, "props"); dt != jsonparser.NotExist && dt != jsonparser.Null && err == nil {
-		fimpmsg.Properties = make(Props)
-		if err := jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
-			fimpmsg.Properties[string(key)], err = jsonparser.ParseString(value)
-			return nil
-		}, "props"); err != nil {
+
+	if properties, dt, _, err := jsonparser.Get(msg, "props"); dt != jsonparser.NotExist && dt != jsonparser.Null && err == nil {
+		err := json.Unmarshal(properties, &fimpmsg.Properties)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if storage, dt, _, err := jsonparser.Get(msg, "storage"); dt != jsonparser.NotExist && dt != jsonparser.Null && err == nil {
+		err := json.Unmarshal(storage, &fimpmsg.Storage)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if tags, dt, _, err := jsonparser.Get(msg, "tags"); dt != jsonparser.NotExist && dt != jsonparser.Null && err == nil {
+		err := json.Unmarshal(tags, &fimpmsg.Tags)
+		if err != nil {
 			return nil, err
 		}
 	}

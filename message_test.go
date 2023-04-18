@@ -8,6 +8,44 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestFimpMessage_SerializeToJson(t *testing.T) {
+	tcs := []struct {
+		name    string
+		message *FimpMessage
+	}{
+		{
+			name:    "Null message",
+			message: NewNullMessage("test_type", "test_service", nil, nil, nil),
+		},
+		{
+			name: "Null message with storage strategy",
+			message: NewNullMessage("test_type", "test_service", nil, nil, nil).
+				WithStorageStrategy(StorageStrategySkip, ""),
+		},
+		{
+			name: "Null message with storage strategy, property and tag",
+			message: NewNullMessage("test_type", "test_service", nil, nil, nil).
+				WithProperty("prop1", "val1").
+				WithTag("tag1").
+				WithStorageStrategy(StorageStrategyAggregate, "val1"),
+		},
+	}
+
+	for _, tc := range tcs {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			json, err := tc.message.SerializeToJson()
+			assert.NoError(t, err)
+
+			newMsg, err := NewMessageFromBytes(json)
+			assert.NoError(t, err)
+
+			assert.Equal(t, tc.message, newMsg)
+		})
+	}
+}
+
 func TestNewBoolMessage(t *testing.T) {
 	msg := NewBoolMessage("cmd.binary.set", "out_bin_switch", true, nil, nil, nil)
 	val, err := msg.GetBoolValue()
