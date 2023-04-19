@@ -145,6 +145,25 @@ func (s *Service) PropertyInteger(name string) (int64, bool) {
 	return 0, false
 }
 
+// PropertyBool is a helper that extracts property settings out of the service specification.
+func (s *Service) PropertyBool(name string) bool {
+	value, ok := s.Props[name]
+	if !ok {
+		return false
+	}
+
+	v, ok := value.(bool)
+	if ok {
+		return v
+	}
+
+	if s.cast(&v, value) {
+		return v
+	}
+
+	return false
+}
+
 // PropertyObject is a helper that extracts property settings out of the service specification.
 func (s *Service) PropertyObject(name string, object interface{}) bool {
 	value, ok := s.Props[name]
