@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -39,9 +40,9 @@ type MqttConnectionConfigs struct {
 }
 
 type Message struct {
-	Topic   string
-	Addr    *Address
-	Payload *FimpMessage
+	Topic      string
+	Addr       *Address
+	Payload    *FimpMessage
 	RawPayload []byte
 }
 
@@ -107,7 +108,7 @@ func NewMqttTransport(serverURI, clientID, username, password string, cleanSessi
 	mh.mqttOptions.SetAutoReconnect(true)
 	mh.mqttOptions.SetConnectionLostHandler(mh.onConnectionLost)
 	mh.mqttOptions.SetOnConnectHandler(mh.onConnect)
-	mh.mqttOptions.SetWriteTimeout(time.Second*30)
+	mh.mqttOptions.SetWriteTimeout(time.Second * 30)
 	//create and start a client using the above ClientOptions
 	mh.client = MQTT.NewClient(mh.mqttOptions)
 	mh.pubQos = pubQos
@@ -119,7 +120,7 @@ func NewMqttTransport(serverURI, clientID, username, password string, cleanSessi
 	mh.startFailRetryCount = 10
 	mh.receiveChTimeout = 10
 	mh.syncPublishTimeout = time.Second * 5
-	mh.compressor = NewMsgCompressor("","")
+	mh.compressor = NewMsgCompressor("", "")
 	return &mh
 }
 
@@ -135,7 +136,7 @@ func NewMqttTransportFromConnection(client MQTT.Client, subQos byte, pubQos byte
 	mh.startFailRetryCount = 10
 	mh.receiveChTimeout = 10
 	mh.syncPublishTimeout = time.Second * 5
-	mh.compressor = NewMsgCompressor("","")
+	mh.compressor = NewMsgCompressor("", "")
 	return &mh
 }
 
@@ -172,7 +173,7 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Optio
 	mh.syncPublishTimeout = time.Second * 5
 	mh.certDir = configs.CertDir
 	mh.globalTopicPrefix = configs.GlobalTopicPrefix
-	mh.compressor = NewMsgCompressor("","")
+	mh.compressor = NewMsgCompressor("", "")
 	if configs.StartFailRetryCount == 0 {
 		mh.startFailRetryCount = 10
 	} else {
@@ -375,11 +376,12 @@ func (mh *MqttTransport) onConnect(_ MQTT.Client) {
 	}
 }
 
-//onMessage default message handler
+// onMessage default message handler
 func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Error("<MqttAd> onMessage CRASHED with error :", r)
+			log.Error(string(debug.Stack()))
 		}
 	}()
 	log.Tracef("<MqttAd> New msg from TOPIC: %s", msg.Topic())
@@ -401,14 +403,14 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	case DefaultPayload:
 		fimpMsg, err = NewMessageFromBytes(msg.Payload())
 	case CompressedJsonPayload:
-		fimpMsg,err = mh.compressor.DecompressFimpMsg(msg.Payload())
+		fimpMsg, err = mh.compressor.DecompressFimpMsg(msg.Payload())
 	default:
 		// This means unknown binary payload , for instance compressed message
 		log.Trace("<MqttAd> Unknown binary payload :", addr.PayloadType)
 	}
 
 	if mh.msgHandler != nil {
-		if err == nil  {
+		if err == nil {
 			mh.msgHandler(topic, addr, fimpMsg, msg.Payload())
 		} else {
 			log.Trace(string(msg.Payload()))
@@ -427,7 +429,7 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 		var fmsg Message
 		if addr.PayloadType == DefaultPayload || addr.PayloadType == CompressedJsonPayload {
 			fmsg = Message{Topic: topic, Addr: addr, Payload: fimpMsg}
-		}else {
+		} else {
 			// message receiver should do decompressions
 			fmsg = Message{Topic: topic, Addr: addr, RawPayload: msg.Payload()}
 		}
@@ -448,6 +450,7 @@ func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr
 	defer func() {
 		if r := recover(); r != nil {
 			log.Error("<MqttAd> Filter CRASHED with error :", r)
+			log.Error(string(debug.Stack()))
 		}
 	}()
 
@@ -466,7 +469,7 @@ func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr
 			(msg.Type == filter.Interface || filter.Interface == "*") {
 			return true
 		}
-	}else {
+	} else {
 		// It means binary payload , and message can't be parsed
 		if utils.RouteIncludesTopic(filter.Topic, topic) {
 			return true
@@ -517,10 +520,10 @@ func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) erro
 	if err != nil {
 		return err
 	}
-	addr,err := NewAddressFromString(topic)
+	addr, err := NewAddressFromString(topic)
 	if err == nil {
 		if addr.PayloadType == CompressedJsonPayload {
-			byteMessage,err = mh.compressor.CompressBinMsg(byteMessage)
+			byteMessage, err = mh.compressor.CompressBinMsg(byteMessage)
 			if err != nil {
 				return err
 			}
