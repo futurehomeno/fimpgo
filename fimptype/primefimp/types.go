@@ -53,9 +53,11 @@ type RequestParam struct {
 }
 
 type Fimp struct {
-	Adapter string `json:"adapter"`
-	Address string `json:"address"`
-	Group   string `json:"group"`
+	Adapter         string `json:"adapter"`
+	Address         string `json:"address"`
+	AdapterResource string `json:"adapter_resource"`
+	AdapterAddress  string `json:"adapter_address"`
+	Group           string `json:"group"`
 }
 
 type Client struct {
@@ -82,11 +84,19 @@ type Device struct {
 
 type Thing struct {
 	ID      int               `json:"id"`
+	Fimp    ThingFimp         `json:"fimp"`
 	Address string            `json:"addr"`
 	Name    string            `json:"name"`
 	Devices []int             `json:"devices,omitempty"`
 	Props   map[string]string `json:"props,omitempty"`
 	RoomID  int               `json:"room"`
+}
+
+type ThingFimp struct {
+	Address         string `json:"address"`
+	AdapterService  string `json:"adapter_service"`
+	AdapterResource string `json:"adapter_resource"`
+	AdapterAddress  string `json:"adapter_address"`
 }
 
 type House struct {
