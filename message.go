@@ -52,7 +52,7 @@ func (p Props) GetIntValue(key string) (int64, bool, error) {
 
 	i, err := strconv.ParseInt(val, 10, 64)
 	if err != nil {
-		return 0, true, fmt.Errorf("property %s has wrong value type. expected int, got %s", key, val)
+		return 0, true, fmt.Errorf("property %s has wrong value type, expected int, got %s", key, val)
 	}
 
 	return i, true, nil
@@ -75,7 +75,7 @@ func (p Props) GetFloatValue(key string) (float64, bool, error) {
 
 	f, err := strconv.ParseFloat(val, 64)
 	if err != nil {
-		return 0, true, fmt.Errorf("property %s has wrong value type. expected float, got %s", key, val)
+		return 0, true, fmt.Errorf("property %s has wrong value type, expected float, got %s", key, val)
 	}
 
 	return f, true, nil
@@ -89,10 +89,24 @@ func (p Props) GetBoolValue(key string) (bool, bool, error) {
 
 	b, err := strconv.ParseBool(val)
 	if err != nil {
-		return false, true, fmt.Errorf("property %s has wrong value type. expected bool, got %s", key, val)
+		return false, true, fmt.Errorf("property %s has wrong value type, expected bool, got %s", key, val)
 	}
 
 	return b, true, nil
+}
+
+func (p Props) GetTimestampValue(key string) (time.Time, bool, error) {
+	val, ok := p[key]
+	if !ok {
+		return time.Time{}, false, nil
+	}
+
+	t := ParseTime(val)
+	if t.IsZero() {
+		return time.Time{}, true, fmt.Errorf("property %s has wrong value type, expected RFC3339 timestamp, got %s", key, val)
+	}
+
+	return t, true, nil
 }
 
 type Tags []string
