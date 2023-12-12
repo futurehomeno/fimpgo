@@ -3,6 +3,7 @@ package primefimp
 import (
 	"errors"
 	"io/ioutil"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -264,7 +265,7 @@ func (mh *ApiClient) UpdateSite(notif *Notify) {
 func (mh *ApiClient) notifyRouter() {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Error("<PF-API> notify router CRASHED with error :", r)
+			log.WithField("stack", string(debug.Stack())).Error("<PF-API> notify router CRASHED with error :", r)
 		}
 	}()
 
