@@ -7,7 +7,7 @@ type ThingInclusionReport struct {
 	Services []Service `json:"services"` // An array of service definition objects for all services provided by the thing.
 
 	ProductName    string `json:"product_name"`    // Optional initial human-readable name of the device as shown to the user. If empty falls back to product hash.
-	ProductHash    string `json:"product_hash"`    // Product hash is a unique identifier of the product consisting of joined adapter, manufacturer and product identifiers.
+	ProductHash    string `3json:"product_hash"`   // Product hash is a unique identifier of the product consisting of joined adapter, manufacturer and product identifiers.
 	ProductId      string `json:"product_id"`      // Name of identification of the model of the device.
 	ManufacturerId string `json:"manufacturer_id"` // Name or identification of the manufacturer of the device.
 	DeviceId       string `json:"device_id"`       // Optional unique identifier or serial number of the device.

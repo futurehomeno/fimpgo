@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 )
 
 const (
@@ -305,7 +305,7 @@ func NewMessage(type_ string, service string, valueType string, value interface{
 		Properties:   props,
 		Version:      "1",
 		CreationTime: time.Now().Format(TimeFormat),
-		UID:          uuid.NewV4().String(),
+		UID:          uuid.New().String(),
 	}
 
 	if requestMessage != nil {

@@ -4,10 +4,12 @@ import (
 	"crypto"
 	"encoding/base64"
 	"errors"
-	"github.com/dgrijalva/jwt-go"
+	"strings"
+
+	"github.com/golang-jwt/jwt"
+
 	"github.com/futurehomeno/fimpgo"
 	"github.com/futurehomeno/fimpgo/security"
-	"strings"
 )
 
 /*
@@ -60,54 +62,52 @@ https://tools.ietf.org/html/rfc7518#section-3
 //  "uid": "73f61030-4399-4d21-bb97-4ca7c1623ac3"
 //}
 
-
 // SignMessageES256 encapsulate original message into special transport message with added signature.
-func SignMessageES256(payload *fimpgo.FimpMessage,requestMsg *fimpgo.FimpMessage,userId string,keys *security.EcdsaKey,props *fimpgo.Props) (*fimpgo.FimpMessage,error) {
-	serializedMsg,err := payload.SerializeToJson()
+func SignMessageES256(payload *fimpgo.FimpMessage, requestMsg *fimpgo.FimpMessage, userId string, keys *security.EcdsaKey, props *fimpgo.Props) (*fimpgo.FimpMessage, error) {
+	serializedMsg, err := payload.SerializeToJson()
 	if err != nil {
 		return nil, err
 	}
 	if props == nil {
-		props = &fimpgo.Props{"user_id":userId}
+		props = &fimpgo.Props{"user_id": userId}
 	}
 	msgType := "evt.transport.signed"
-	if strings.Contains(payload.Type,"cmd") {
+	if strings.Contains(payload.Type, "cmd") {
 		msgType = "cmd.transport.signed"
 	}
-	signedMsg := fimpgo.NewBinaryMessage(msgType,payload.Service,serializedMsg,*props,nil,requestMsg)
+	signedMsg := fimpgo.NewBinaryMessage(msgType, payload.Service, serializedMsg, *props, nil, requestMsg)
 
 	signingMethodES256 := &jwt.SigningMethodECDSA{Name: "ES256", Hash: crypto.SHA256, KeySize: 32, CurveBits: 256}
-	signature , err := signingMethodES256.Sign(signedMsg.Value.(string),keys.PrivateKey())
+	signature, err := signingMethodES256.Sign(signedMsg.Value.(string), keys.PrivateKey())
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	signedMsg.Properties["sig"] = signature
-	return signedMsg,nil
+	return signedMsg, nil
 }
-//
-func GetVerifiedMessageES256(signedMsg *fimpgo.FimpMessage,key *security.EcdsaKey) (*fimpgo.FimpMessage,error) {
 
-	if signedMsg.Type != "cmd.transport.signed" && signedMsg.Type != "evt.transport.signed"  {
-		return nil,errors.New("incorrect message type")
+func GetVerifiedMessageES256(signedMsg *fimpgo.FimpMessage, key *security.EcdsaKey) (*fimpgo.FimpMessage, error) {
+
+	if signedMsg.Type != "cmd.transport.signed" && signedMsg.Type != "evt.transport.signed" {
+		return nil, errors.New("incorrect message type")
 	}
-	origMsgBin , ok1 := signedMsg.Value.(string)
+	origMsgBin, ok1 := signedMsg.Value.(string)
 	if !ok1 {
-		return nil,errors.New("incorrect encapsulated message format")
+		return nil, errors.New("incorrect encapsulated message format")
 	}
-	sig , ok2 := signedMsg.Properties["sig"]
+	sig, ok2 := signedMsg.Properties["sig"]
 	if !ok2 {
-		return nil,errors.New("missing signature")
+		return nil, errors.New("missing signature")
 	}
 	signingMethodES256 := &jwt.SigningMethodECDSA{Name: "ES256", Hash: crypto.SHA256, KeySize: 32, CurveBits: 256}
-	err := signingMethodES256.Verify(origMsgBin,sig,key.PublicKey())
+	err := signingMethodES256.Verify(origMsgBin, sig, key.PublicKey())
 	if err == nil {
-		decodedPayloadBin,err := base64.StdEncoding.DecodeString(origMsgBin)
+		decodedPayloadBin, err := base64.StdEncoding.DecodeString(origMsgBin)
 		if err != nil {
-			return nil,err
+			return nil, err
 		}
 		return fimpgo.NewMessageFromBytes(decodedPayloadBin)
-	}else {
-		return nil,err
+	} else {
+		return nil, err
 	}
 }
-
