@@ -8,8 +8,9 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"github.com/dgrijalva/jwt-go"
 	"math/big"
+
+	"github.com/golang-jwt/jwt"
 )
 
 type JsonEcKey struct {
@@ -21,7 +22,7 @@ type JsonEcKey struct {
 
 type EcdsaKey struct {
 	privateKey *ecdsa.PrivateKey
-	publicKey *ecdsa.PublicKey
+	publicKey  *ecdsa.PublicKey
 }
 
 func (kp *EcdsaKey) SetPrivateKey(privateKey *ecdsa.PrivateKey) {
@@ -50,8 +51,8 @@ func (kp *EcdsaKey) Generate() error {
 	return nil
 }
 
-func (kp *EcdsaKey) ExportX509EncodedKeys() (string,string) {
-	var pemEncodedStr,pemEncodedPubStr string
+func (kp *EcdsaKey) ExportX509EncodedKeys() (string, string) {
+	var pemEncodedStr, pemEncodedPubStr string
 	if kp.privateKey != nil {
 		x509Encoded, _ := x509.MarshalECPrivateKey(kp.privateKey)
 		pemEncoded := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: x509Encoded})
@@ -80,7 +81,7 @@ func (kp *EcdsaKey) ExportJsonEncodedKeys() (JsonEcKey, JsonEcKey) {
 	return privateKey, pubKey
 }
 
-func (kp *EcdsaKey) ImportX509PublicKey(pemEncodedPub string)  error {
+func (kp *EcdsaKey) ImportX509PublicKey(pemEncodedPub string) error {
 	blockPub, _ := pem.Decode([]byte(pemEncodedPub))
 	if blockPub == nil {
 		return errors.New("incorrect PEM format")
@@ -91,9 +92,8 @@ func (kp *EcdsaKey) ImportX509PublicKey(pemEncodedPub string)  error {
 		return err
 	}
 	kp.publicKey = genericPublicKey.(*ecdsa.PublicKey)
-	return  nil
+	return nil
 }
-
 
 func (kp *EcdsaKey) ImportX509PrivateKey(pemEncoded string) error {
 	var err error
@@ -106,10 +106,10 @@ func (kp *EcdsaKey) ImportX509PrivateKey(pemEncoded string) error {
 	return nil
 }
 
-func (kp *EcdsaKey) ImportJsonPublicKey(jkey JsonEcKey)  error {
-	x , xok := big.NewInt(0).SetString(jkey.X,16)
-	y , yok := big.NewInt(0).SetString(jkey.Y,16)
-	if  !xok || !yok {
+func (kp *EcdsaKey) ImportJsonPublicKey(jkey JsonEcKey) error {
+	x, xok := big.NewInt(0).SetString(jkey.X, 16)
+	y, yok := big.NewInt(0).SetString(jkey.Y, 16)
+	if !xok || !yok {
 		return errors.New("json key parse error")
 	}
 	kp.publicKey = &ecdsa.PublicKey{
@@ -117,14 +117,14 @@ func (kp *EcdsaKey) ImportJsonPublicKey(jkey JsonEcKey)  error {
 		X:     x,
 		Y:     y,
 	}
-	return  nil
+	return nil
 }
 
-func (kp *EcdsaKey) ImportJsonPrivateKey(jkey JsonEcKey)  error {
-	x , xok := big.NewInt(0).SetString(jkey.X,16)
-	y , yok := big.NewInt(0).SetString(jkey.Y,16)
-	d , dok := big.NewInt(0).SetString(jkey.D,16)
-	if  !xok || !yok || !dok {
+func (kp *EcdsaKey) ImportJsonPrivateKey(jkey JsonEcKey) error {
+	x, xok := big.NewInt(0).SetString(jkey.X, 16)
+	y, yok := big.NewInt(0).SetString(jkey.Y, 16)
+	d, dok := big.NewInt(0).SetString(jkey.D, 16)
+	if !xok || !yok || !dok {
 		return errors.New("json key parse error")
 	}
 	kp.privateKey = &ecdsa.PrivateKey{
@@ -133,28 +133,27 @@ func (kp *EcdsaKey) ImportJsonPrivateKey(jkey JsonEcKey)  error {
 			X:     x,
 			Y:     y,
 		},
-		D:         d,
+		D: d,
 	}
-	return  nil
+	return nil
 }
-
 
 // SignStringES256 signs string and returns as result .
-func SignStringES256(payload string,keys *EcdsaKey) (string,error) {
+func SignStringES256(payload string, keys *EcdsaKey) (string, error) {
 	signingMethodES256 := &jwt.SigningMethodECDSA{Name: "ES256", Hash: crypto.SHA256, KeySize: 32, CurveBits: 256}
-	signature , err := signingMethodES256.Sign(payload,keys.PrivateKey())
+	signature, err := signingMethodES256.Sign(payload, keys.PrivateKey())
 	if err != nil {
-		return "",err
+		return "", err
 	}
-	return signature,nil
+	return signature, nil
 }
 
-func VerifyStringES256(payload, sig string,key *EcdsaKey) bool {
+func VerifyStringES256(payload, sig string, key *EcdsaKey) bool {
 	signingMethodES256 := &jwt.SigningMethodECDSA{Name: "ES256", Hash: crypto.SHA256, KeySize: 32, CurveBits: 256}
-	err := signingMethodES256.Verify(payload,sig,key.PublicKey())
+	err := signingMethodES256.Verify(payload, sig, key.PublicKey())
 	if err == nil {
 		return true
-	}else {
+	} else {
 		return false
 	}
 }

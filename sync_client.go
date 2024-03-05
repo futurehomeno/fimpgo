@@ -3,7 +3,7 @@ package fimpgo
 import (
 	"time"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -110,7 +110,7 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	var inboundCh = make(MessageCh, 10)
 	var responseChannel chan *FimpMessage
 	var err error
-	var chanName = uuid.NewV4().String()
+	var chanName = uuid.New().String()
 
 	defer func() {
 		if autoSubscribe && responseTopic != "" && conn != nil {

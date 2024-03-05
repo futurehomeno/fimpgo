@@ -1,22 +1,28 @@
 module github.com/futurehomeno/fimpgo
 
 require (
-	github.com/BurntSushi/toml v0.3.1 // indirect
-	github.com/buger/jsonparser v1.0.0
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/eclipse/paho.mqtt.golang v1.2.0
-	github.com/google/uuid v1.1.1
-	github.com/kr/pretty v0.1.0 // indirect
-	github.com/pkg/errors v0.0.0-20161029093637-248dadf4e906
-	github.com/satori/go.uuid v1.2.0
-	github.com/sirupsen/logrus v1.3.0
-	github.com/stretchr/testify v1.6.1
-	golang.org/x/crypto v0.0.0-20181030102418-4d3f4d9ffa16 // indirect
-	golang.org/x/net v0.0.0-20170527060238-48359f4f600b // indirect
-	golang.org/x/sys v0.0.0-20181031143558-9b800f95dbbc // indirect
-	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
+	github.com/buger/jsonparser v1.1.1
+	github.com/eclipse/paho.mqtt.golang v1.4.3
+	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/google/uuid v1.6.0
+	github.com/pkg/errors v0.9.1
+	github.com/sirupsen/logrus v1.9.3
+	github.com/stretchr/testify v1.8.4
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
-	gopkg.in/yaml.v2 v2.3.0 // indirect
 )
 
-go 1.13
+require (
+	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/kr/pretty v0.1.0 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	golang.org/x/net v0.21.0 // indirect
+	golang.org/x/sync v0.6.0 // indirect
+	golang.org/x/sys v0.17.0 // indirect
+	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
+	gopkg.in/yaml.v2 v2.3.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
+)
+
+go 1.20
