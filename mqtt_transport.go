@@ -32,16 +32,16 @@ type MqttConnectionConfigs struct {
 	CertDir             string // full path to directory where all certificates are stored. Cert dir should contains all CA root certificates .
 	PrivateKeyFileName  string //
 	CertFileName        string //
-	ReceiveChTimeout    int
-	IsAws               bool // Should be set to true if cloud broker is AwS IoT platform .
+	IsAws               bool   // Should be set to true if cloud broker is AwS IoT platform .
+	ReceiveChTimeout    int    // Deprecated
 
 	connectionLostHandler MQTT.ConnectionLostHandler
 }
 
 type Message struct {
-	Topic   string
-	Addr    *Address
-	Payload *FimpMessage
+	Topic      string
+	Addr       *Address
+	Payload    *FimpMessage
 	RawPayload []byte
 }
 
@@ -70,16 +70,16 @@ type MqttTransport struct {
 	startFailRetryCount  int
 	certDir              string
 	mqttOptions          *MQTT.ClientOptions
-	receiveChTimeout     int
 	syncPublishTimeout   time.Duration
-	channelRegMux        sync.Mutex
+	channelRegMux        sync.RWMutex
 	subMutex             sync.Mutex
 	compressor           *MsgCompressor
 }
 
-func (mh *MqttTransport) SetReceiveChTimeout(receiveChTimeout int) {
-	mh.receiveChTimeout = receiveChTimeout
-}
+// SetReceiveChTimeout sets a timeout for forwarding an incoming message to a registered channel.
+//
+// Deprecated: timeout is not used anymore.
+func (mh *MqttTransport) SetReceiveChTimeout(_ int) {}
 
 func (mh *MqttTransport) SetCertDir(certDir string) {
 	mh.certDir = certDir
@@ -107,7 +107,7 @@ func NewMqttTransport(serverURI, clientID, username, password string, cleanSessi
 	mh.mqttOptions.SetAutoReconnect(true)
 	mh.mqttOptions.SetConnectionLostHandler(mh.onConnectionLost)
 	mh.mqttOptions.SetOnConnectHandler(mh.onConnect)
-	mh.mqttOptions.SetWriteTimeout(time.Second*30)
+	mh.mqttOptions.SetWriteTimeout(time.Second * 30)
 	//create and start a client using the above ClientOptions
 	mh.client = MQTT.NewClient(mh.mqttOptions)
 	mh.pubQos = pubQos
@@ -117,9 +117,8 @@ func NewMqttTransport(serverURI, clientID, username, password string, cleanSessi
 	mh.subFilters = make(map[string]FimpFilter)
 	mh.subFilterFuncs = make(map[string]FilterFunc)
 	mh.startFailRetryCount = 10
-	mh.receiveChTimeout = 10
 	mh.syncPublishTimeout = time.Second * 5
-	mh.compressor = NewMsgCompressor("","")
+	mh.compressor = NewMsgCompressor("", "")
 	return &mh
 }
 
@@ -133,9 +132,8 @@ func NewMqttTransportFromConnection(client MQTT.Client, subQos byte, pubQos byte
 	mh.subFilters = make(map[string]FimpFilter)
 	mh.subFilterFuncs = make(map[string]FilterFunc)
 	mh.startFailRetryCount = 10
-	mh.receiveChTimeout = 10
 	mh.syncPublishTimeout = time.Second * 5
-	mh.compressor = NewMsgCompressor("","")
+	mh.compressor = NewMsgCompressor("", "")
 	return &mh
 }
 
@@ -168,20 +166,14 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Optio
 	mh.subFilters = make(map[string]FimpFilter)
 	mh.subFilterFuncs = make(map[string]FilterFunc)
 	mh.startFailRetryCount = 10
-	mh.receiveChTimeout = 10
 	mh.syncPublishTimeout = time.Second * 5
 	mh.certDir = configs.CertDir
 	mh.globalTopicPrefix = configs.GlobalTopicPrefix
-	mh.compressor = NewMsgCompressor("","")
+	mh.compressor = NewMsgCompressor("", "")
 	if configs.StartFailRetryCount == 0 {
 		mh.startFailRetryCount = 10
 	} else {
 		mh.startFailRetryCount = configs.StartFailRetryCount
-	}
-	if configs.ReceiveChTimeout == 0 {
-		mh.receiveChTimeout = 10
-	} else {
-		mh.receiveChTimeout = configs.ReceiveChTimeout
 	}
 
 	if configs.PrivateKeyFileName != "" && configs.CertFileName != "" {
@@ -375,7 +367,7 @@ func (mh *MqttTransport) onConnect(_ MQTT.Client) {
 	}
 }
 
-//onMessage default message handler
+// onMessage default message handler
 func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -401,14 +393,14 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	case DefaultPayload:
 		fimpMsg, err = NewMessageFromBytes(msg.Payload())
 	case CompressedJsonPayload:
-		fimpMsg,err = mh.compressor.DecompressFimpMsg(msg.Payload())
+		fimpMsg, err = mh.compressor.DecompressFimpMsg(msg.Payload())
 	default:
 		// This means unknown binary payload , for instance compressed message
 		log.Trace("<MqttAd> Unknown binary payload :", addr.PayloadType)
 	}
 
 	if mh.msgHandler != nil {
-		if err == nil  {
+		if err == nil {
 			mh.msgHandler(topic, addr, fimpMsg, msg.Payload())
 		} else {
 			log.Trace(string(msg.Payload()))
@@ -417,30 +409,30 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 		}
 	}
 
-	mh.channelRegMux.Lock()
-	defer mh.channelRegMux.Unlock()
+	mh.channelRegMux.RLock()
+	subChannels := mh.subChannels
+	mh.channelRegMux.RUnlock()
 
-	for i := range mh.subChannels {
-		if !mh.isChannelInterested(i, topic, addr, fimpMsg) {
+	for channelID, channel := range subChannels {
+		if !mh.isChannelInterested(channelID, topic, addr, fimpMsg) {
 			continue
 		}
 		var fmsg Message
 		if addr.PayloadType == DefaultPayload || addr.PayloadType == CompressedJsonPayload {
 			fmsg = Message{Topic: topic, Addr: addr, Payload: fimpMsg}
-		}else {
+		} else {
 			// message receiver should do decompressions
 			fmsg = Message{Topic: topic, Addr: addr, RawPayload: msg.Payload()}
 		}
-		timer := time.NewTimer(time.Second * time.Duration(mh.receiveChTimeout))
+
 		select {
-		case mh.subChannels[i] <- &fmsg:
-			timer.Stop()
-			// send to channel
-		case <-timer.C:
-			log.Info("<MqttAd> Channel is not read for ", mh.receiveChTimeout)
+		case channel <- &fmsg:
+			continue
+		default:
+			log.WithField("channel-id", channelID).
+				Warn("<MqttAd> Failed to forward incoming message: channel is busy")
 		}
 	}
-
 }
 
 // isChannelInterested validates if channel is interested in message. Filtering is executed against either static filters or filter function
@@ -466,7 +458,7 @@ func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr
 			(msg.Type == filter.Interface || filter.Interface == "*") {
 			return true
 		}
-	}else {
+	} else {
 		// It means binary payload , and message can't be parsed
 		if utils.RouteIncludesTopic(filter.Topic, topic) {
 			return true
@@ -517,10 +509,10 @@ func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) erro
 	if err != nil {
 		return err
 	}
-	addr,err := NewAddressFromString(topic)
+	addr, err := NewAddressFromString(topic)
 	if err == nil {
 		if addr.PayloadType == CompressedJsonPayload {
-			byteMessage,err = mh.compressor.CompressBinMsg(byteMessage)
+			byteMessage, err = mh.compressor.CompressBinMsg(byteMessage)
 			if err != nil {
 				return err
 			}
