@@ -17,6 +17,10 @@ import (
 	"github.com/futurehomeno/fimpgo/utils"
 )
 
+const (
+	defaultMainQueueSize = 100
+)
+
 type MessageCh chan *Message
 
 type MqttConnectionConfigs struct {
@@ -34,14 +38,15 @@ type MqttConnectionConfigs struct {
 	CertFileName        string //
 	ReceiveChTimeout    int
 	IsAws               bool // Should be set to true if cloud broker is AwS IoT platform .
+	MainQueueSize       int
 
 	connectionLostHandler MQTT.ConnectionLostHandler
 }
 
 type Message struct {
-	Topic   string
-	Addr    *Address
-	Payload *FimpMessage
+	Topic      string
+	Addr       *Address
+	Payload    *FimpMessage
 	RawPayload []byte
 }
 
@@ -62,6 +67,10 @@ type MqttTransport struct {
 	subChannels    map[string]MessageCh
 	subFilters     map[string]FimpFilter
 	subFilterFuncs map[string]FilterFunc
+
+	done      chan struct{}
+	wg        sync.WaitGroup
+	mainQueue chan MQTT.Message
 
 	globalTopicPrefixMux sync.RWMutex
 	globalTopicPrefix    string
@@ -107,7 +116,7 @@ func NewMqttTransport(serverURI, clientID, username, password string, cleanSessi
 	mh.mqttOptions.SetAutoReconnect(true)
 	mh.mqttOptions.SetConnectionLostHandler(mh.onConnectionLost)
 	mh.mqttOptions.SetOnConnectHandler(mh.onConnect)
-	mh.mqttOptions.SetWriteTimeout(time.Second*30)
+	mh.mqttOptions.SetWriteTimeout(time.Second * 30)
 	//create and start a client using the above ClientOptions
 	mh.client = MQTT.NewClient(mh.mqttOptions)
 	mh.pubQos = pubQos
@@ -116,10 +125,11 @@ func NewMqttTransport(serverURI, clientID, username, password string, cleanSessi
 	mh.subChannels = make(map[string]MessageCh)
 	mh.subFilters = make(map[string]FimpFilter)
 	mh.subFilterFuncs = make(map[string]FilterFunc)
+	mh.mainQueue = make(chan MQTT.Message, defaultMainQueueSize)
 	mh.startFailRetryCount = 10
 	mh.receiveChTimeout = 10
 	mh.syncPublishTimeout = time.Second * 5
-	mh.compressor = NewMsgCompressor("","")
+	mh.compressor = NewMsgCompressor("", "")
 	return &mh
 }
 
@@ -132,10 +142,11 @@ func NewMqttTransportFromConnection(client MQTT.Client, subQos byte, pubQos byte
 	mh.subChannels = make(map[string]MessageCh)
 	mh.subFilters = make(map[string]FimpFilter)
 	mh.subFilterFuncs = make(map[string]FilterFunc)
+	mh.mainQueue = make(chan MQTT.Message, defaultMainQueueSize)
 	mh.startFailRetryCount = 10
 	mh.receiveChTimeout = 10
 	mh.syncPublishTimeout = time.Second * 5
-	mh.compressor = NewMsgCompressor("","")
+	mh.compressor = NewMsgCompressor("", "")
 	return &mh
 }
 
@@ -172,7 +183,7 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Optio
 	mh.syncPublishTimeout = time.Second * 5
 	mh.certDir = configs.CertDir
 	mh.globalTopicPrefix = configs.GlobalTopicPrefix
-	mh.compressor = NewMsgCompressor("","")
+	mh.compressor = NewMsgCompressor("", "")
 	if configs.StartFailRetryCount == 0 {
 		mh.startFailRetryCount = 10
 	} else {
@@ -182,6 +193,11 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Optio
 		mh.receiveChTimeout = 10
 	} else {
 		mh.receiveChTimeout = configs.ReceiveChTimeout
+	}
+	if configs.MainQueueSize == 0 {
+		mh.mainQueue = make(chan MQTT.Message, defaultMainQueueSize)
+	} else {
+		mh.mainQueue = make(chan MQTT.Message, configs.MainQueueSize)
 	}
 
 	if configs.PrivateKeyFileName != "" && configs.CertFileName != "" {
@@ -279,11 +295,13 @@ func (mh *MqttTransport) Client() MQTT.Client {
 // Start , starts adapter async.
 func (mh *MqttTransport) Start() error {
 	log.Info("<MqttAd> Connecting to MQTT broker ")
+
 	var err error
 	var delay time.Duration
+
 	for i := 1; i < mh.startFailRetryCount; i++ {
 		if token := mh.client.Connect(); token.Wait() && token.Error() == nil {
-			return nil
+			break
 		} else {
 			err = token.Error()
 		}
@@ -291,12 +309,25 @@ func (mh *MqttTransport) Start() error {
 		log.Infof("<MqttAd> Connection failed , retrying after %d sec.... ", delay)
 		time.Sleep(delay * time.Second)
 	}
-	return err
+
+	if err != nil {
+		return err
+	}
+
+	mh.done = make(chan struct{})
+	mh.wg.Add(1)
+	go mh.handleIncomingMessages()
+
+	return nil
 }
 
 // Stop stops adapter . Adapter can't be started again using Start . In order to start adapter it has to be re-initialized
 func (mh *MqttTransport) Stop() {
 	mh.client.Disconnect(250)
+
+	close(mh.done)
+	mh.wg.Wait()
+	mh.done = nil
 }
 
 // Subscribe - subscribing for topic
@@ -375,13 +406,34 @@ func (mh *MqttTransport) onConnect(_ MQTT.Client) {
 	}
 }
 
-//onMessage default message handler
+// onMessage default message handler
 func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
+	select {
+	case mh.mainQueue <- msg:
+		return
+	default:
+		log.Warn("<MqttAd> Main message queue is full")
+	}
+}
+
+func (mh *MqttTransport) handleIncomingMessages() {
+	for {
+		select {
+		case <-mh.done:
+			return
+		case msg := <-mh.mainQueue:
+			mh.handleIncomingMessage(msg)
+		}
+	}
+}
+
+func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Error("<MqttAd> onMessage CRASHED with error :", r)
 		}
 	}()
+
 	log.Tracef("<MqttAd> New msg from TOPIC: %s", msg.Topic())
 	var topic string
 	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
@@ -401,14 +453,14 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	case DefaultPayload:
 		fimpMsg, err = NewMessageFromBytes(msg.Payload())
 	case CompressedJsonPayload:
-		fimpMsg,err = mh.compressor.DecompressFimpMsg(msg.Payload())
+		fimpMsg, err = mh.compressor.DecompressFimpMsg(msg.Payload())
 	default:
 		// This means unknown binary payload , for instance compressed message
 		log.Trace("<MqttAd> Unknown binary payload :", addr.PayloadType)
 	}
 
 	if mh.msgHandler != nil {
-		if err == nil  {
+		if err == nil {
 			mh.msgHandler(topic, addr, fimpMsg, msg.Payload())
 		} else {
 			log.Trace(string(msg.Payload()))
@@ -427,7 +479,7 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 		var fmsg Message
 		if addr.PayloadType == DefaultPayload || addr.PayloadType == CompressedJsonPayload {
 			fmsg = Message{Topic: topic, Addr: addr, Payload: fimpMsg}
-		}else {
+		} else {
 			// message receiver should do decompressions
 			fmsg = Message{Topic: topic, Addr: addr, RawPayload: msg.Payload()}
 		}
@@ -466,7 +518,7 @@ func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr
 			(msg.Type == filter.Interface || filter.Interface == "*") {
 			return true
 		}
-	}else {
+	} else {
 		// It means binary payload , and message can't be parsed
 		if utils.RouteIncludesTopic(filter.Topic, topic) {
 			return true
@@ -517,10 +569,10 @@ func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) erro
 	if err != nil {
 		return err
 	}
-	addr,err := NewAddressFromString(topic)
+	addr, err := NewAddressFromString(topic)
 	if err == nil {
 		if addr.PayloadType == CompressedJsonPayload {
-			byteMessage,err = mh.compressor.CompressBinMsg(byteMessage)
+			byteMessage, err = mh.compressor.CompressBinMsg(byteMessage)
 			if err != nil {
 				return err
 			}
