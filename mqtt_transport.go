@@ -406,7 +406,9 @@ func (mh *MqttTransport) onConnect(_ MQTT.Client) {
 	}
 }
 
-// onMessage default message handler
+// onMessage is a message handler registered with MQTT client.
+// It enqueues incoming messages to an intermediate queue or drops them if the queue is full.
+// The intermediate queue is required, because the handler cannot be blocking.
 func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	select {
 	case mh.mainQueue <- msg:
