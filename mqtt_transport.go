@@ -419,6 +419,8 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 }
 
 func (mh *MqttTransport) handleIncomingMessages() {
+	defer mh.wg.Done()
+
 	for {
 		select {
 		case <-mh.done:
