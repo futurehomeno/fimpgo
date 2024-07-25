@@ -194,11 +194,13 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Optio
 	} else {
 		mh.receiveChTimeout = configs.ReceiveChTimeout
 	}
-	if configs.MainQueueSize == 0 {
-		mh.mainQueue = make(chan MQTT.Message, defaultMainQueueSize)
-	} else {
-		mh.mainQueue = make(chan MQTT.Message, configs.MainQueueSize)
+
+	mainQueueSize := defaultMainQueueSize
+	if configs.MainQueueSize > 0 {
+		mainQueueSize = configs.MainQueueSize
 	}
+
+	mh.mainQueue = make(chan MQTT.Message, mainQueueSize)
 
 	if configs.PrivateKeyFileName != "" && configs.CertFileName != "" {
 		err := mh.ConfigureTls(configs.PrivateKeyFileName, configs.CertFileName, configs.CertDir, configs.IsAws)
