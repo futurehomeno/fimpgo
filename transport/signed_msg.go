@@ -3,6 +3,7 @@ package transport
 import (
 	"crypto"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"strings"
 
@@ -82,7 +83,7 @@ func SignMessageES256(payload *fimpgo.FimpMessage, requestMsg *fimpgo.FimpMessag
 	if err != nil {
 		return nil, err
 	}
-	signedMsg.Properties["sig"] = signature
+	signedMsg.Properties["sig"] = hex.EncodeToString(signature)
 	return signedMsg, nil
 }
 
@@ -95,12 +96,18 @@ func GetVerifiedMessageES256(signedMsg *fimpgo.FimpMessage, key *security.EcdsaK
 	if !ok1 {
 		return nil, errors.New("incorrect encapsulated message format")
 	}
-	sig, ok2 := signedMsg.Properties["sig"]
+	sigStr, ok2 := signedMsg.Properties["sig"]
 	if !ok2 {
 		return nil, errors.New("missing signature")
 	}
+
+	sig, err := hex.DecodeString(sigStr)
+	if err != nil {
+		return nil, err
+	}
+
 	signingMethodES256 := &jwt.SigningMethodECDSA{Name: "ES256", Hash: crypto.SHA256, KeySize: 32, CurveBits: 256}
-	err := signingMethodES256.Verify(origMsgBin, sig, key.PublicKey())
+	err = signingMethodES256.Verify(origMsgBin, sig, key.PublicKey())
 	if err == nil {
 		decodedPayloadBin, err := base64.StdEncoding.DecodeString(origMsgBin)
 		if err != nil {

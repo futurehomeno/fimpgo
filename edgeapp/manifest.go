@@ -2,9 +2,9 @@ package edgeapp
 
 import (
 	"encoding/json"
+	"os"
+
 	"github.com/futurehomeno/fimpgo/fimptype"
-	log "github.com/sirupsen/logrus"
-	"io/ioutil"
 )
 
 type Manifest struct {
@@ -73,7 +73,7 @@ type UIButton struct {
 		IntfT string `json:"intf_t"`
 		Val   string `json:"val"`
 	} `json:"req"`
-	Hidden       bool `json:"hidden"`
+	Hidden bool `json:"hidden"`
 }
 
 func (b *UIButton) Hide() {
@@ -110,21 +110,17 @@ func (b *AppUBLock) Show() {
 	b.Hidden = true
 }
 
-
 func NewManifest() *Manifest {
 	return &Manifest{}
 }
 
 func (m *Manifest) LoadFromFile(filePath string) error {
-	log.Debug("<manifest> Loading flow from file : ", filePath)
-	file, err := ioutil.ReadFile(filePath)
+	file, err := os.ReadFile(filePath)
 	if err != nil {
-		log.Error("<manifest> Can't open manifest file.")
 		return err
 	}
 	err = json.Unmarshal(file, m)
 	if err != nil {
-		log.Error("<FlMan> Can't unmarshal manifest file.")
 		return err
 	}
 	return nil
@@ -133,20 +129,18 @@ func (m *Manifest) LoadFromFile(filePath string) error {
 func (m *Manifest) SaveToFile(filePath string) error {
 	flowMetaByte, err := json.Marshal(m)
 	if err != nil {
-		log.Error("<manifest> Can't marshal imported file ")
 		return err
 	}
-	log.Debugf("<manifest> Saving manifest to file %s :", filePath)
-	err = ioutil.WriteFile(filePath, flowMetaByte, 0644)
+
+	err = os.WriteFile(filePath, flowMetaByte, 0644)
 	if err != nil {
-		log.Error("<manifest>Can't save flow to file . Error : ", err)
 		return err
 	}
 	return nil
 }
 
-func (m *Manifest) GetUIBlock(id string)*AppUBLock {
-	for i:=range m.UIBlocks {
+func (m *Manifest) GetUIBlock(id string) *AppUBLock {
+	for i := range m.UIBlocks {
 		if m.UIBlocks[i].ID == id {
 			return &m.UIBlocks[i]
 		}
@@ -154,8 +148,8 @@ func (m *Manifest) GetUIBlock(id string)*AppUBLock {
 	return nil
 }
 
-func (m *Manifest) GetButton(id string)*UIButton {
-	for i:=range m.UIButtons {
+func (m *Manifest) GetButton(id string) *UIButton {
+	for i := range m.UIButtons {
 		if m.UIButtons[i].ID == id {
 			return &m.UIButtons[i]
 		}
@@ -163,8 +157,8 @@ func (m *Manifest) GetButton(id string)*UIButton {
 	return nil
 }
 
-func (m *Manifest) GetAppConfig(id string)*AppConfig {
-	for i:=range m.Configs {
+func (m *Manifest) GetAppConfig(id string) *AppConfig {
+	for i := range m.Configs {
 		if m.Configs[i].ID == id {
 			return &m.Configs[i]
 		}
@@ -173,7 +167,7 @@ func (m *Manifest) GetAppConfig(id string)*AppConfig {
 }
 
 type AuthResponse struct {
-	Status string `json:"status"`
+	Status    string `json:"status"`
 	ErrorText string `json:"error_text"`
 	ErrorCode string `json:"error_code"`
 }

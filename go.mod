@@ -3,7 +3,6 @@ module github.com/futurehomeno/fimpgo
 require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/eclipse/paho.mqtt.golang v1.5.1
-	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/pkg/errors v0.9.1

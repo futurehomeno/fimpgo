@@ -38,7 +38,7 @@ func TestSyncClient_Connect(t *testing.T) {
 	syncClient.AddSubscription("pt:j1/mt:evt/rt:app/rn:testapp/ad:1")
 	var counter int32
 	iterations := 1000
-	for it := 0; it < iterations; it++ {
+	for it := range iterations {
 		i := it
 		go func() {
 			log.Debug("Iteration = ", i)
@@ -99,7 +99,7 @@ func TestSyncClient_SendFimp(t *testing.T) {
 	syncClient := NewSyncClient(mqtt)
 	syncClient.AddSubscription("#")
 	counter := 0
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		t.Log("Iteration = ", i)
 		adr := Address{MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
 		msg := NewFloatMessage("cmd.sensor.get_report", "temp_sensor", float64(35.5), nil, nil, nil)
@@ -152,7 +152,7 @@ func TestSyncClient_SendFimpWithTopicResponse(t *testing.T) {
 	syncClient := NewSyncClient(mqtt)
 	syncClient.AddSubscription("#")
 	counter := 0
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		t.Log("Iteration = ", i)
 		reqAddr := Address{MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
 		respAddr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}

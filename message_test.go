@@ -315,7 +315,7 @@ func TestFimpMessage_GetBoolMapValue(t *testing.T) {
 }
 
 func TestProps_GetIntValue(t *testing.T) {
-	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"int","val":1234,"props":{"param1":1,"param2":2},"tags":null}`
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"int","val":1234,"props":{"param1":"1","param2":"2"},"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -347,7 +347,7 @@ func TestProps_GetStringValue(t *testing.T) {
 }
 
 func TestProps_GetFloatValue(t *testing.T) {
-	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"float","val":1.5,"props":{"param1":1.5,"param2":2.5},"tags":null}`
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"float","val":1.5,"props":{"param1":"1.5","param2":"2.5"},"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -364,7 +364,7 @@ func TestProps_GetFloatValue(t *testing.T) {
 }
 
 func TestProps_GetBoolValue(t *testing.T) {
-	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"bool","val":true,"props":{"param1":true,"param2":false},"tags":null}`
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"bool","val":true,"props":{"param1":"true","param2":"false"},"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)

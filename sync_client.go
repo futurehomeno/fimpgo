@@ -65,16 +65,12 @@ func (sc *SyncClient) init() {
 // Should be used if MqttTransport instance is not provided in constructor .
 func (sc *SyncClient) Connect(serverURI string, clientID string, username string, password string, cleanSession bool, subQos byte, pubQos byte) error {
 	if sc.mqttTransport == nil {
-		log.Info("<SyncClient> Connecting to mqtt broker")
 		sc.mqttTransport = NewMqttTransport(serverURI, clientID, username, password, cleanSession, subQos, pubQos)
 		err := sc.mqttTransport.Start()
 		if err != nil {
-			log.Error("<SyncClient> Error connecting to broker :", err)
 			return err
 		}
 		sc.isStartedUsingConnect = true
-	} else {
-		log.Info("<SyncClient> Already connected")
 	}
 
 	return nil
@@ -85,21 +81,16 @@ func (sc *SyncClient) Stop() {
 	if sc.isStartedUsingConnect {
 		sc.mqttTransport.Stop()
 	}
-
 }
 
 // AddSubscription has to be invoked before Send methods
-func (sc *SyncClient) AddSubscription(topic string) {
-	if err := sc.mqttTransport.Subscribe(topic); err != nil {
-		log.Error("<SyncClient> error subscribing to topic:", err)
-	}
+func (sc *SyncClient) AddSubscription(topic string) error {
+	return sc.mqttTransport.Subscribe(topic)
 }
 
 // RemoveSubscription
-func (sc *SyncClient) RemoveSubscription(topic string) {
-	if err := sc.mqttTransport.Unsubscribe(topic); err != nil {
-		log.Error("<SyncClient> error unsubscribing from topic:", err)
-	}
+func (sc *SyncClient) RemoveSubscription(topic string) error {
+	return sc.mqttTransport.Unsubscribe(topic)
 }
 
 // SendFimpWithTopicResponse send message over mqtt and awaits response from responseTopic with responseService and responseMsgType
@@ -115,7 +106,7 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	defer func() {
 		if autoSubscribe && responseTopic != "" && conn != nil {
 			if err := conn.Unsubscribe(responseTopic); err != nil {
-				log.Error("<SyncClient> error unsubscribing from topic:", err)
+				log.Error("[fimpgo] Error unsubscribing from topic:", err)
 			}
 		}
 		if conn != nil {
@@ -148,17 +139,17 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 
 	if autoSubscribe && responseTopic != "" {
 		if err := conn.Subscribe(responseTopic); err != nil {
-			log.Error("<SyncClient> error subscribing to topic:", err)
+			log.Error("[fimpgo] error subscribing to topic:", err)
 		}
 	} else if responseTopic != "" {
 		if err := conn.Subscribe(responseTopic); err != nil {
-			log.Error("<SyncClient> error subscribing to topic:", err)
+			log.Error("[fimpgo] error subscribing to topic:", err)
 			return nil, errSubscribe
 		}
 	}
 
 	if err := conn.PublishToTopic(topic, fimpMsg); err != nil {
-		log.Error("<SyncClient> error publishing to topic:", err)
+		log.Error("[fimpgo] error publishing to topic:", err)
 		return nil, errPublish
 	}
 
@@ -166,7 +157,7 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	case fimpResponse := <-responseChannel:
 		return fimpResponse, nil
 	case <-time.After(time.Second * time.Duration(timeout)):
-		log.Info("<SyncClient> No response from queue for ", timeout)
+		log.Info("[fimpgo] No response from queue for ", timeout)
 		return nil, errTimeout
 	}
 }
@@ -189,7 +180,7 @@ func (sc *SyncClient) SendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 
 // startResponseListener starts response listener , it blocks callers proc until response is received or timeout.
 func (sc *SyncClient) startResponseListener(requestMsg *FimpMessage, respMsgType, respService, respTopic string, inboundCh MessageCh, timeout int64) chan *FimpMessage {
-	log.Debug("<SyncClient> Msg listener is started")
+	log.Debug("[fimpgo] Msg listener is started")
 	respChan := make(chan *FimpMessage)
 	go func() {
 		for msg := range inboundCh {

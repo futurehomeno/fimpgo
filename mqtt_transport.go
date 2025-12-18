@@ -4,8 +4,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -114,6 +115,9 @@ func NewMqttTransport(serverURI, clientID, username, password string, cleanSessi
 	mh.mqttOptions.SetDefaultPublishHandler(mh.onMessage)
 	mh.mqttOptions.SetCleanSession(cleanSession)
 	mh.mqttOptions.SetAutoReconnect(true)
+	mh.mqttOptions.SetConnectRetry(true)
+	mh.mqttOptions.SetKeepAlive(60 * time.Second)
+	mh.mqttOptions.SetPingTimeout(20 * time.Second)
 	mh.mqttOptions.SetConnectionLostHandler(mh.onConnectionLost)
 	mh.mqttOptions.SetOnConnectHandler(mh.onConnect)
 	mh.mqttOptions.SetWriteTimeout(time.Second * 30)
@@ -151,7 +155,6 @@ func NewMqttTransportFromConnection(client MQTT.Client, subQos byte, pubQos byte
 }
 
 func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Option) *MqttTransport {
-
 	applyDefaults(&configs)
 
 	// apply extra options
@@ -205,7 +208,7 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Optio
 	if configs.PrivateKeyFileName != "" && configs.CertFileName != "" {
 		err := mh.ConfigureTls(configs.PrivateKeyFileName, configs.CertFileName, configs.CertDir, configs.IsAws)
 		if err != nil {
-			log.Error("Certificate loading error :", err.Error())
+			log.Error("[fimpgo] Certificate loading err:", err.Error())
 		}
 	}
 	return &mh
@@ -294,12 +297,9 @@ func (mh *MqttTransport) Client() MQTT.Client {
 	return mh.client
 }
 
-// Start , starts adapter async.
+// Start starts adapter async.
 func (mh *MqttTransport) Start() error {
-	log.Info("<MqttAd> Connecting to MQTT broker ")
-
 	var err error
-	var delay time.Duration
 
 	for i := 1; i < mh.startFailRetryCount; i++ {
 		if token := mh.client.Connect(); token.Wait() && token.Error() == nil {
@@ -307,8 +307,7 @@ func (mh *MqttTransport) Start() error {
 		} else {
 			err = token.Error()
 		}
-		delay = time.Duration(i) * time.Duration(i)
-		log.Infof("<MqttAd> Connection failed , retrying after %d sec.... ", delay)
+		delay := time.Duration(i) * time.Duration(i)
 		time.Sleep(delay * time.Second)
 	}
 
@@ -344,14 +343,11 @@ func (mh *MqttTransport) Subscribe(topic string) error {
 	//subscribe to the topic /go-mqtt/sample and request messages to be delivered
 	//at a maximum qos of zero, wait for the receipt to confirm the subscription
 	topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
-	log.Debug("<MqttAd> Subscribing to topic:", topic)
 	token := mh.client.Subscribe(topic, mh.subQos, nil)
 	isInTime := token.WaitTimeout(time.Second * 20)
 	if token.Error() != nil {
-		log.Error("<MqttAd> Can't subscribe. Error :", token.Error())
 		return token.Error()
 	} else if !isInTime {
-		log.Error("<MqttAd> Subscribe operation timed out")
 		return errors.New("subscribe timed out")
 	}
 
@@ -365,20 +361,19 @@ func (mh *MqttTransport) Unsubscribe(topic string) error {
 	mh.subMutex.Lock()
 	defer mh.subMutex.Unlock()
 	topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
-	log.Debug("<MqttAd> Unsubscribing from topic:", topic)
 	token := mh.client.Unsubscribe(topic)
 	isInTime := token.WaitTimeout(time.Second * 20)
 	if token.Error() != nil {
 		return token.Error()
 	} else if !isInTime {
-		log.Error("<MqttAd> Unsubscribe operation timed out")
 		return errors.New("unsubscribe timed out")
 	}
 	delete(mh.subs, topic)
 	return nil
 }
 
-func (mh *MqttTransport) UnsubscribeAll() {
+func (mh *MqttTransport) UnsubscribeAll() error {
+	var ret string
 	var topics []string
 	mh.subMutex.Lock()
 	for i := range mh.subs {
@@ -387,23 +382,29 @@ func (mh *MqttTransport) UnsubscribeAll() {
 	mh.subMutex.Unlock()
 	for _, t := range topics {
 		if err := mh.Unsubscribe(t); err != nil {
-			log.Error(errors.Wrap(err, "unsubscribing from topic"))
+			ret += fmt.Sprintf("Error unsubscribing from topic %s : %s\n", t, err.Error())
 		}
 	}
+
+	if ret != "" {
+		return errors.New(ret)
+	}
+
+	return nil
 }
 
 func (mh *MqttTransport) onConnectionLost(_ MQTT.Client, err error) {
-	log.Errorf("<MqttAd> Connection lost with MQTT broker . Error : %v", err)
+	log.Errorf("[fimpgo] Connection lost with MQTT broker err: %v", err)
 }
 
 func (mh *MqttTransport) onConnect(_ MQTT.Client) {
 	mh.subMutex.Lock()
 	defer mh.subMutex.Unlock()
 
-	log.Infof("<MqttAd> Connection established with MQTT broker .")
+	log.Infof("[fimpgo] Connection established with MQTT broker")
 	if len(mh.subs) > 0 {
 		if token := mh.client.SubscribeMultiple(mh.subs, nil); token.Wait() && token.Error() != nil {
-			log.Error("Can't subscribe. Error :", token.Error())
+			log.Error("[fimpgo] Subscribe error:", token.Error())
 		}
 	}
 }
@@ -416,7 +417,7 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	case mh.mainQueue <- msg:
 		return
 	default:
-		log.Warn("<MqttAd> Main message queue is full")
+		log.Panic("[fimpgo] Main msg queue overflow")
 	}
 }
 
@@ -436,11 +437,11 @@ func (mh *MqttTransport) handleIncomingMessages() {
 func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Error("<MqttAd> onMessage CRASHED with error :", r)
+			log.Errorf("[fimpgo] handleIncomingMessage crash %v", r)
+			log.Info(debug.Stack())
 		}
 	}()
 
-	log.Tracef("<MqttAd> New msg from TOPIC: %s", msg.Topic())
 	var topic string
 	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
 		_, topic = DetachGlobalPrefixFromTopic(msg.Topic())
@@ -450,7 +451,7 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 
 	addr, err := NewAddressFromString(topic)
 	if err != nil {
-		log.Error("<MqttAd> Error processing address :", err)
+		log.Errorf("[fimpgo] Processing topic=%v err:%v", topic, err)
 		return
 	}
 	var fimpMsg *FimpMessage
@@ -461,8 +462,8 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 	case CompressedJsonPayload:
 		fimpMsg, err = mh.compressor.DecompressFimpMsg(msg.Payload())
 	default:
-		// This means unknown binary payload , for instance compressed message
-		log.Trace("<MqttAd> Unknown binary payload :", addr.PayloadType)
+		// This means unknown binary payload, for instance compressed message
+		log.Warnf("[fimpgo] Unknown payloadType=%v", addr.PayloadType)
 	}
 
 	if mh.msgHandler != nil {
@@ -470,7 +471,7 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 			mh.msgHandler(topic, addr, fimpMsg, msg.Payload())
 		} else {
 			log.Trace(string(msg.Payload()))
-			log.Error("<MqttAd> Error processing payload :", err)
+			log.Errorf("[fimpgo] Processing payload err:%v", err)
 			return
 		}
 	}
@@ -495,7 +496,7 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 			timer.Stop()
 			// send to channel
 		case <-timer.C:
-			log.Info("<MqttAd> Channel is not read for ", mh.receiveChTimeout)
+			log.Warnf("[fimpgo] Channel %s not read for %d sec", i, mh.receiveChTimeout)
 		}
 	}
 
@@ -505,7 +506,8 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr *Address, msg *FimpMessage) bool {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Error("<MqttAd> Filter CRASHED with error :", r)
+			log.Errorf("[fimpgo] isChannelInterested crash %v", r)
+			log.Info(debug.Stack())
 		}
 	}()
 
@@ -550,7 +552,7 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 		bytm, err = mh.compressor.CompressFimpMsg(fimpMsg)
 	default:
 		// This means unknown binary payload , for instance compressed message
-		log.Trace("<MqttAd> Publish - unknown binary payload :", addr.PayloadType)
+		log.Warnf("[fimpgo] Publish - unknown binary PayloadType=%v", addr.PayloadType)
 	}
 	if err != nil {
 		return err
@@ -559,12 +561,10 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
 		topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
 	}
-	if err == nil {
-		log.Trace("<MqttAd> Publishing msg to topic:", topic)
-		mh.client.Publish(topic, mh.pubQos, false, bytm)
-		return nil
-	}
-	return err
+
+	log.Trace("[fimpgo] Publishing msg to topic:", topic)
+	mh.client.Publish(topic, mh.pubQos, false, bytm)
+	return nil
 }
 
 // PublishToTopic publishes iotMsg to string topic
@@ -589,7 +589,7 @@ func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) erro
 		topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
 	}
 
-	log.Trace("<MqttAd> Publishing msg to topic:", topic)
+	log.Trace("[fimpgo] Publishing msg to topic:", topic)
 	return mh.client.Publish(topic, mh.pubQos, false, byteMessage).Error()
 }
 
@@ -621,7 +621,7 @@ func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error 
 		topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
 	}
 	if err == nil {
-		log.Trace("<MqttAd> Publishing msg to topic:", topic)
+		log.Trace("[fimpgo] Publishing msg to topic:", topic)
 		token := mh.client.Publish(topic, mh.pubQos, false, bytm)
 		if token.WaitTimeout(mh.syncPublishTimeout) && token.Error() == nil {
 			return nil
@@ -633,12 +633,12 @@ func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error 
 }
 
 func (mh *MqttTransport) PublishRaw(topic string, bytem []byte) {
-	log.Trace("<MqttAd> Publishing msg to topic:", topic)
+	log.Trace("[fimpgo] Publishing msg to topic:", topic)
 	mh.client.Publish(topic, mh.pubQos, false, bytem)
 }
 
 func (mh *MqttTransport) PublishRawSync(topic string, bytem []byte) error {
-	log.Trace("<MqttAd> Publishing msg to topic:", topic)
+	log.Trace("[fimpgo] Publishing msg to topic:", topic)
 	token := mh.client.Publish(topic, mh.pubQos, false, bytem)
 	if token.WaitTimeout(mh.syncPublishTimeout) && token.Error() == nil {
 		return nil
@@ -725,31 +725,31 @@ func (mh *MqttTransport) ConfigureTls(privateKeyFileName, certFileName, certDir 
 func (mh *MqttTransport) getCACertPool() (*x509.CertPool, error) {
 	certs := x509.NewCertPool()
 	cafile := filepath.Join(mh.certDir, "root-ca-1.pem")
-	pemData, err := ioutil.ReadFile(cafile)
+	pemData, err := os.ReadFile(cafile)
 	if err != nil {
 		return nil, err
 	}
 	certs.AppendCertsFromPEM(pemData)
 
 	cafile = filepath.Join(mh.certDir, "root-ca-2.pem")
-	pemData, err = ioutil.ReadFile(cafile)
+	pemData, err = os.ReadFile(cafile)
 	certs.AppendCertsFromPEM(pemData)
 
 	cafile = filepath.Join(mh.certDir, "root-ca-3.pem")
-	pemData, err = ioutil.ReadFile(cafile)
+	pemData, err = os.ReadFile(cafile)
 	certs.AppendCertsFromPEM(pemData)
-	log.Infof("CA certificates are loaded.")
+	log.Infof("[fimpgo] CA certificates are loaded")
 	return certs, nil
 }
 
 // configuring certificate pool
 func (mh *MqttTransport) getCertPool(certFile string) (*x509.CertPool, error) {
 	certs := x509.NewCertPool()
-	pemData, err := ioutil.ReadFile(certFile)
+	pemData, err := os.ReadFile(certFile)
 	if err != nil {
 		return nil, err
 	}
 	certs.AppendCertsFromPEM(pemData)
-	log.Infof("Certificate is loaded.")
+	log.Infof("[fimpgo] Certificate %v is loaded", certFile)
 	return certs, nil
 }

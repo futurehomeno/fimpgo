@@ -33,6 +33,6 @@ build-mac: clean
 	GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w -X main.Version=$(TAG)" -o $(TARGET_BIN) $(MAIN_SRC)
 
 test:
-	go test -v ./...
+	go test ./...
 
 .PHONY: all clean test build build-arm build-amd64 build-mac

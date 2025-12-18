@@ -82,7 +82,10 @@ func TestPrimeFimpSendFimpWithTopicResponse(t *testing.T) {
 
 	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
 	respAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeRsp, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "fimpgo-test", ResourceAddress: "1"}
-	syncClient.AddSubscription(respAddr.Serialize())
+	if err := syncClient.AddSubscription(respAddr.Serialize()); err != nil {
+		t.Error("Error adding subscription", err)
+		t.Fail()
+	}
 
 	param := RequestParam{Components: []string{"device"}}
 	req := Request{Cmd: "get", Param: &param}

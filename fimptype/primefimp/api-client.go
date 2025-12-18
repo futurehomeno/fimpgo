@@ -2,7 +2,9 @@ package primefimp
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -60,7 +62,7 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSite
 	}
 	if loadSiteIntoCache {
 		if err := api.ReloadSiteToCache(3); err != nil {
-			log.Error("<PF-API> Error reloading cache: ", err)
+			log.Error("[fimpgo] Error reloading cache: ", err)
 		}
 	}
 
@@ -94,9 +96,9 @@ func (mh *ApiClient) IsCacheEmpty() bool {
 // ValidateAndReloadSiteCache validates cache , if empty it makes one reload attempt. The method can be used for cache lazy loading.
 func (mh *ApiClient) ValidateAndReloadSiteCache() bool {
 	if mh.IsCacheEmpty() {
-		log.Debug("<PF-API> Empty site cache.Reloading...")
+		log.Debug("[fimpgo] Empty site cache.Reloading...")
 		if err := mh.ReloadSiteToCache(1); err != nil {
-			log.Error("<PF-API> Error reloading cache: ", err)
+			log.Error("[fimpgo] Error reloading cache: ", err)
 		}
 		if mh.IsCacheEmpty() {
 			return false
@@ -111,24 +113,24 @@ func (mh *ApiClient) ReloadSiteToCache(retry int) error {
 	var site *Site
 	var err error
 	for i := 1; i < retry; i++ {
-		log.Debug("<PF-API> Reloading site into the cache.Attempt ", i)
+		log.Debug("[fimpgo] Reloading site into the cache.Attempt ", i)
 		site, err = mh.GetSite(false)
 		if err == nil {
-			log.Debug("<PF-API> Site loaded successfully")
+			log.Debug("[fimpgo] Site loaded successfully")
 			break
 		}
-		log.Error("<PF-API> site sync error :", err.Error())
+		log.Error("[fimpgo] site sync error :", err.Error())
 		time.Sleep(time.Second * time.Duration(5*i))
 
 	}
 	if err != nil {
 		mh.isCacheEnabled = false
-		log.Errorf("<PF-API>: %s", err)
+		log.Errorf("[fimpgo]: %s", err)
 		return err
 	}
 	mh.isCacheEnabled = true
 	mh.siteCache = *site
-	log.Debug("<PF-API> Site info successfully loaded to cache")
+	log.Debug("[fimpgo] Site info successfully loaded to cache")
 	return nil
 }
 
@@ -183,9 +185,9 @@ func (mh *ApiClient) StartNotifyRouter() {
 				break
 			}
 			mh.notifyRouter()
-			log.Info("<PF-API> Restarting notify router")
+			log.Info("[fimpgo] Restarting notify router")
 		}
-		log.Info("<PF-API> Notify router stopped ")
+		log.Info("[fimpgo] Notify router stopped ")
 	}()
 }
 
@@ -199,14 +201,15 @@ func (mh *ApiClient) Stop() {
 }
 
 // UpdateSite : Updates the internal cache according to notification message.
-func (mh *ApiClient) UpdateSite(notif *Notify) {
-	log.Tracef("Command: %s & Component:%s", notif.Cmd, notif.Component)
+func (mh *ApiClient) UpdateSite(notif *Notify) error {
+	log.Tracef("Command=%s & Component=%s", notif.Cmd, notif.Component)
 	if !mh.isVincAppsSyncEnabled {
 		if notif.Component != ComponentArea && notif.Component != ComponentDevice && notif.Component != ComponentThing && notif.Component != ComponentRoom {
-			log.Debugf("Component skipped")
-			return
+			log.Tracef("Component skipped")
+			return nil
 		}
 	}
+
 	switch notif.Cmd {
 	case CmdAdd:
 		switch notif.Component {
@@ -225,14 +228,16 @@ func (mh *ApiClient) UpdateSite(notif *Notify) {
 		case ComponentTimer:
 			mh.siteCache.AddTimer(notif.GetTimer())
 		default:
-			log.Errorf("Unknown Component:%s cannot be added.", notif.Component)
+			return fmt.Errorf("unknown Component=%s add", notif.Component)
 		}
 	case CmdDelete:
-		err := mh.siteCache.RemoveWithID(notif.Component, int(notif.Id.(float64)))
+		notifID, ok := notif.Id.(float64)
+		if !ok {
+			return fmt.Errorf("notify ID type assertion error")
+		}
+		err := mh.siteCache.RemoveWithID(notif.Component, int(notifID))
 		if err != nil {
-			log.Error(err)
-		} else {
-			log.Infof("%s with ID:%d is deleted", notif.Component, int(notif.Id.(float64)))
+			return fmt.Errorf("remove with ID err: %v", err)
 		}
 	case CmdEdit:
 		switch notif.Component {
@@ -249,29 +254,35 @@ func (mh *ApiClient) UpdateSite(notif *Notify) {
 		case ComponentShortcut:
 			mh.siteCache.UpdateShortcut(notif.GetShortcut())
 		default:
-			log.Error("Unknown component update occured. Report this as issue please")
+			return fmt.Errorf("unknown component=%s update", notif.Component)
 		}
 	case CmdSet:
 		switch notif.Component {
 		case ComponentRoom:
 		case ComponentHub:
+		default:
+			return fmt.Errorf("unknown component=%s set", notif.Component)
 		}
+	default:
+		return fmt.Errorf("unknown notify cmd=%s", notif.Cmd)
 	}
 
+	return nil
 }
 
 // Receives notify messages and forwards them using filtering
 func (mh *ApiClient) notifyRouter() {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Error("<PF-API> notify router CRASHED with error :", r)
+			log.Errorf("[fimpgo] isChannelInterested crash %v", r)
+			log.Info(debug.Stack())
 		}
 	}()
 
 	mh.inMsgChan = make(fimpgo.MessageCh, 10)
 	mh.mqttTransport.RegisterChannel(mh.clientID, mh.inMsgChan)
 	if err := mh.mqttTransport.Subscribe(VincEventTopic); err != nil {
-		log.Error("<PF-API> error subscribing to the vinculum event topic: ", err)
+		log.Error("[fimpgo] error subscribing to the vinculum event topic: ", err)
 	}
 
 	for msg := range mh.inMsgChan {
@@ -283,7 +294,7 @@ func (mh *ApiClient) notifyRouter() {
 		}
 		notif, err := FimpToNotify(msg)
 		if err != nil {
-			log.Debug("<PF-API> Can't cast to Notify. Err:", err)
+			log.Warnf("[fimpgo] Cast %v to Notify err: %v", msg, err)
 			continue
 		} else {
 			mh.UpdateSite(notif)
@@ -303,7 +314,7 @@ func (mh *ApiClient) notifyRouter() {
 						select {
 						case nfCh <- *notif: // send notification to corresponding subchannel if there is match
 						default:
-							log.Warnf("<PF-API> Send channel %s is blocked ", cid)
+							log.Warnf("[fimpgo] Send channel %s is blocked ", cid)
 						}
 					}
 				}
@@ -338,7 +349,6 @@ func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, e
 }
 
 func (mh *ApiClient) sendSetRequest(component string, value interface{}) (*fimpgo.FimpMessage, error) {
-
 	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
 	respAddr := mh.responseAddress()
 	responseAddress := respAddr.Serialize()
