@@ -14,7 +14,6 @@ func TestNewMqttConnectionPool(t *testing.T) {
 }
 
 func TestMqttConnectionPool_GetConnection(t *testing.T) {
-
 	log.SetLevel(log.DebugLevel)
 
 	template := MqttConnectionConfigs{

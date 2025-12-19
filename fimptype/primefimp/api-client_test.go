@@ -30,8 +30,6 @@ func TestPrimeFimp_ClientApi_Update(t *testing.T) {
 		t.Fatal("Error connecting to broker ", err)
 	}
 
-	t.Log("Connected")
-
 	client := NewApiClient("test-1", mqtt, true)
 	client.StartNotifyRouter()
 	site, err := client.GetSite(false)
@@ -82,8 +80,6 @@ func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
 		t.Fatal("Error connecting to broker ", err)
 	}
 
-	t.Log("Connected")
-
 	// Actual test
 	notifyCh := make(chan Notify, 10)
 	apiclientid := uuid.New().String()[0:12]
@@ -114,8 +110,6 @@ func TestPrimeFimp_SiteLazyLoading(t *testing.T) {
 		t.Fatal("Error connecting to broker ", err)
 	}
 
-	t.Log("Connected")
-
 	// Actual test
 	apiclientid := uuid.New().String()[0:12]
 	client := NewApiClient(apiclientid, mqtt, false)
@@ -141,8 +135,6 @@ func TestPrimeFimp_LoadStates(t *testing.T) {
 	if err != nil {
 		t.Fatal("Error connecting to broker ", err)
 	}
-
-	t.Log("Connected")
 
 	// Actual test
 	apiclientid := uuid.New().String()[0:12]
@@ -245,8 +237,6 @@ func TestPrimeFimp_ClientApi_Notify_With_Filter(t *testing.T) {
 	if err != nil {
 		t.Fatal("Error connecting to broker ", err)
 	}
-
-	t.Log("Connected")
 	// Actual test
 	channelIDAdd := uuid.New().String()[0:12]
 	notifyAreaAdd := make(chan Notify, 10)

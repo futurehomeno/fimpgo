@@ -7,16 +7,12 @@ import (
 )
 
 func TestNewMsgCompressor(t *testing.T) {
-
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", 35.5, nil, nil, nil)
 
 	comp := NewMsgCompressor("", "")
 	decomp := NewMsgCompressor("", "")
 
 	for i := 0; i < 5; i++ {
-		bmsg, _ := msg.SerializeToJson()
-
-		t.Log("Uncompressed message size = ", len(bmsg))
 		compMsg, err := comp.CompressFimpMsg(msg)
 		if err != nil {
 			t.Fatal("Compressor error :", err)

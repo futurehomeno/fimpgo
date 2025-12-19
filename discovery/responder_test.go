@@ -1,9 +1,10 @@
 package discovery
 
 import (
+	"testing"
+
 	"github.com/futurehomeno/fimpgo"
 	log "github.com/sirupsen/logrus"
-	"testing"
 )
 
 func SecondResponder() {
@@ -34,7 +35,6 @@ func TestServiceDiscoveryResponder_Start(t *testing.T) {
 
 	mqt := fimpgo.NewMqttTransport("tcp://localhost:1883", "fimpgotest-1", "", "", true, 1, 1)
 	err := mqt.Start()
-	t.Log("Connected")
 	if err != nil {
 		t.Error("Error connecting to broker ", err)
 	}
@@ -54,7 +54,7 @@ func TestServiceDiscoveryResponder_Start(t *testing.T) {
 	responder.Start()
 
 	t.Log("Sending discovery request 1 ")
-	discoveredResource,_ := DiscoverResources(mqt, 2)
+	discoveredResource, _ := DiscoverResources(mqt, 2)
 	for _, r := range discoveredResource {
 		t.Log("Discovered resource = " + r.ResourceName)
 	}
@@ -63,7 +63,7 @@ func TestServiceDiscoveryResponder_Start(t *testing.T) {
 	}
 
 	t.Log("Sending discovery request 2 ")
-	discoveredResource,_ = DiscoverResources(mqt, 2)
+	discoveredResource, _ = DiscoverResources(mqt, 2)
 	for _, r := range discoveredResource {
 		t.Log("Discovered resource = " + r.ResourceName)
 	}

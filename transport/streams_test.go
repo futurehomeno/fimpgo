@@ -40,8 +40,6 @@ func TestBufferedStream_serializeBuffer(t *testing.T) {
 		return
 	}
 
-	t.Log("Connected")
-	time.Sleep(time.Second * 1)
 	if err := mqtt.Subscribe("pt:j1/mt:evt/rt:dev/+/ad:1/sv:meter_elec/+"); err != nil {
 		t.Fatal("Subscribe err:", err)
 		return

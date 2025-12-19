@@ -1,6 +1,7 @@
 package fimpgo
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -9,14 +10,13 @@ import (
 
 // SyncClient allows sync interaction over async channel.
 type SyncClient struct {
-	mqttTransport         *MqttTransport
-	mqttConnPool          *MqttConnectionPool
-	isConnPoolEnabled     bool
-	transactionPoolSize   int // Max transaction pool size
-	inboundBufferSize     int // Inbound message channel buffer size
-	stopSignalCh          chan bool
-	isStartedUsingConnect bool
-	globalPrefix          string
+	mqttTransport       *MqttTransport
+	mqttConnPool        *MqttConnectionPool
+	isConnPoolEnabled   bool
+	transactionPoolSize int // Max transaction pool size
+	inboundBufferSize   int // Inbound message channel buffer size
+	stopSignalCh        chan bool
+	globalPrefix        string
 }
 
 // SetGlobalPrefix configures global prefix/site_id . Most be used from backend services.
@@ -72,7 +72,6 @@ func (sc *SyncClient) Connect(serverURI string, clientID string, username string
 		if err != nil {
 			return err
 		}
-		sc.isStartedUsingConnect = true
 	}
 
 	return nil
@@ -80,9 +79,7 @@ func (sc *SyncClient) Connect(serverURI string, clientID string, username string
 
 // Stop has to be invoked to stop message listener
 func (sc *SyncClient) Stop() {
-	if sc.isStartedUsingConnect {
-		sc.mqttTransport.Stop()
-	}
+	sc.mqttTransport.Stop()
 }
 
 // AddSubscription has to be invoked before Send methods
@@ -97,11 +94,9 @@ func (sc *SyncClient) RemoveSubscription(topic string) error {
 
 // SendFimpWithTopicResponse send message over mqtt and awaits response from responseTopic with responseService and responseMsgType
 func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessage, responseTopic string, responseService string, responseMsgType string, timeout int64, autoSubscribe bool) (*FimpMessage, error) {
-	//log.Debug("Registering request uid = ",fimpMsg.UID)
 	var conId int
 	var conn *MqttTransport
 	var inboundCh = make(MessageCh, 10)
-	var responseChannel chan *FimpMessage
 	var err error
 	var chanName = uuid.New().String()
 
@@ -130,9 +125,10 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	} else {
 		conn = sc.mqttTransport
 	}
+
 	conn.RegisterChannel(chanName, inboundCh)
 
-	responseChannel = sc.startResponseListener(fimpMsg, responseMsgType, responseService, responseTopic, inboundCh, timeout)
+	responseChannel := sc.startResponseListener(fimpMsg, responseMsgType, responseService, responseTopic, inboundCh, timeout)
 
 	// force the global prefix -> this is useful for per-site operations
 	if sc.globalPrefix != "" {
@@ -140,26 +136,23 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	}
 
 	if autoSubscribe && responseTopic != "" {
-		if err := conn.Subscribe(responseTopic); err != nil {
-			log.Error("[fimpgo] error subscribing to topic:", err)
+		if err = conn.Subscribe(responseTopic); err != nil {
+			return nil, fmt.Errorf("[fimpgo] Subscribe err: %s", err)
 		}
 	} else if responseTopic != "" {
-		if err := conn.Subscribe(responseTopic); err != nil {
-			log.Error("[fimpgo] error subscribing to topic:", err)
-			return nil, errSubscribe
+		if err = conn.Subscribe(responseTopic); err != nil {
+			return nil, fmt.Errorf("[fimpgo] Subscribe err: %s", err)
 		}
 	}
 
-	if err := conn.PublishToTopic(topic, fimpMsg); err != nil {
-		log.Error("[fimpgo] error publishing to topic:", err)
-		return nil, errPublish
+	if err = conn.PublishToTopic(topic, fimpMsg); err != nil {
+		return nil, fmt.Errorf("[fimpgo] Publish err: %s", err)
 	}
 
 	select {
 	case fimpResponse := <-responseChannel:
 		return fimpResponse, nil
 	case <-time.After(time.Second * time.Duration(timeout)):
-		log.Warnf("[fimpgo] No response from queue for %d sec", timeout)
 		return nil, errTimeout
 	}
 }

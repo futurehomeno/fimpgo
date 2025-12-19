@@ -69,8 +69,8 @@ type MqttTransport struct {
 	subFilters     map[string]FimpFilter
 	subFilterFuncs map[string]FilterFunc
 
-	done      chan struct{}
-	wg        sync.WaitGroup
+	connState ConnStateT
+	incMsgsWg sync.WaitGroup // WaitGroup for incoming message handler
 	mainQueue chan MQTT.Message
 
 	globalTopicPrefixMux sync.RWMutex
@@ -300,12 +300,14 @@ func (mh *MqttTransport) Client() MQTT.Client {
 // Start starts adapter async.
 func (mh *MqttTransport) Start() error {
 	var err error
+	mh.connState.Init()
 
-	for i := 1; i < mh.startFailRetryCount; i++ {
+	for i := 1; i <= mh.startFailRetryCount; i++ {
 		if token := mh.client.Connect(); token.Wait() && token.Error() == nil {
 			break
 		} else {
 			err = token.Error()
+			log.Warnf("[fimpgo] MQTT connect failed %d/%d err: %v", i, mh.startFailRetryCount, token.Error())
 		}
 		delay := time.Duration(i) * time.Duration(i)
 		time.Sleep(delay * time.Second)
@@ -315,9 +317,10 @@ func (mh *MqttTransport) Start() error {
 		return err
 	}
 
-	mh.done = make(chan struct{})
-	mh.wg.Add(1)
+	mh.incMsgsWg = sync.WaitGroup{}
+	mh.incMsgsWg.Add(1)
 	go mh.handleIncomingMessages()
+	mh.connState.WaitConnected()
 
 	return nil
 }
@@ -326,9 +329,13 @@ func (mh *MqttTransport) Start() error {
 func (mh *MqttTransport) Stop() {
 	mh.client.Disconnect(250)
 
-	close(mh.done)
-	mh.wg.Wait()
-	mh.done = nil
+	if mh.connState.IsConnected() {
+		return
+	}
+
+	mh.connState.OnDone()
+	mh.incMsgsWg.Wait()
+	time.Sleep(100 * time.Millisecond)
 }
 
 // Subscribe - subscribing for topic
@@ -403,12 +410,15 @@ func (mh *MqttTransport) onConnect(_ MQTT.Client) {
 	mh.subMutex.Lock()
 	defer mh.subMutex.Unlock()
 
-	log.Infof("[fimpgo] Connection established with MQTT broker")
+	log.Infof("[fimpgo] Connected to the MQTT broker")
+
 	if len(mh.subs) > 0 {
 		if token := mh.client.SubscribeMultiple(mh.subs, nil); token.Wait() && token.Error() != nil {
 			log.Error("[fimpgo] Subscribe error:", token.Error())
 		}
 	}
+
+	mh.connState.OnConnect()
 }
 
 // onMessage is a message handler registered with MQTT client.
@@ -424,11 +434,11 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 }
 
 func (mh *MqttTransport) handleIncomingMessages() {
-	defer mh.wg.Done()
+	defer mh.incMsgsWg.Done()
 
 	for {
 		select {
-		case <-mh.done:
+		case <-mh.connState.DoneC():
 			return
 		case msg := <-mh.mainQueue:
 			mh.handleIncomingMessage(msg)
@@ -440,7 +450,7 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Errorf("[fimpgo] handleIncomingMessage crash %v", r)
-			log.Info(debug.Stack())
+			log.Info(string(debug.Stack()))
 		}
 	}()
 
@@ -456,6 +466,7 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 		log.Errorf("[fimpgo] Processing topic=%v err:%v", topic, err)
 		return
 	}
+
 	var fimpMsg *FimpMessage
 
 	switch addr.PayloadType {
@@ -501,7 +512,6 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 			log.Warnf("[fimpgo] Channel %s not read for %d sec", i, mh.receiveChTimeout)
 		}
 	}
-
 }
 
 // isChannelInterested validates if channel is interested in message. Filtering is executed against either static filters or filter function
@@ -509,7 +519,7 @@ func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr
 	defer func() {
 		if r := recover(); r != nil {
 			log.Errorf("[fimpgo] isChannelInterested crash %v", r)
-			log.Info(debug.Stack())
+			log.Info(string(debug.Stack()))
 		}
 	}()
 

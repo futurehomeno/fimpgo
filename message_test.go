@@ -1,9 +1,11 @@
 package fimpgo
 
 import (
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/buger/jsonparser"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -82,13 +84,13 @@ func TestNewObjectMessage(t *testing.T) {
 		Field2: 2,
 	})
 	msg := NewMessage("evt.timeline.report", "kind-owl", VTypeObject, obj, nil, nil, nil)
-	bObj, err := msg.SerializeToJson()
+	serVal, err := msg.SerializeToJson()
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	if !assert.Equal(t, string(bObj), `{"type":"evt.timeline.report","serv":"kind-owl","val_t":"object","val":[{"Field1":1,"Field2":2}],"tags":null,"props":null,"ver":"1","corid":"","ctime":"2025-12-19T14:43:20.681+01:00","uid":"1a7204ea-1e56-4353-aa69-a4d41058fd8b"}`) {
+	if !strings.HasPrefix(string(serVal), `{"type":"evt.timeline.report","serv":"kind-owl","val_t":"object","val":[{"Field1":1,"Field2":2}],"tags":null,"props":null,"ver":"1","corid":"","ctime":"`) {
 		t.Error("Serialization failed")
 	}
 }
@@ -100,7 +102,7 @@ func TestFimpMessage_SerializeBool(t *testing.T) {
 		t.Error(err)
 	}
 
-	if !assert.Equal(t, string(serVal), `{"type":"cmd.binary.set","serv":"out_bin_switch","val_t":"bool","val":true,"tags":null,"props":null,"ver":"1","corid":"","ctime":"2025-12-19T14:45:06.711+01:00","uid":"dffa7321-9918-4974-be57-8ce8980b85f5"}`) {
+	if !strings.HasPrefix(string(serVal), `{"type":"cmd.binary.set","serv":"out_bin_switch","val_t":"bool","val":true,"tags":null,"props":null,"ver":"1","corid":"","ctime":"`) {
 		t.Error("Serialization failed")
 	}
 }
@@ -114,7 +116,7 @@ func TestFimpMessage_SerializeFloat(t *testing.T) {
 		t.Error(err)
 	}
 
-	if !assert.Equal(t, string(serVal), `{"type":"evt.sensor.report","serv":"temp_sensor","val_t":"float","val":35.5,"tags":null,"props":{"unit":"C"},"ver":"1","corid":"","ctime":"2025-12-19T14:45:06.711+01:00","uid":"d61b3df6-2883-410d-a2c2-bb64647c0d9e"}`) {
+	if !strings.HasPrefix(string(serVal), `{"type":"evt.sensor.report","serv":"temp_sensor","val_t":"float","val":35.5,"tags":null,"props":{"unit":"C"},"ver":"1","corid":"","ctime":"`) {
 		t.Error("Serialization failed")
 	}
 }
@@ -144,9 +146,7 @@ func BenchmarkFimpMessage_Serialize2(b *testing.B) {
 func TestNewMessageFromBytes_CorruptedPayload1(t *testing.T) {
 	msgString := "{123456789-=#$%"
 	_, err := NewMessageFromBytes([]byte(msgString))
-	if err != nil {
-		t.Error(err)
-	}
+	assert.Equal(t, jsonparser.KeyPathNotFoundError, err)
 }
 
 func TestNewMessageFromBytes_BoolValue(t *testing.T) {
