@@ -7,12 +7,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//var msgChan = make(chan int)
-
-func TestNewMqttConnectionPool(t *testing.T) {
-
-}
-
 func TestMqttConnectionPool_GetConnection(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
@@ -30,7 +24,6 @@ func TestMqttConnectionPool_GetConnection(t *testing.T) {
 	id1, conn1, _ := pool.BorrowConnection()
 	id2, conn2, _ := pool.BorrowConnection()
 	id3, responderConn, _ := pool.BorrowConnection()
-	log.Infof("Connection ids %d %d %d", id1, id2, id3)
 	msg1 := NewStringMessage("cmd.test.get_response", "tester", "test-1", nil, nil, nil)
 	msg1.ResponseToTopic = "pt:j1/mt:rsp/rt:app/rn:goland/ad:1"
 	msg1_1 := NewStringMessage("cmd.test.get_response", "tester", "test-3", nil, nil, nil)
@@ -72,12 +65,10 @@ func TestMqttConnectionPool_GetConnection(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	pool.ReturnConnection(id1)
 
-	id1_1, con1_1, _ := pool.BorrowConnection()
+	_, con1_1, _ := pool.BorrowConnection()
 	if err := con1_1.PublishToTopic("pt:j1/mt:cmd/rt:app/rn:conn_pool_tester/ad:1", msg1_1); err != nil {
 		t.Fatal("Publish error:", err)
 	}
-
-	log.Infof("Connection ids %d ", id1_1)
 
 	var i int
 	for {
@@ -92,15 +83,10 @@ func TestMqttConnectionPool_GetConnection(t *testing.T) {
 		i++
 
 	}
-	log.Infof("Total connections %d", pool.TotalConnections())
-	log.Infof("Idle  connections %d", pool.IdleConnections())
+
 	pool.ReturnConnection(id1)
-	log.Infof("Total connections %d", pool.TotalConnections())
-	log.Infof("Idle  connections %d", pool.IdleConnections())
 	pool.ReturnConnection(id2)
 	pool.ReturnConnection(id3)
 	time.Sleep(100 * time.Millisecond)
-	log.Infof("Total connections %d", pool.TotalConnections())
-	log.Infof("Idle  connections %d", pool.IdleConnections())
 	pool.Stop()
 }

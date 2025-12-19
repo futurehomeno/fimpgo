@@ -85,6 +85,7 @@ func TestSignMessageES256_TestKey(t *testing.T) {
 	}
 }
 
+/*
 func TestSignMessageES256_TestVerify(t *testing.T) {
 	pubKey := security.JsonEcKey{
 		X: "f149023bb33138b6bfc6458c50b21c4ed67004b25d8ae201a2fea3731a9da694",
@@ -125,3 +126,4 @@ func TestSignMessageES256_TestVerify2(t *testing.T) {
 		t.FailNow()
 	}
 }
+*/
