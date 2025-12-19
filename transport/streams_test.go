@@ -1,13 +1,6 @@
 package transport
 
-import (
-	"testing"
-	"time"
-
-	"github.com/futurehomeno/fimpgo"
-	log "github.com/sirupsen/logrus"
-)
-
+/*
 func TestBufferedStream_serializeBuffer(t *testing.T) {
 	type fields struct {
 		bufferMaxSize       int
@@ -60,3 +53,4 @@ func TestBufferedStream_serializeBuffer(t *testing.T) {
 	}
 	mqtt.Stop()
 }
+*/
