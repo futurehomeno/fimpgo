@@ -1,12 +1,12 @@
 package fimpgo
 
 import (
-	"errors"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"math/rand"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type connection struct {
@@ -83,8 +83,7 @@ func (cp *MqttConnectionPool) IdleConnections() int {
 func (cp *MqttConnectionPool) createConnection() (int, error) {
 	connId := cp.genConnId()
 	if len(cp.connPool) >= cp.maxSize {
-		log.Error("<mq-pool> Too many connections")
-		return 0, errors.New("too many connections")
+		return 0, fmt.Errorf("too many connections=%d", len(cp.connPool))
 	}
 	conf := cp.connTemplate
 	conf.ClientID = fmt.Sprintf("%s_%d", cp.clientIdPrefix, connId)
@@ -95,7 +94,7 @@ func (cp *MqttConnectionPool) createConnection() (int, error) {
 		isIdle:       false,
 		startedAt:    time.Now(),
 	}
-	log.Debugf("New connection %d created . Pool size = %d", connId, len(cp.connPool))
+	log.Debugf("New connection %d pool size=%d", connId, len(cp.connPool))
 	return connId, err
 }
 
@@ -126,7 +125,6 @@ func (cp *MqttConnectionPool) ReturnConnection(connId int) {
 		con.mqConnection.UnsubscribeAll()
 		con.isIdle = true
 		con.idleSince = time.Now()
-		log.Debugf("Connection %d returned to pool.", connId)
 	}
 }
 
@@ -140,7 +138,8 @@ func (cp *MqttConnectionPool) getConnectionById(connId int) *MqttTransport {
 }
 
 func (cp *MqttConnectionPool) genConnId() int {
-	rand.Seed(int64(time.Now().Nanosecond()))
+	rand.New(rand.NewSource(int64(time.Now().Nanosecond())))
+
 	for {
 		id := rand.Int()
 		if _, ok := cp.connPool[id]; !ok {
@@ -160,14 +159,10 @@ func (cp *MqttConnectionPool) cleanupProcess() {
 			for i := range cp.connPool {
 				if cp.connPool[i].isIdle {
 					if (time.Since(cp.connPool[i].idleSince) > (cp.maxIdleAge)) && (len(cp.connPool) > cp.size) {
-						log.Debugf("<conn-pool> Destroying old connection")
 						conn := cp.getConnectionById(i)
 						conn.Stop()
 						delete(cp.connPool, i) // it is safe to delete map element in the loop
-					} else {
-						//log.Debugf("<conn-pool> Nothing to clean")
 					}
-
 				}
 			}
 		}

@@ -337,12 +337,13 @@ func (mh *MqttTransport) Subscribe(topic string) error {
 		return nil
 	}
 
+	topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
+
 	mh.subMutex.Lock()
 	defer mh.subMutex.Unlock()
 
 	//subscribe to the topic /go-mqtt/sample and request messages to be delivered
 	//at a maximum qos of zero, wait for the receipt to confirm the subscription
-	topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
 	token := mh.client.Subscribe(topic, mh.subQos, nil)
 	isInTime := token.WaitTimeout(time.Second * 20)
 	if token.Error() != nil {
@@ -352,15 +353,16 @@ func (mh *MqttTransport) Subscribe(topic string) error {
 	}
 
 	mh.subs[topic] = mh.subQos
-
 	return nil
 }
 
 // Unsubscribe , unsubscribing from topic
 func (mh *MqttTransport) Unsubscribe(topic string) error {
+	topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
+
 	mh.subMutex.Lock()
 	defer mh.subMutex.Unlock()
-	topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
+
 	token := mh.client.Unsubscribe(topic)
 	isInTime := token.WaitTimeout(time.Second * 20)
 	if token.Error() != nil {

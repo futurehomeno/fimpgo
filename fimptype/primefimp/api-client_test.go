@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -23,13 +24,13 @@ func TestPrimeFimp_ClientApi_Update(t *testing.T) {
 
 	uuid := uuid.New().String()
 	validClientID := strings.ReplaceAll(uuid, "-", "")[0:22]
-
 	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
 	err := mqtt.Start()
-	t.Log("Connected")
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Error connecting to broker ", err)
 	}
+
+	t.Log("Connected")
 
 	client := NewApiClient("test-1", mqtt, true)
 	client.StartNotifyRouter()
@@ -75,13 +76,13 @@ func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
-
 	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
 	err := mqtt.Start()
-	t.Log("Connected")
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Error connecting to broker ", err)
 	}
+
+	t.Log("Connected")
 
 	// Actual test
 	notifyCh := make(chan Notify, 10)
@@ -93,32 +94,27 @@ func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
 	client.RegisterChannel(channelID, notifyCh) // (channelId string, ch chan Notify)
 	client.StartNotifyRouter()
 	// Notify router is started. Now please, make 3 "add", "edit" or "delete" actions to finalize the test.
-	i := 0
 	limit := 3
-	for {
-		select {
-		case msg := <-notifyCh:
-			log.Infof("Check %d/%d: New notify message of cmd = %s,comp = %s", i, limit, msg.Cmd, msg.Component)
-			i++
-			if i > limit {
-				client.Stop()
-				break
-			}
-		}
+
+	for i := range limit {
+		msg := <-notifyCh
+		log.Infof("Check %d/%d: New notify message of cmd=%s comp=%s", i, limit, msg.Cmd, msg.Component)
 	}
+
+	client.Stop()
 }
 
 func TestPrimeFimp_SiteLazyLoading(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
-
 	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
 	err := mqtt.Start()
-	t.Log("Connected")
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Error connecting to broker ", err)
 	}
+
+	t.Log("Connected")
 
 	// Actual test
 	apiclientid := uuid.New().String()[0:12]
@@ -138,29 +134,31 @@ func TestPrimeFimp_LoadStates(t *testing.T) {
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
 	mqtt := fimpgo.NewMqttTransport(awsIotEndpoint, validClientID, brokerUser, brokerPass, true, 1, 1)
-	mqtt.ConfigureTls("awsiot.private.key","awsiot.crt","./datatools/certs",true)
+	mqtt.ConfigureTls("awsiot.private.key", "awsiot.crt", "./datatools/certs", true)
 	mqtt.SetGlobalTopicPrefix(testSiteGuid)
+
 	err := mqtt.Start()
-	t.Log("Connected")
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Error connecting to broker ", err)
 	}
+
+	t.Log("Connected")
 
 	// Actual test
 	apiclientid := uuid.New().String()[0:12]
-	client := NewApiClient(apiclientid, mqtt, false,WithCloudService("test-proc-1"))
+	client := NewApiClient(apiclientid, mqtt, false, WithCloudService("test-proc-1"))
 	client.SetResponsePayloadType(fimpgo.CompressedJsonPayload)
 	state, err := client.GetState()
-	if err != nil || len(state.Devices)==0 {
+	if err != nil || len(state.Devices) == 0 {
 		t.Error("Cache is empty. Cache must contain data.")
-	}else {
-		t.Log("STATES - All Good .Number of states = ",len(state.Devices))
+	} else {
+		t.Log("STATES - All Good .Number of states = ", len(state.Devices))
 	}
 	shortcuts, err := client.GetShortcuts(false)
-	if err != nil || len(shortcuts)==0 {
+	if err != nil || len(shortcuts) == 0 {
 		t.Error("Cache is empty. Cache must contain data.")
-	}else {
-		t.Log("SHORTCUTS - All Good . Number of shortcuts = ",len(shortcuts))
+	} else {
+		t.Log("SHORTCUTS - All Good . Number of shortcuts = ", len(shortcuts))
 	}
 }
 
@@ -182,24 +180,28 @@ func TestPrimeFimp_LoadStatesWithConnPool(t *testing.T) {
 		StartFailRetryCount: 5,
 	}
 
-	connPool := fimpgo.NewMqttConnectionPool(3,5,20,time.Minute*3,transportConfigs,"lib_code_test_pool")
+	connPool := fimpgo.NewMqttConnectionPool(3, 5, 20, time.Minute*3, transportConfigs, "lib_code_test_pool")
 	connPool.Start()
 
 	var successCounter int
+	var waitgroup sync.WaitGroup
+	waitgroup.Add(2)
 
 	go func() {
-		for i := 0; i < 3; i++ {
-			connId, conn,err := connPool.BorrowConnection()
+		defer waitgroup.Done()
+		for range 3 {
+			connId, conn, err := connPool.BorrowConnection()
 			if err != nil {
-				t.Fatal("Connection pool error , Err:",err.Error())
+				t.Error("Connection pool error , Err:", err.Error())
+				t.Fail()
 			}
-			client := NewApiClient(validClientID, conn, false, WithCloudService("test-proc-1"),WithGlobalPrefix(testSiteGuid))
+			client := NewApiClient(validClientID, conn, false, WithCloudService("test-proc-1"), WithGlobalPrefix(testSiteGuid))
 			client.SetResponsePayloadType(fimpgo.CompressedJsonPayload)
 			state, err := client.GetState()
-			if err != nil || len(state.Devices)==0 {
-				t.Fatal("Cache is empty. Cache must contain data.")
-			}else {
-				t.Log("STATES - All Good .Number of states = ",len(state.Devices))
+			if err != nil || len(state.Devices) == 0 {
+				t.Error("Cache is empty. Cache must contain data")
+				t.Fail()
+			} else {
 				successCounter++
 			}
 			connPool.ReturnConnection(connId)
@@ -207,46 +209,44 @@ func TestPrimeFimp_LoadStatesWithConnPool(t *testing.T) {
 	}()
 
 	go func() {
-		for i := 0; i < 3; i++ {
+		defer waitgroup.Done()
+		for range 3 {
 			connId, conn, err := connPool.BorrowConnection()
 			if err != nil {
-				t.Fatal("Connection pool error , Err:", err.Error())
+				t.Error("Connection pool err:", err.Error())
+				t.Fail()
 			}
 			client := NewApiClient(validClientID, conn, false, WithCloudService("test-proc-1"), WithGlobalPrefix(testSiteGuid))
 			client.SetResponsePayloadType(fimpgo.CompressedJsonPayload)
 			shortcuts, err := client.GetShortcuts(false)
 			if err != nil || len(shortcuts) == 0 {
-				t.Fatal("Cache is empty. Cache must contain data.")
+				t.Error("Cache is empty. Cache must contain data")
+				t.Fail()
 			} else {
-				t.Log("SHORTCUTS - All Good . Number of shortcuts = ", len(shortcuts))
 				successCounter++
 			}
 			connPool.ReturnConnection(connId)
 		}
 	}()
 
-	time.Sleep(time.Second*10)
+	waitgroup.Wait()
 
 	if successCounter != 6 {
 		t.Fatal("something went wrong")
-	}else {
-		t.Log("______ALL____GOOOD_______")
 	}
-
 }
 
 func TestPrimeFimp_ClientApi_Notify_With_Filter(t *testing.T) {
 	log.SetLevel(log.TraceLevel)
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
-
 	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
 	err := mqtt.Start()
-	t.Log("Connected")
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Error connecting to broker ", err)
 	}
 
+	t.Log("Connected")
 	// Actual test
 	channelIDAdd := uuid.New().String()[0:12]
 	notifyAreaAdd := make(chan Notify, 10)
@@ -304,7 +304,6 @@ func TestPrimeFimp_ClientApi_Notify_With_Filter(t *testing.T) {
 	}()
 
 	<-closeChan
-	t.Log("Tadaaa")
 }
 
 func TestPrimeFimp_LoadSiteFromFile(t *testing.T) {

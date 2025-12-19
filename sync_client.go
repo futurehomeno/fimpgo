@@ -14,8 +14,6 @@ type SyncClient struct {
 	isConnPoolEnabled     bool
 	transactionPoolSize   int // Max transaction pool size
 	inboundBufferSize     int // Inbound message channel buffer size
-	inboundMsgChannel     MessageCh
-	inboundChannelName    string
 	stopSignalCh          chan bool
 	isStartedUsingConnect bool
 	globalPrefix          string
@@ -52,9 +50,13 @@ func (sc *SyncClient) SetConfigs(transactionPoolSize int, inboundBuffSize int) {
 	if transactionPoolSize == 0 {
 		transactionPoolSize = 20
 	}
+
 	if inboundBuffSize == 0 {
 		inboundBuffSize = 10
 	}
+
+	sc.transactionPoolSize = transactionPoolSize
+	sc.inboundBufferSize = inboundBuffSize
 }
 
 func (sc *SyncClient) init() {
@@ -157,7 +159,7 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	case fimpResponse := <-responseChannel:
 		return fimpResponse, nil
 	case <-time.After(time.Second * time.Duration(timeout)):
-		log.Info("[fimpgo] No response from queue for ", timeout)
+		log.Warnf("[fimpgo] No response from queue for %d sec", timeout)
 		return nil, errTimeout
 	}
 }
@@ -180,8 +182,8 @@ func (sc *SyncClient) SendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 
 // startResponseListener starts response listener , it blocks callers proc until response is received or timeout.
 func (sc *SyncClient) startResponseListener(requestMsg *FimpMessage, respMsgType, respService, respTopic string, inboundCh MessageCh, timeout int64) chan *FimpMessage {
-	log.Debug("[fimpgo] Msg listener is started")
 	respChan := make(chan *FimpMessage)
+
 	go func() {
 		for msg := range inboundCh {
 			if (respMsgType == msg.Payload.Type && respService == msg.Payload.Service && respTopic == msg.Topic) || requestMsg.UID == msg.Payload.CorrelationID {

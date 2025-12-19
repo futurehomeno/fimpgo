@@ -182,11 +182,8 @@ func (s *Service) cast(dst, src interface{}) bool {
 	}
 
 	err = json.Unmarshal(b, dst)
-	if err != nil {
-		return false
-	}
 
-	return true
+	return err == nil
 }
 
 // Constants defining type of interface.
