@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version: '1.25'
 
@@ -32,22 +32,64 @@ jobs:
         name: fimpgo-armhf
         path: package/build/*.deb
 
-  test:
-    runs-on: ubuntu-latest
-    needs: build
+  golangci:
+    name: linter
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - uses: reviewdog/action-golangci-lint@v6
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+          fail_level: error
+      - uses: reviewdog/action-staticcheck@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+          fail_level: error
+
+test:
+  runs-on: ubuntu-latest
+  needs:
+    - build
+    - golangci
+
+  services:
+    mosquitto:
+      image: eclipse-mosquitto:2
+      ports:
+        - 1883:1883
+      options: >-
+        --health-cmd "mosquitto_sub -h localhost -t '$$SYS/#' -C 1"
+        --health-interval 5s
+        --health-timeout 3s
+        --health-retries 5
+
+  steps:
+    - uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version: '1.25'
 
-    - name: Test
-      shell: bash
+    - name: Configure git auth
       run: |
         export "GH_TOKEN=${{ secrets.GH_OAUTH_TOKEN }}"
         git config --global url."https://$GH_TOKEN@github.com/".insteadOf "https://github.com/"
+
+    - name: Run tests
+      env:
+        MQTT_HOST: localhost
+        MQTT_PORT: "1883"
+      run: |
         make test
 
   release:
