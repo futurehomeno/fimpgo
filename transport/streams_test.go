@@ -36,13 +36,11 @@ func TestBufferedStream_serializeBuffer(t *testing.T) {
 	mqtt := fimpgo.NewMqttTransport("tcp://cube.local:1884", "fimpgotest", "", "", true, 1, 1)
 	err := mqtt.Start()
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
-		return
+		t.Fatal("Start MQTT err:", err)
 	}
 
 	if err := mqtt.Subscribe("pt:j1/mt:evt/rt:dev/+/ad:1/sv:meter_elec/+"); err != nil {
 		t.Fatal("Subscribe err:", err)
-		return
 	}
 
 	chan1 := make(fimpgo.MessageCh)

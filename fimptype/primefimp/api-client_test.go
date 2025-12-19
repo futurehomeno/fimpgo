@@ -2,7 +2,7 @@ package primefimp
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -66,7 +66,6 @@ func TestPrimeFimp_ClientApi_Update(t *testing.T) {
 		}
 	}()
 	log.Infof("Site contains %d devices", len(site.Devices))
-	time.Sleep(20 * time.Minute)
 	client.Stop()
 }
 
@@ -121,6 +120,7 @@ func TestPrimeFimp_SiteLazyLoading(t *testing.T) {
 		t.Error("Cache is empty. Cache must contain data.")
 	}
 
+	mqtt.Stop()
 }
 
 func TestPrimeFimp_LoadStates(t *testing.T) {
@@ -143,15 +143,14 @@ func TestPrimeFimp_LoadStates(t *testing.T) {
 	state, err := client.GetState()
 	if err != nil || len(state.Devices) == 0 {
 		t.Error("Cache is empty. Cache must contain data.")
-	} else {
-		t.Log("STATES - All Good .Number of states = ", len(state.Devices))
 	}
+
 	shortcuts, err := client.GetShortcuts(false)
 	if err != nil || len(shortcuts) == 0 {
 		t.Error("Cache is empty. Cache must contain data.")
-	} else {
-		t.Log("SHORTCUTS - All Good . Number of shortcuts = ", len(shortcuts))
 	}
+
+	client.Stop()
 }
 
 func TestPrimeFimp_LoadStatesWithConnPool(t *testing.T) {
@@ -265,25 +264,22 @@ func TestPrimeFimp_ClientApi_Notify_With_Filter(t *testing.T) {
 	go func() {
 		for {
 			select {
-			case msg := <-notifyAreaAdd:
+			case <-notifyAreaAdd:
 				addarea++
-				log.Infof("Check %s: New notify message of cmd = %s,comp = %s", msg.Cmd, msg.Cmd, msg.Component)
 				if addarea > 0 && deletearea > 0 && editarea > 0 {
 					client.Stop()
 					closeChan <- "shit"
 					break
 				}
-			case msg := <-notifyAreaDelete:
+			case <-notifyAreaDelete:
 				deletearea++
-				log.Infof("Check %s: New notify message of cmd = %s,comp = %s", msg.Cmd, msg.Cmd, msg.Component)
 				if addarea > 0 && deletearea > 0 && editarea > 0 {
 					client.Stop()
 					closeChan <- "shit"
 					break
 				}
-			case msg := <-notifyAreaEdit:
+			case <-notifyAreaEdit:
 				editarea++
-				log.Infof("Check %s: New notify message of cmd = %s,comp = %s", msg.Cmd, msg.Cmd, msg.Component)
 				if addarea > 0 && deletearea > 0 && editarea > 0 {
 					client.Stop()
 					closeChan <- "shit"
@@ -294,6 +290,7 @@ func TestPrimeFimp_ClientApi_Notify_With_Filter(t *testing.T) {
 	}()
 
 	<-closeChan
+	client.Stop()
 }
 
 func TestPrimeFimp_LoadSiteFromFile(t *testing.T) {
@@ -314,26 +311,23 @@ func TestPrimeFimp_LoadSiteFromFile(t *testing.T) {
 		t.Error("name doesn't match")
 		t.FailNow()
 	}
-	t.Log(thing.Name)
 
 	device := site.GetDeviceByServiceAddress("/rt:dev/rn:flow/ad:1/sv:out_bin_switch/ad:7zfeSQx3Q8")
 	if device.ID != 12 {
 		t.Error("device id doesn't match")
 		t.FailNow()
 	}
-	t.Log(*device.Client.Name)
 
 	room := site.GetRoomById(4)
 	if room.ID != 4 {
 		t.Error("room id doesn't match")
 		t.FailNow()
 	}
-	t.Log(room.Alias)
 }
 
 func TestPrimefimp_LoadStateFromFile(t *testing.T) {
 	const deviceCount = 18
-	bSite, err := ioutil.ReadFile("testdata/state.json")
+	bSite, err := os.ReadFile("testdata/state.json")
 	if err != nil {
 		t.Fatal(err)
 	}

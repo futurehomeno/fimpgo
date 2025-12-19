@@ -36,7 +36,7 @@ func TestServiceDiscoveryResponder_Start(t *testing.T) {
 	mqt := fimpgo.NewMqttTransport("tcp://localhost:1883", "fimpgotest-1", "", "", true, 1, 1)
 	err := mqt.Start()
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
 
 	resource := Resource{

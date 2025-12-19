@@ -211,7 +211,7 @@ func (oac *FhOAuth2Client) postMsg(req interface{}, url string) (*OAuth2TokenRes
 		if err == nil && resp.StatusCode < 400 {
 			break
 		}
-		log.Error("Error response from auth endpoint.Retrying...")
+		log.Error("[fimpgo] Error response from auth endpoint.Retrying...")
 		time.Sleep(time.Second * oac.retryDelay)
 	}
 	if err != nil {

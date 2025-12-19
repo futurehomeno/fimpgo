@@ -73,7 +73,7 @@ func TestPrimeFimpSendFimpWithTopicResponse(t *testing.T) {
 	mqtt := fimpgo.NewMqttTransport(brokerUrl, "fimpgotest", brokerUser, brokerPass, true, 1, 1)
 	err := mqtt.Start()
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
 
 	// Actual test
@@ -100,7 +100,6 @@ func TestPrimeFimpSendFimpWithTopicResponse(t *testing.T) {
 	resp := Response{}
 	err = response.GetObjectValue(&resp)
 
-	t.Log(resp.Success)
 	if err != nil {
 		t.Error("Error", err)
 		t.Fail()
@@ -110,7 +109,6 @@ func TestPrimeFimpSendFimpWithTopicResponse(t *testing.T) {
 		t.Error("No rooms")
 		t.Fail()
 	}
-	t.Log("Response test - OK , total number of devices = ", len(resp.GetDevices()))
 }
 
 func TestPrimeFimpClientApiGetDevices(t *testing.T) {
@@ -119,7 +117,7 @@ func TestPrimeFimpClientApiGetDevices(t *testing.T) {
 	mqtt := fimpgo.NewMqttTransport(brokerUrl, clientId(), brokerUser, brokerPass, true, 1, 1)
 	err := mqtt.Start()
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
 
 	client := NewApiClient("test-1", mqtt, false)
@@ -146,7 +144,7 @@ func TestPrimeFimpClientApiGetShortcuts(t *testing.T) {
 	client := NewApiClient("test-1", mqtt, false)
 	err := mqtt.Start()
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
 	devices, err := client.GetShortcuts(false)
 	if err != nil {
@@ -167,7 +165,7 @@ func TestPrimeFimpClientApiGetVincServices(t *testing.T) {
 	mqtt := fimpgo.NewMqttTransport(brokerUrl, clientId(), brokerUser, brokerPass, true, 1, 1)
 	err := mqtt.Start()
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
 
 	client := NewApiClient("test-1", mqtt, false)
@@ -189,7 +187,7 @@ func TestPrimeFimpClientApiGetSite(t *testing.T) {
 	mqtt := fimpgo.NewMqttTransport(brokerUrl, clientId(), brokerUser, brokerPass, true, 1, 1)
 	err := mqtt.Start()
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
 
 	client := NewApiClient("test-1", mqtt, false)

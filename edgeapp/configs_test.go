@@ -23,6 +23,4 @@ func TestConfigs_LoadFromFile(t *testing.T) {
 		t.Error("Failed to load config:", err)
 		return
 	}
-	ac2 := cf2.GetCustomConfigs()
-	t.Log("Custom conf:", ac2.(*AppConf).Prop1)
 }
