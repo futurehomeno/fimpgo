@@ -90,7 +90,7 @@ jobs:
           MQTT_HOST: localhost
           MQTT_PORT: "1883"
         run: |
-          make test
+          go test ./... -v -count=1 -timeout=5m | tee test.log
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')

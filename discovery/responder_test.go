@@ -53,22 +53,15 @@ func TestServiceDiscoveryResponder_Start(t *testing.T) {
 	responder.RegisterResource(resource)
 	responder.Start()
 
-	t.Log("Sending discovery request 1 ")
 	discoveredResource, _ := DiscoverResources(mqt, 2)
-	for _, r := range discoveredResource {
-		t.Log("Discovered resource = " + r.ResourceName)
-	}
+
 	if len(discoveredResource) != 2 {
 		t.Fatal("number of discovered resources doesn't match ")
 	}
 
-	t.Log("Sending discovery request 2 ")
 	discoveredResource, _ = DiscoverResources(mqt, 2)
-	for _, r := range discoveredResource {
-		t.Log("Discovered resource = " + r.ResourceName)
-	}
+
 	if len(discoveredResource) != 2 {
 		t.Fatal("number of discovered resources doesn't match ")
 	}
-
 }
