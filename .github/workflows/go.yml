@@ -67,10 +67,10 @@ jobs:
         ports:
           - 1883:1883
         options: >-
-          --health-cmd "mosquitto_sub -h localhost -t '$$SYS/#' -C 1"
+          --health-cmd "nc -z localhost 1883"
           --health-interval 5s
           --health-timeout 3s
-          --health-retries 5
+          --health-retries 10
 
     steps:
       - uses: actions/checkout@v4
