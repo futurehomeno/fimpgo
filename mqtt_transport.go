@@ -406,11 +406,12 @@ func (mh *MqttTransport) onConnectionLost(_ MQTT.Client, err error) {
 	log.Errorf("[fimpgo] Connection lost with MQTT broker err: %v", err)
 }
 
-func (mh *MqttTransport) onConnect(_ MQTT.Client) {
+func (mh *MqttTransport) onConnect(client MQTT.Client) {
 	mh.subMutex.Lock()
 	defer mh.subMutex.Unlock()
 
-	log.Infof("[fimpgo] Connected to the MQTT broker")
+	options := client.OptionsReader()
+	log.Infof("[fimpgo] Connected to the MQTT broker %s", options.ClientID())
 
 	if len(mh.subs) > 0 {
 		if token := mh.client.SubscribeMultiple(mh.subs, nil); token.Wait() && token.Error() != nil {
