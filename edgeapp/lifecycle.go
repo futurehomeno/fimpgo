@@ -134,7 +134,7 @@ func (al *Lifecycle) ConnectionState() State {
 }
 
 func (al *Lifecycle) SetConnectionState(connectivityState State) {
-	log.Debug("[edgeapp] New CONNECTION state = ", connectivityState)
+	log.Debug("[edgeapp] New connection ", connectivityState)
 	al.connectionState = connectivityState
 	for i := range al.systemEventBus {
 		select {
@@ -166,7 +166,7 @@ func (al *Lifecycle) SetAppState(currentState State, params map[string]string) {
 		select {
 		case al.systemEventBus[i] <- SystemEvent{Type: SystemEventTypeState, State: currentState, Info: "sys", Params: params}:
 		default:
-			log.Warnf("[edgeapp] State listener %s is busy , event dropped", i)
+			log.Warnf("[edgeapp] State listener %s busy event dropped", i)
 		}
 
 	}
@@ -188,7 +188,7 @@ func (al *Lifecycle) Publish(event SystemEvent, src string, params map[string]st
 		select {
 		case al.systemEventBus[i] <- event:
 		default:
-			log.Warnf("[edgeapp] Event listener %s is busy , event dropped", i)
+			log.Warnf("[edgeapp] Event listener %s busy event dropped", i)
 		}
 
 	}
@@ -213,7 +213,7 @@ func (al *Lifecycle) Unsubscribe(subId string) {
 
 // WaitForState blocks until target state is reached
 func (al *Lifecycle) WaitForState(subId string, stateType string, targetState State) {
-	log.Debugf("[edgeapp] Waiting for state = %s , current state = %s", targetState, al.AppState())
+	log.Debugf("[edgeapp] Waiting for state=%s current state=%s", targetState, al.AppState())
 	if al.AppState() == targetState && stateType == SystemEventTypeState ||
 		al.ConfigState() == targetState && stateType == SystemEventTypeConfigState ||
 		al.AuthState() == targetState && stateType == SystemEventTypeAuthState ||

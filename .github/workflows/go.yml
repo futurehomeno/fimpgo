@@ -80,12 +80,22 @@ jobs:
           export "GH_TOKEN=${{ secrets.GH_OAUTH_TOKEN }}"
           git config --global url."https://$GH_TOKEN@github.com/".insteadOf "https://github.com/"
 
+      - name: Wait for Mosquitto
+        run: |
+          for i in {1..10}; do
+            nc -4 -z 127.0.0.1 1883 && exit 0
+            sleep 2
+          done
+          echo "Mosquitto not ready"
+          exit 1
+
       - name: Run tests
         env:
           MQTT_HOST: localhost
           MQTT_PORT: "1883"
         run: |
-          go test ./... -v -count=1 -timeout=5m | tee test.log
+          set -o pipefail
+          go test ./... -v -count=1 -timeout=5m --failfast | tee test.log
 
       - name: Upload test log
         if: always()

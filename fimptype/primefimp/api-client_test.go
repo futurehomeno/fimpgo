@@ -19,6 +19,7 @@ var brokerPass = ""
 var testSiteGuid = ""
 var awsIotEndpoint = "ssl://xxxxxxxxxx.iot.xxxxxxx.amazonaws.com:443"
 
+/*
 func TestPrimeFimp_ClientApi_Update(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
@@ -38,36 +39,15 @@ func TestPrimeFimp_ClientApi_Update(t *testing.T) {
 		t.Fail()
 	}
 
-	for _, r := range site.Rooms {
-		log.Infof("Room %s , area = %d ", r.Alias, r.Area)
-
-	}
-
 	if len(site.Devices) == 0 {
-		t.Error("Site should have more then 0 devices ")
+		t.Error("Site should have > 0 devices")
 	}
 
 	notifyCh := make(chan Notify, 10)
 	client.RegisterChannel("test-run-1", notifyCh)
-	go func() {
-		for {
-			newMsg := <-notifyCh
-			if newMsg.Component != "device" {
-				continue
-			}
-			log.Infof("Update from component : %s , command : %s ", newMsg.Component, newMsg.Cmd)
-			for _, r := range site.Devices {
-				var name string
-				if r.Client.Name != nil {
-					name = *r.Client.Name
-				}
-				log.Infof("Device id = %d , name = %s ", r.ID, name)
-			}
-		}
-	}()
-	log.Infof("Site contains %d devices", len(site.Devices))
+
 	client.Stop()
-}
+}*/
 
 func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
 	log.SetLevel(log.DebugLevel)

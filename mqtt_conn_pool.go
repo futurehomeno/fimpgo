@@ -5,8 +5,6 @@ import (
 	"math/rand"
 	"sync"
 	"time"
-
-	log "github.com/sirupsen/logrus"
 )
 
 type connection struct {
@@ -94,7 +92,7 @@ func (cp *MqttConnectionPool) createConnection() (int, error) {
 		isIdle:       false,
 		startedAt:    time.Now(),
 	}
-	log.Debugf("New connection %d pool size=%d", connId, len(cp.connPool))
+
 	return connId, err
 }
 

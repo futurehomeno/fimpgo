@@ -1,10 +1,12 @@
 package fimpgo
 
 import (
+	"sync/atomic"
 	"testing"
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMqttConnectionPool_GetConnection(t *testing.T) {
@@ -19,11 +21,17 @@ func TestMqttConnectionPool_GetConnection(t *testing.T) {
 
 	pool := NewMqttConnectionPool(0, 1, 10, 5*time.Second, template, "pool_test_")
 	pool.Start()
-	idt, _, _ := pool.BorrowConnection()
+	idt, _, err := pool.BorrowConnection()
+	require.NoError(t, err)
 	pool.ReturnConnection(idt)
-	id1, conn1, _ := pool.BorrowConnection()
-	id2, conn2, _ := pool.BorrowConnection()
-	id3, responderConn, _ := pool.BorrowConnection()
+
+	id1, conn1, err := pool.BorrowConnection()
+	require.NoError(t, err)
+	id2, conn2, err := pool.BorrowConnection()
+	require.NoError(t, err)
+	id3, responderConn, err := pool.BorrowConnection()
+	require.NoError(t, err)
+
 	msg1 := NewStringMessage("cmd.test.get_response", "tester", "test-1", nil, nil, nil)
 	msg1.ResponseToTopic = "pt:j1/mt:rsp/rt:app/rn:goland/ad:1"
 	msg1_1 := NewStringMessage("cmd.test.get_response", "tester", "test-3", nil, nil, nil)
@@ -31,18 +39,19 @@ func TestMqttConnectionPool_GetConnection(t *testing.T) {
 	msg2 := NewStringMessage("cmd.test.get_response", "tester", "test-2", nil, nil, nil)
 	msg2.ResponseToTopic = "pt:j1/mt:rsp/rt:app/rn:goland/ad:2"
 
-	isResp1 := false
-	isResp2 := false
-	isResp3 := false
+	var isResp1 atomic.Bool
+	var isResp2 atomic.Bool
+	var isResp3 atomic.Bool
+
 	responderConn.SetMessageHandler(func(topic string, addr *Address, iotMsg *FimpMessage, rawPayload []byte) {
 		val, _ := iotMsg.GetStringValue()
 		switch val {
 		case "test-1":
-			isResp1 = true
+			isResp1.Store(true)
 		case "test-2":
-			isResp2 = true
+			isResp2.Store(true)
 		case "test-3":
-			isResp3 = true
+			isResp3.Store(true)
 		}
 		response := NewStringMessage("evt.test.response", "tester", val, nil, nil, iotMsg)
 		if err := responderConn.RespondToRequest(iotMsg, response); err != nil {
@@ -65,7 +74,9 @@ func TestMqttConnectionPool_GetConnection(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	pool.ReturnConnection(id1)
 
-	_, con1_1, _ := pool.BorrowConnection()
+	_, con1_1, err := pool.BorrowConnection()
+	require.NoError(t, err)
+
 	if err := con1_1.PublishToTopic("pt:j1/mt:cmd/rt:app/rn:conn_pool_tester/ad:1", msg1_1); err != nil {
 		t.Fatal("Publish error:", err)
 	}
@@ -73,20 +84,19 @@ func TestMqttConnectionPool_GetConnection(t *testing.T) {
 	var i int
 	for {
 		if i > 3 {
-			log.Error("Failed")
-			t.FailNow()
+			log.Errorf("Failed %t %t %t", isResp1.Load(), isResp2.Load(), isResp3.Load())
+			t.Fail()
 		}
+
 		time.Sleep(100 * time.Millisecond)
-		if isResp1 && isResp2 && isResp3 {
+		if isResp1.Load() && isResp2.Load() && isResp3.Load() {
 			break
 		}
 		i++
-
 	}
 
 	pool.ReturnConnection(id1)
 	pool.ReturnConnection(id2)
 	pool.ReturnConnection(id3)
-	time.Sleep(100 * time.Millisecond)
 	pool.Stop()
 }
