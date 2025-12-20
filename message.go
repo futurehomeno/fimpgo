@@ -128,24 +128,24 @@ const (
 )
 
 type FimpMessage struct {
-	Type            string      `json:"type"`
-	Service         string      `json:"serv"`
-	ValueType       string      `json:"val_t"`
-	Value           interface{} `json:"val"`
-	ValueObj        []byte      `json:"-"`
-	Tags            Tags        `json:"tags"`
-	Properties      Props       `json:"props"`
-	Storage         *Storage    `json:"storage,omitempty"`
-	Version         string      `json:"ver"`
-	CorrelationID   string      `json:"corid"`
-	ResponseToTopic string      `json:"resp_to,omitempty"`
-	Source          string      `json:"src,omitempty"`
-	CreationTime    string      `json:"ctime"`
-	UID             string      `json:"uid"`
-	Topic           string      `json:"topic,omitempty"` // The field should be used to store original topic. It can be useful for converting message from MQTT to other transports.
+	Type            string   `json:"type"`
+	Service         string   `json:"serv"`
+	ValueType       string   `json:"val_t"`
+	Value           any      `json:"val"`
+	ValueObj        []byte   `json:"-"`
+	Tags            Tags     `json:"tags"`
+	Properties      Props    `json:"props"`
+	Storage         *Storage `json:"storage,omitempty"`
+	Version         string   `json:"ver"`
+	CorrelationID   string   `json:"corid"`
+	ResponseToTopic string   `json:"resp_to,omitempty"`
+	Source          string   `json:"src,omitempty"`
+	CreationTime    string   `json:"ctime"`
+	UID             string   `json:"uid"`
+	Topic           string   `json:"topic,omitempty"` // The field should be used to store original topic. It can be useful for converting message from MQTT to other transports.
 }
 
-func (msg *FimpMessage) SetValue(value interface{}, valType string) {
+func (msg *FimpMessage) SetValue(value any, valType string) {
 	msg.Value = value
 	msg.ValueType = valType
 }
@@ -250,7 +250,7 @@ func (msg *FimpMessage) GetRawObjectValue() []byte {
 	return msg.ValueObj
 }
 
-func (msg *FimpMessage) GetObjectValue(objectBindVar interface{}) error {
+func (msg *FimpMessage) GetObjectValue(objectBindVar any) error {
 	return json.Unmarshal(msg.ValueObj, objectBindVar)
 }
 
@@ -296,7 +296,7 @@ func (msg *FimpMessage) WithTag(tag string) *FimpMessage {
 	return msg
 }
 
-func NewMessage(type_ string, service string, valueType string, value interface{}, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
+func NewMessage(type_ string, service string, valueType string, value any, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
 	msg := FimpMessage{Type: type_,
 		Service:      service,
 		ValueType:    valueType,
@@ -367,7 +367,7 @@ func NewBoolMapMessage(type_ string, service string, value map[string]bool, prop
 	return NewMessage(type_, service, VTypeBoolMap, value, props, tags, requestMessage)
 }
 
-func NewObjectMessage(type_ string, service string, value interface{}, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
+func NewObjectMessage(type_ string, service string, value any, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeObject, value, props, tags, requestMessage)
 }
 

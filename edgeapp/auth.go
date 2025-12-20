@@ -15,11 +15,11 @@ import (
 )
 
 type OAuth2TokenResponse struct {
-	AccessToken  string      `json:"access_token"`
-	TokenType    string      `json:"token_type"`
-	ExpiresIn    int64       `json:"expires_in"`
-	RefreshToken string      `json:"refresh_token"`
-	Scope        interface{} `json:"scope"`
+	AccessToken  string `json:"access_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int64  `json:"expires_in"`
+	RefreshToken string `json:"refresh_token"`
+	Scope        any    `json:"scope"`
 }
 
 type OAuth2RefreshProxyRequest struct {
@@ -188,7 +188,7 @@ func (oac *FhOAuth2Client) ExchangeRefreshToken(refreshToken string) (*OAuth2Tok
 	return oac.postMsg(req, oac.refreshTokenApiUrl)
 }
 
-func (oac *FhOAuth2Client) postMsg(req interface{}, url string) (*OAuth2TokenResponse, error) {
+func (oac *FhOAuth2Client) postMsg(req any, url string) (*OAuth2TokenResponse, error) {
 	if oac.hubToken == "" {
 		err := oac.LoadHubTokenFromCB()
 		if err != nil {

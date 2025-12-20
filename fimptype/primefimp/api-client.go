@@ -354,7 +354,7 @@ func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, e
 	return mh.sClient.SendReqRespFimp(reqAddr.Serialize(), responseAddress, msg, 5, true)
 }
 
-func (mh *ApiClient) sendSetRequest(component string, value interface{}) (*fimpgo.FimpMessage, error) {
+func (mh *ApiClient) sendSetRequest(component string, value any) (*fimpgo.FimpMessage, error) {
 	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
 	respAddr := mh.responseAddress()
 	responseAddress := respAddr.Serialize()

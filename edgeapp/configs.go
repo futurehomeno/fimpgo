@@ -13,18 +13,18 @@ import (
 
 type Configs struct {
 	path               string
-	WorkDir            string      `json:"-"`
-	InstanceAddress    string      `json:"instance_address"`
-	MqttServerURI      string      `json:"mqtt_server_uri"`
-	MqttUsername       string      `json:"mqtt_server_username"`
-	MqttPassword       string      `json:"mqtt_server_password"`
-	MqttClientIdPrefix string      `json:"mqtt_client_id_prefix"`
-	LogFile            string      `json:"log_file"`
-	LogLevel           string      `json:"log_level"`
-	LogFormat          string      `json:"log_format"`
-	ConfiguredAt       string      `json:"configured_at"`
-	ConfiguredBy       string      `json:"configured_by"`
-	CustomConfigs      interface{} `json:"custom_configs"`
+	WorkDir            string `json:"-"`
+	InstanceAddress    string `json:"instance_address"`
+	MqttServerURI      string `json:"mqtt_server_uri"`
+	MqttUsername       string `json:"mqtt_server_username"`
+	MqttPassword       string `json:"mqtt_server_password"`
+	MqttClientIdPrefix string `json:"mqtt_client_id_prefix"`
+	LogFile            string `json:"log_file"`
+	LogLevel           string `json:"log_level"`
+	LogFormat          string `json:"log_format"`
+	ConfiguredAt       string `json:"configured_at"`
+	ConfiguredBy       string `json:"configured_by"`
+	CustomConfigs      any    `json:"custom_configs"`
 }
 
 // NewConfigs stores main application configurations
@@ -91,11 +91,11 @@ func (cf *Configs) LoadDefaults() error {
 	return utils.CopyFile(defaultConfigFile, configFile)
 }
 
-func (cf *Configs) SetCustomConfigs(config interface{}) {
+func (cf *Configs) SetCustomConfigs(config any) {
 	cf.CustomConfigs = config
 }
 
-func (cf *Configs) GetCustomConfigs() interface{} {
+func (cf *Configs) GetCustomConfigs() any {
 	return cf.CustomConfigs
 }
 
