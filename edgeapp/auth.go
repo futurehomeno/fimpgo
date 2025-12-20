@@ -76,7 +76,7 @@ func (oac *FhOAuth2Client) SetRefreshTokenApiUrl(refreshTokenApiUrl string) {
 
 // NewFhOAuth2Client implements OAuth client which communicates to 3rd party API over FH Auth proxy.
 func NewFhOAuth2Client(partnerName string, appName string, env string) *FhOAuth2Client {
-	client := &FhOAuth2Client{partnerName: partnerName, mqttServerURI: "tcp://localhost:1883", mqttClientID: "auth_client_" + appName}
+	client := &FhOAuth2Client{partnerName: partnerName, mqttServerURI: "tcp://127.0.0.1:1883", mqttClientID: "auth_client_" + appName}
 	if env == utils.EnvBeta {
 		client.refreshTokenApiUrl = "https://partners-beta.futurehome.io/api/control/edge/proxy/refresh"
 		client.authCodeApiUrl = "https://partners-beta.futurehome.io/api/control/edge/proxy/auth-code"

@@ -9,7 +9,7 @@ import (
 
 func TestSyncClient_Connect(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1)
 	err := mqtt.Start()
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
@@ -25,7 +25,7 @@ func TestSyncClient_Connect(t *testing.T) {
 
 	// Actual test
 	syncClient := NewSyncClientV2(nil, 20, 20)
-	if err := syncClient.Connect("tcp://localhost:1883", "fimpgotest2", "", "", true, 1, 1); err != nil {
+	if err := syncClient.Connect("tcp://127.0.0.1:1883", "fimpgotest2", "", "", true, 1, 1); err != nil {
 		t.Fatal("Error connecting sync client to broker ", err)
 	}
 
@@ -81,7 +81,7 @@ func TestSyncClient_Connect(t *testing.T) {
 
 func TestSyncClient_SendFimp(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1)
 	err := mqtt.Start()
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
@@ -138,7 +138,7 @@ func TestSyncClient_SendFimp(t *testing.T) {
 
 func TestSyncClient_SendFimpWithTopicResponse(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1)
 	err := mqtt.Start()
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)

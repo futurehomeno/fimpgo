@@ -105,7 +105,7 @@ func (mh *MqttTransport) SetOptions(options *MQTT.ClientOptions) {
 
 type MessageHandler func(topic string, addr *Address, iotMsg *FimpMessage, rawPayload []byte)
 
-// NewMqttTransport constructor. serverUri="tcp://localhost:1883"
+// NewMqttTransport constructor. serverUri="tcp://127.0.0.1:1883"
 func NewMqttTransport(serverURI, clientID, username, password string, cleanSession bool, subQos byte, pubQos byte) *MqttTransport {
 	mh := MqttTransport{}
 	mh.mqttOptions = MQTT.NewClientOptions().AddBroker(serverURI)

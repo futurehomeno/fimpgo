@@ -90,9 +90,6 @@ jobs:
           exit 1
 
       - name: Run tests
-        env:
-          MQTT_HOST: 127.0.0.1
-          MQTT_PORT: "1883"
         run: |
           set -o pipefail
           go test ./... -v -count=1 -timeout=5m --failfast | tee test.log

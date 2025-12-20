@@ -13,7 +13,7 @@ func TestMqttConnectionPool_GetConnection(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
 	template := MqttConnectionConfigs{
-		ServerURI:    "tcp://localhost:1883",
+		ServerURI:    "tcp://127.0.0.1:1883",
 		CleanSession: true,
 		SubQos:       1,
 		PubQos:       1,

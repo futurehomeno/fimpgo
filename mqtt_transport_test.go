@@ -26,7 +26,7 @@ var isCorrect = make(map[int]bool)
 
 func TestMqttTransport_Publish(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1)
 	err := mqtt.Start()
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
@@ -52,7 +52,7 @@ func TestMqttTransport_Publish(t *testing.T) {
 
 func TestMqttTransport_PublishStopPublish(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1)
 	err := mqtt.Start()
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
@@ -74,7 +74,7 @@ func TestMqttTransport_PublishStopPublish(t *testing.T) {
 
 	mqtt.Stop()
 
-	mqtt = NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt = NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1)
 	err = mqtt.Start()
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
@@ -85,7 +85,7 @@ func TestMqttTransport_PublishStopPublish(t *testing.T) {
 
 func TestMqttTransport_PublishSync(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1)
 	err := mqtt.Start()
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
@@ -132,7 +132,7 @@ func TestMqttTransport_PublishSync(t *testing.T) {
 
 func TestMqttTransport_SubUnsub(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1)
 	err := mqtt.Start()
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
@@ -250,7 +250,7 @@ func TestMqttTransport_SubUnsub(t *testing.T) {
 
 func TestMqttTransport_TestChannels(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1)
 	err := mqtt.Start()
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
@@ -311,7 +311,7 @@ func TestMqttTransport_TestChannels(t *testing.T) {
 func TestMqttTransport_TestResponder(t *testing.T) {
 	log.SetLevel(log.TraceLevel)
 
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest-1", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest-1", "", "", true, 1, 1)
 	err := mqtt.Start()
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
@@ -321,7 +321,7 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 		t.Fatal("Subscribe err:", err)
 	}
 
-	mqtt2 := NewMqttTransport("tcp://localhost:1883", "fimpgotest-2", "", "", true, 1, 1)
+	mqtt2 := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest-2", "", "", true, 1, 1)
 	err = mqtt2.Start()
 
 	if err != nil {
@@ -387,7 +387,7 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 
 func TestMqttTransport_TestChannelsWithFilters(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1)
 	err := mqtt.Start()
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)

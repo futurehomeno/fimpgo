@@ -8,7 +8,7 @@ import (
 )
 
 func SecondResponder() {
-	mqt := fimpgo.NewMqttTransport("tcp://localhost:1883", "fimpgotest-2", "", "", true, 1, 1)
+	mqt := fimpgo.NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest-2", "", "", true, 1, 1)
 	err := mqt.Start()
 	if err != nil {
 		//t.Error("Error connecting to broker ",err)
@@ -33,7 +33,7 @@ func TestServiceDiscoveryResponder_Start(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	go SecondResponder()
 
-	mqt := fimpgo.NewMqttTransport("tcp://localhost:1883", "fimpgotest-1", "", "", true, 1, 1)
+	mqt := fimpgo.NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest-1", "", "", true, 1, 1)
 	err := mqt.Start()
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
