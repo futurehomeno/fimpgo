@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -190,7 +190,6 @@ func (oac *FhOAuth2Client) ExchangeRefreshToken(refreshToken string) (*OAuth2Tok
 
 func (oac *FhOAuth2Client) postMsg(req interface{}, url string) (*OAuth2TokenResponse, error) {
 	if oac.hubToken == "" {
-		log.Info("Empty token.Re-requesting new token")
 		err := oac.LoadHubTokenFromCB()
 		if err != nil {
 			return nil, errors.New("empty hub token.operation aborted")
@@ -204,9 +203,9 @@ func (oac *FhOAuth2Client) postMsg(req interface{}, url string) (*OAuth2TokenRes
 	r, _ := http.NewRequest("POST", url, bytes.NewBuffer(reqB))
 	r.Header.Add("Content-Type", "application/json")
 	r.Header.Add("Authorization", "Bearer "+oac.hubToken)
-	//log.Info("Sending using token :",oac.hubToken
+
 	var resp *http.Response
-	for i := 0; i < oac.refreshRetry; i++ {
+	for range oac.refreshRetry {
 		resp, err = client.Do(r)
 		if err == nil && resp.StatusCode < 400 {
 			break
@@ -221,7 +220,7 @@ func (oac *FhOAuth2Client) postMsg(req interface{}, url string) (*OAuth2TokenRes
 		return nil, fmt.Errorf("error %s response from server", resp.Status)
 	}
 
-	bData, err := ioutil.ReadAll(resp.Body)
+	bData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

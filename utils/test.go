@@ -12,7 +12,13 @@ type TestConfig struct {
 
 func GetTestConfig(path string) TestConfig {
 	var result TestConfig
-	bFile, _ := os.ReadFile(path)
-	json.Unmarshal(bFile, &result)
+	bFile, err := os.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+
+	if err = json.Unmarshal(bFile, &result); err != nil {
+		panic(err)
+	}
 	return result
 }

@@ -41,10 +41,10 @@ const (
 // Top level element for commands
 type Request struct {
 	Cmd       string        `json:"cmd"`
-	Component interface{}   `json:"component"`
+	Component any           `json:"component"`
 	Param     *RequestParam `json:"param,omitempty"`
-	RequestID interface{}   `json:"requestId,omitempty"`
-	Id        interface{}   `json:"id,omitempty"`
+	RequestID any           `json:"requestId,omitempty"`
+	Id        any           `json:"id,omitempty"`
 }
 
 type RequestParam struct {
@@ -66,30 +66,30 @@ type Client struct {
 }
 
 type Device struct {
-	Fimp          Fimp                   `json:"fimp"`
-	Client        Client                 `json:"client"`
-	Functionality *string                `json:"functionality"`
-	Service       map[string]Service     `json:"services"`
-	ID            int                    `json:"id"`
-	Lrn           bool                   `json:"lrn"`
-	Model         string                 `json:"model"`
-	ModelAlias    string                 `json:"modelAlias"`
-	Param         map[string]interface{} `json:"param"`
-	Problem       bool                   `json:"problem"`
-	Room          *int                   `json:"room"`
-	Changes       map[string]interface{} `json:"changes"`
-	ThingID       *int                   `json:"thing"`
-	Type          map[string]interface{} `json:"type"`
+	Fimp          Fimp               `json:"fimp"`
+	Client        Client             `json:"client"`
+	Functionality *string            `json:"functionality"`
+	Service       map[string]Service `json:"services"`
+	ID            int                `json:"id"`
+	Lrn           bool               `json:"lrn"`
+	Model         string             `json:"model"`
+	ModelAlias    string             `json:"modelAlias"`
+	Param         map[string]any     `json:"param"`
+	Problem       bool               `json:"problem"`
+	Room          *int               `json:"room"`
+	Changes       map[string]any     `json:"changes"`
+	ThingID       *int               `json:"thing"`
+	Type          map[string]any     `json:"type"`
 }
 
 type Thing struct {
-	ID      int                    `json:"id"`
-	Fimp    ThingFimp              `json:"fimp"`
-	Address string                 `json:"addr"`
-	Name    string                 `json:"name"`
-	Devices []int                  `json:"devices,omitempty"`
-	Props   map[string]interface{} `json:"props,omitempty"`
-	RoomID  int                    `json:"room"`
+	ID      int            `json:"id"`
+	Fimp    ThingFimp      `json:"fimp"`
+	Address string         `json:"addr"`
+	Name    string         `json:"name"`
+	Devices []int          `json:"devices,omitempty"`
+	Props   map[string]any `json:"props,omitempty"`
+	RoomID  int            `json:"room"`
 }
 
 type ThingFimp struct {
@@ -100,9 +100,9 @@ type ThingFimp struct {
 }
 
 type House struct {
-	Learning interface{} `json:"learning"`
-	Mode     string      `json:"mode"`
-	Time     time.Time   `json:"time"`
+	Learning any       `json:"learning"`
+	Mode     string    `json:"mode"`
+	Time     time.Time `json:"time"`
 }
 
 type Room struct {
@@ -117,11 +117,11 @@ type Room struct {
 
 type RoomParams struct {
 	Heating  RoomHeating `json:"heating"`
-	Lighting interface{} `json:"lighting"`
-	Security interface{} `json:"security"`
+	Lighting any         `json:"lighting"`
+	Security any         `json:"security"`
 	Sensors  []string    `json:"sensors"`
-	Shading  interface{} `json:"shading"`
-	Triggers interface{} `json:"triggers"`
+	Shading  any         `json:"shading"`
+	Triggers any         `json:"triggers"`
 }
 
 type RoomHeating struct {
@@ -133,10 +133,10 @@ type RoomHeating struct {
 }
 
 type Service struct {
-	Addr       string                 `json:"addr,omitempty"`
-	Enabled    bool                   `json:"enabled,omitempty"`
-	Interfaces []string               `json:"intf"`
-	Props      map[string]interface{} `json:"props"`
+	Addr       string         `json:"addr,omitempty"`
+	Enabled    bool           `json:"enabled,omitempty"`
+	Interfaces []string       `json:"intf"`
+	Props      map[string]any `json:"props"`
 }
 
 type UserInfo struct {
@@ -160,9 +160,9 @@ type AreaProps struct {
 	TransNr string `json:"transNr"`
 }
 
-type ActionDevice map[string]interface{}
+type ActionDevice map[string]any
 
-type ActionRoom map[string]interface{}
+type ActionRoom map[string]any
 
 type ShortcutAction struct {
 	Device map[int]ActionDevice `json:"device"`
@@ -195,20 +195,20 @@ type Mode struct {
 }
 
 type TimerAction struct {
-	Type     string
-	Shortcut int
-	Mode     string
-	Action   ShortcutAction
+	Type     string         `json:"type"`
+	Shortcut int            `json:"shortcut"`
+	Mode     string         `json:"mode"`
+	Action   ShortcutAction `json:"action"`
 }
 
 type Timer struct {
-	Action  TimerAction
-	Client  Client                 `json:"client"`
-	Enabled bool                   `json:"enabled"`
-	Time    map[string]interface{} `json:"time"`
-	ID      int                    `json:"id"`
+	TimerAction
+	Client  Client         `json:"client"`
+	Enabled bool           `json:"enabled"`
+	Time    map[string]any `json:"time"`
+	ID      int            `json:"id"`
 }
 
 type VincServices struct {
-	FireAlarm map[string]interface{} `json:"fireAlarm"`
+	FireAlarm map[string]any `json:"fireAlarm"`
 }

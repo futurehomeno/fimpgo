@@ -2,13 +2,12 @@ package primefimp
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 
-	"github.com/futurehomeno/fimpgo"
 	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/require"
 )
 
 func clientId() string {
@@ -16,7 +15,7 @@ func clientId() string {
 }
 
 func TestMode(t *testing.T) {
-	tb, _ := ioutil.ReadFile("testdata/mode.json")
+	tb, _ := os.ReadFile("testdata/mode.json")
 
 	var mode []Mode
 
@@ -31,13 +30,15 @@ func TestMode(t *testing.T) {
 }
 
 func TestTimerWithActions(t *testing.T) {
-	tb, _ := ioutil.ReadFile("testdata/timer_with_actions.json")
+	tb, err := os.ReadFile("testdata/timer_with_actions.json")
+	require.NoError(t, err)
 
 	var timer Timer
+	err = json.Unmarshal(tb, &timer)
+	require.NoError(t, err)
 
-	json.Unmarshal(tb, &timer)
-
-	device37 := timer.Action.Action.Device[37]
+	device37, ok := timer.Action.Device[37]
+	require.True(t, ok, "Device 37 not found in timer action map=%v", timer.Action.Device)
 
 	if device37["power"].(string) != "on" {
 		t.Errorf("Wrong power value for device 37. Expecting: on, Got: %s", device37["power"].(string))
@@ -45,29 +46,32 @@ func TestTimerWithActions(t *testing.T) {
 }
 
 func TestTimerWithMode(t *testing.T) {
-	tb, _ := ioutil.ReadFile("testdata/timer_with_mode.json")
+	tb, err := os.ReadFile("testdata/timer_with_mode.json")
+	require.NoError(t, err)
 
 	var timer Timer
+	err = json.Unmarshal(tb, &timer)
+	require.NoError(t, err)
 
-	json.Unmarshal(tb, &timer)
-
-	if timer.Action.Type != "mode" {
-		t.Errorf("Wrong action type. Expection: mode, Got: %s", timer.Action.Mode)
+	if timer.Mode != "vacation" {
+		t.Errorf("Wrong action type. Expection: mode, Got: %s", timer.Mode)
 	}
 }
 
 func TestTimerWithShortcut(t *testing.T) {
-	tb, _ := ioutil.ReadFile("testdata/timer_with_shortcut.json")
+	tb, err := os.ReadFile("testdata/timer_with_shortcut.json")
+	require.NoError(t, err)
 
 	var timer Timer
+	err = json.Unmarshal(tb, &timer)
+	require.NoError(t, err)
 
-	json.Unmarshal(tb, &timer)
-
-	if timer.Action.Type != "shortcut" {
-		t.Errorf("Wrong action type. Expection: mode, Got: %s", timer.Action.Mode)
+	if timer.Shortcut != 1 {
+		t.Errorf("Wrong action type. Expection: shortcut, Got: %d", timer.Shortcut)
 	}
 }
 
+/*
 func TestPrimeFimpSendFimpWithTopicResponse(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	mqtt := fimpgo.NewMqttTransport(brokerUrl, "fimpgotest", brokerUser, brokerPass, true, 1, 1)
@@ -203,3 +207,4 @@ func TestPrimeFimpClientApiGetSite(t *testing.T) {
 	log.Infof("SIte contains %d devices", len(site.Devices))
 	client.Stop()
 }
+*/

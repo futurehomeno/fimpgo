@@ -6,15 +6,15 @@ import (
 
 // Service represents a specification of the service supported by the thing.
 type Service struct {
-	Name             string                 `json:"name" storm:"index"`
-	Alias            string                 `json:"alias"`
-	Address          string                 `json:"address"`
-	Enabled          bool                   `json:"enabled"`
-	Groups           []string               `json:"groups"`
-	Props            map[string]interface{} `json:"props"`
-	Tags             []string               `json:"tags"`
-	PropSetReference string                 `json:"prop_set_ref"`
-	Interfaces       []Interface            `json:"interfaces"`
+	Name             string         `json:"name" storm:"index"`
+	Alias            string         `json:"alias"`
+	Address          string         `json:"address"`
+	Enabled          bool           `json:"enabled"`
+	Groups           []string       `json:"groups"`
+	Props            map[string]any `json:"props"`
+	Tags             []string       `json:"tags"`
+	PropSetReference string         `json:"prop_set_ref"`
+	Interfaces       []Interface    `json:"interfaces"`
 }
 
 // EnsureInterfaces makes sure that service definition contains provided interfaces and adds them if they are missing.
@@ -165,7 +165,7 @@ func (s *Service) PropertyBool(name string) bool {
 }
 
 // PropertyObject is a helper that extracts property settings out of the service specification.
-func (s *Service) PropertyObject(name string, object interface{}) bool {
+func (s *Service) PropertyObject(name string, object any) bool {
 	value, ok := s.Props[name]
 	if !ok {
 		return false
@@ -175,7 +175,7 @@ func (s *Service) PropertyObject(name string, object interface{}) bool {
 }
 
 // cast is a helper allowing simple casting of interfaces to destination type using marshalling and unmarshalling in the process.
-func (s *Service) cast(dst, src interface{}) bool {
+func (s *Service) cast(dst, src any) bool {
 	b, err := json.Marshal(src)
 	if err != nil {
 		return false

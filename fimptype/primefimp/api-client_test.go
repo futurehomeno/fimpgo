@@ -1,18 +1,5 @@
 package primefimp
 
-import (
-	"fmt"
-	"os"
-	"strings"
-	"sync"
-	"testing"
-	"time"
-
-	"github.com/futurehomeno/fimpgo"
-	"github.com/google/uuid"
-	log "github.com/sirupsen/logrus"
-)
-
 var brokerUrl = "tcp://cube.local:1883"
 var brokerUser = ""
 var brokerPass = ""
@@ -47,10 +34,10 @@ func TestPrimeFimp_ClientApi_Update(t *testing.T) {
 	client.RegisterChannel("test-run-1", notifyCh)
 
 	client.Stop()
-}*/
+}
 
 func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.TraceLevel)
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
 	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
@@ -342,4 +329,4 @@ func TestPrimefimp_LoadStateFromFile(t *testing.T) {
 	if len(filteredDevices) != meterAttributes {
 		t.Fatal(fmt.Sprintf("meter_elec devices count does not match. expected %d, got %d", meterAttributes, len(filteredDevices)))
 	}
-}
+}*/

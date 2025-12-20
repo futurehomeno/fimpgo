@@ -3,7 +3,7 @@ package primefimp
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
@@ -136,7 +136,7 @@ func (mh *ApiClient) ReloadSiteToCache(retry int) error {
 
 // LoadVincResponseFromFile Loads site from file . File should be in exactly the same format as vinculum response
 func (mh *ApiClient) LoadVincResponseFromFile(fileName string) error {
-	bSite, err := ioutil.ReadFile(fileName)
+	bSite, err := os.ReadFile(fileName)
 	if err != nil {
 		return err
 	}

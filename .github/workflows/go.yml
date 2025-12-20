@@ -92,9 +92,9 @@ jobs:
 
       - name: Wait for Mosquitto
         run: |
-          for i in {1..30}; do
+          for i in {1..5}; do
             nc -z 127.0.0.1 1883 && exit 0
-            sleep 1
+            sleep 2
           done
           echo "Mosquitto not ready"
           docker logs mosquitto

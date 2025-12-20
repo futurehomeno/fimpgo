@@ -3,7 +3,6 @@ package edgeapp
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -52,7 +51,7 @@ func (cf *Configs) initFiles() error {
 }
 
 func (cf *Configs) LoadFromFile() error {
-	configFileBody, err := ioutil.ReadFile(cf.path)
+	configFileBody, err := os.ReadFile(cf.path)
 	if err != nil {
 		return err
 	}
@@ -67,7 +66,7 @@ func (cf *Configs) SaveToFile() error {
 	cf.ConfiguredBy = "auto"
 	cf.ConfiguredAt = time.Now().Format(time.RFC3339)
 	bpayload, err := json.Marshal(cf)
-	err = ioutil.WriteFile(cf.path, bpayload, 0664)
+	err = os.WriteFile(cf.path, bpayload, 0664)
 	if err != nil {
 		return err
 	}
