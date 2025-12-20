@@ -105,9 +105,6 @@ jobs:
           set -o pipefail
           go test ./... -v -count=1 -timeout=5m --failfast | tee test.log
 
-      - name: Show Mosquitto logs
-        run: docker logs ${{ job.services.mosquitto.id }}
-
       - name: Upload test log
         if: always()
         uses: actions/upload-artifact@v4
