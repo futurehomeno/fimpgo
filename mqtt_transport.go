@@ -115,7 +115,6 @@ func NewMqttTransport(serverURI, clientID, username, password string, cleanSessi
 	mh.mqttOptions.SetCleanSession(cleanSession)
 	mh.mqttOptions.SetAutoReconnect(true)
 	mh.mqttOptions.SetConnectRetry(true)
-	mh.mqttOptions.SetKeepAlive(60 * time.Second)
 	mh.mqttOptions.SetConnectionLostHandler(mh.onConnectionLost)
 	mh.mqttOptions.SetOnConnectHandler(mh.onConnect)
 	mh.mqttOptions.SetWriteTimeout(time.Second * 30)
