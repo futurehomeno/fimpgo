@@ -141,7 +141,7 @@ jobs:
         echo "" >> changes.md
 
         # Parse commit messages for "(#123)" pattern - works for squash/merge/rebase
-        PRS=$(git log "$LAST"..HEAD --pretty=format:"%s" | grep -E "\(#[0-9]+\)")
+        PRS=$(git log "$LAST"..HEAD --pretty=format:"%s" | grep -E "\(#[0-9]+\)" || true)
 
         if [[ -z "$PRS" ]]; then
           echo "_No PRs found in this release range._" >> changes.md
