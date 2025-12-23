@@ -116,8 +116,11 @@ func NewMqttTransport(serverURI, clientID, username, password string, cleanSessi
 	mh.mqttOptions.SetCleanSession(cleanSession)
 	mh.mqttOptions.SetAutoReconnect(true)
 	mh.mqttOptions.SetConnectRetry(true)
+<<<<<<< HEAD
 	mh.mqttOptions.SetKeepAlive(60 * time.Second)
 	mh.mqttOptions.SetPingTimeout(20 * time.Second)
+=======
+>>>>>>> dev/align_connection_with_zga
 	mh.mqttOptions.SetConnectionLostHandler(mh.onConnectionLost)
 	mh.mqttOptions.SetOnConnectHandler(mh.onConnect)
 	mh.mqttOptions.SetWriteTimeout(time.Second * 30)
