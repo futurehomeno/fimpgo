@@ -3,7 +3,6 @@ package security
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 )
@@ -129,30 +128,27 @@ func (cs *KeyStore) GetAllUserKeys(userId string) []KeyRecord {
 
 func (cs *KeyStore) SaveToDisk() error {
 	bpayload, err := json.Marshal(cs.keyStore)
+	if err != nil {
+		return err
+	}
+
 	var mode os.FileMode
 	if cs.isPrivate {
 		mode = 0600
 	} else {
 		mode = 0664
 	}
-	err = ioutil.WriteFile(cs.keyStoreFilePath, bpayload, mode)
-	if err != nil {
-		return err
-	}
-	return err
-	return nil
+
+	return os.WriteFile(cs.keyStoreFilePath, bpayload, mode)
 }
 
 func (cs *KeyStore) LoadFromDisk() error {
-	configFileBody, err := ioutil.ReadFile(cs.keyStoreFilePath)
+	configFileBody, err := os.ReadFile(cs.keyStoreFilePath)
 	if err != nil {
 		return err
 	}
-	err = json.Unmarshal(configFileBody, &cs.keyStore)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return json.Unmarshal(configFileBody, &cs.keyStore)
 }
 
 // An app should call the method to authenticate message

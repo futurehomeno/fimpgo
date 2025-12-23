@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -15,11 +15,11 @@ import (
 )
 
 type OAuth2TokenResponse struct {
-	AccessToken  string      `json:"access_token"`
-	TokenType    string      `json:"token_type"`
-	ExpiresIn    int64       `json:"expires_in"`
-	RefreshToken string      `json:"refresh_token"`
-	Scope        interface{} `json:"scope"`
+	AccessToken  string `json:"access_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int64  `json:"expires_in"`
+	RefreshToken string `json:"refresh_token"`
+	Scope        any    `json:"scope"`
 }
 
 type OAuth2RefreshProxyRequest struct {
@@ -76,7 +76,7 @@ func (oac *FhOAuth2Client) SetRefreshTokenApiUrl(refreshTokenApiUrl string) {
 
 // NewFhOAuth2Client implements OAuth client which communicates to 3rd party API over FH Auth proxy.
 func NewFhOAuth2Client(partnerName string, appName string, env string) *FhOAuth2Client {
-	client := &FhOAuth2Client{partnerName: partnerName, mqttServerURI: "tcp://localhost:1883", mqttClientID: "auth_client_" + appName}
+	client := &FhOAuth2Client{partnerName: partnerName, mqttServerURI: "tcp://127.0.0.1:1883", mqttClientID: "auth_client_" + appName}
 	if env == utils.EnvBeta {
 		client.refreshTokenApiUrl = "https://partners-beta.futurehome.io/api/control/edge/proxy/refresh"
 		client.authCodeApiUrl = "https://partners-beta.futurehome.io/api/control/edge/proxy/auth-code"
@@ -188,9 +188,8 @@ func (oac *FhOAuth2Client) ExchangeRefreshToken(refreshToken string) (*OAuth2Tok
 	return oac.postMsg(req, oac.refreshTokenApiUrl)
 }
 
-func (oac *FhOAuth2Client) postMsg(req interface{}, url string) (*OAuth2TokenResponse, error) {
+func (oac *FhOAuth2Client) postMsg(req any, url string) (*OAuth2TokenResponse, error) {
 	if oac.hubToken == "" {
-		log.Info("Empty token.Re-requesting new token")
 		err := oac.LoadHubTokenFromCB()
 		if err != nil {
 			return nil, errors.New("empty hub token.operation aborted")
@@ -204,14 +203,14 @@ func (oac *FhOAuth2Client) postMsg(req interface{}, url string) (*OAuth2TokenRes
 	r, _ := http.NewRequest("POST", url, bytes.NewBuffer(reqB))
 	r.Header.Add("Content-Type", "application/json")
 	r.Header.Add("Authorization", "Bearer "+oac.hubToken)
-	//log.Info("Sending using token :",oac.hubToken
+
 	var resp *http.Response
-	for i := 0; i < oac.refreshRetry; i++ {
+	for range oac.refreshRetry {
 		resp, err = client.Do(r)
 		if err == nil && resp.StatusCode < 400 {
 			break
 		}
-		log.Error("Error response from auth endpoint.Retrying...")
+		log.Error("[fimpgo] Error response from auth endpoint.Retrying...")
 		time.Sleep(time.Second * oac.retryDelay)
 	}
 	if err != nil {
@@ -221,7 +220,7 @@ func (oac *FhOAuth2Client) postMsg(req interface{}, url string) (*OAuth2TokenRes
 		return nil, fmt.Errorf("error %s response from server", resp.Status)
 	}
 
-	bData, err := ioutil.ReadAll(resp.Body)
+	bData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

@@ -1,13 +1,14 @@
 package discovery
 
 import (
+	"testing"
+
 	"github.com/futurehomeno/fimpgo"
 	log "github.com/sirupsen/logrus"
-	"testing"
 )
 
 func SecondResponder() {
-	mqt := fimpgo.NewMqttTransport("tcp://localhost:1883", "fimpgotest-2", "", "", true, 1, 1)
+	mqt := fimpgo.NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest-2", "", "", true, 1, 1)
 	err := mqt.Start()
 	if err != nil {
 		//t.Error("Error connecting to broker ",err)
@@ -32,11 +33,10 @@ func TestServiceDiscoveryResponder_Start(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	go SecondResponder()
 
-	mqt := fimpgo.NewMqttTransport("tcp://localhost:1883", "fimpgotest-1", "", "", true, 1, 1)
+	mqt := fimpgo.NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest-1", "", "", true, 1, 1)
 	err := mqt.Start()
-	t.Log("Connected")
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
 
 	resource := Resource{
@@ -53,22 +53,15 @@ func TestServiceDiscoveryResponder_Start(t *testing.T) {
 	responder.RegisterResource(resource)
 	responder.Start()
 
-	t.Log("Sending discovery request 1 ")
-	discoveredResource,_ := DiscoverResources(mqt, 2)
-	for _, r := range discoveredResource {
-		t.Log("Discovered resource = " + r.ResourceName)
-	}
+	discoveredResource, _ := DiscoverResources(mqt, 2)
+
 	if len(discoveredResource) != 2 {
 		t.Fatal("number of discovered resources doesn't match ")
 	}
 
-	t.Log("Sending discovery request 2 ")
-	discoveredResource,_ = DiscoverResources(mqt, 2)
-	for _, r := range discoveredResource {
-		t.Log("Discovered resource = " + r.ResourceName)
-	}
+	discoveredResource, _ = DiscoverResources(mqt, 2)
+
 	if len(discoveredResource) != 2 {
 		t.Fatal("number of discovered resources doesn't match ")
 	}
-
 }

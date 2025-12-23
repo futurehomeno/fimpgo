@@ -15,7 +15,7 @@ type Manifest struct {
 	InitFlow    []string     `json:"init_flow"`
 	Services    []AppService `json:"services"`
 	AppState    AppStates    `json:"app_state"`
-	ConfigState interface{}  `json:"config_state"`
+	ConfigState any          `json:"config_state"`
 }
 
 type AppConfig struct {
@@ -57,12 +57,12 @@ type AppService struct {
 }
 
 type Value struct {
-	Default interface{} `json:"default"`
+	Default any `json:"default"`
 }
 
 type AppConfigUI struct {
-	Type   string      `json:"type"`
-	Select interface{} `json:"select"`
+	Type   string `json:"type"`
+	Select any    `json:"select"`
 }
 
 type UIButton struct {

@@ -3,18 +3,16 @@ package fimpgo
 import (
 	"bytes"
 	"compress/gzip"
-	"io/ioutil"
+	"io"
 	"sync"
 
 	log "github.com/sirupsen/logrus"
 )
 
 type MsgCompressor struct {
-	compressor         *gzip.Writer
-	decompressor       *gzip.Reader
-	compressionBuffer  bytes.Buffer
-	decompressorBuffer bytes.Buffer
-	mux                sync.Mutex
+	compressor        *gzip.Writer
+	compressionBuffer bytes.Buffer
+	mux               sync.Mutex
 }
 
 func NewMsgCompressor(alg, compLevel string) *MsgCompressor {
@@ -28,18 +26,25 @@ func NewMsgCompressor(alg, compLevel string) *MsgCompressor {
 	return comp
 }
 
-//CompressBinMsg - compresses binary message and return compressed byte array.
+// CompressBinMsg - compresses binary message and return compressed byte array.
 func (c *MsgCompressor) CompressBinMsg(msg []byte) ([]byte, error) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 	c.compressor.Reset(&c.compressionBuffer)
+
 	_, err := c.compressor.Write(msg)
 	if err != nil {
-		log.Error("Compression error :", err.Error())
 		return nil, err
 	}
-	c.compressor.Flush()
-	c.compressor.Close()
+
+	if err := c.compressor.Flush(); err != nil {
+		return nil, err
+	}
+
+	if err := c.compressor.Close(); err != nil {
+		return nil, err
+	}
+
 	cp := c.compressionBuffer.Bytes()
 	c.compressionBuffer.Reset()
 	return cp, nil
@@ -49,13 +54,17 @@ func (c *MsgCompressor) DecompressBinMsg(binMsg []byte) ([]byte, error) {
 	var err error
 	var decompressorBuffer bytes.Buffer
 	decompressorBuffer.Write(binMsg)
+
 	decompressor, err := gzip.NewReader(&decompressorBuffer)
 	if err != nil {
-		log.Error("Decompression error 1 .Err:", err)
 		return nil, err
 	}
-	response, err := ioutil.ReadAll(decompressor)
-	decompressor.Close()
+
+	response, err := io.ReadAll(decompressor)
+	if err := decompressor.Close(); err != nil {
+		return nil, err
+	}
+
 	decompressorBuffer.Reset()
 	return response, err
 }
@@ -65,6 +74,7 @@ func (c *MsgCompressor) CompressFimpMsg(msg *FimpMessage) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return c.CompressBinMsg(binMsg)
 }
 
@@ -73,5 +83,6 @@ func (c *MsgCompressor) DecompressFimpMsg(compBinMsg []byte) (*FimpMessage, erro
 	if err != nil {
 		return nil, err
 	}
+
 	return NewMessageFromBytes(binMsg)
 }

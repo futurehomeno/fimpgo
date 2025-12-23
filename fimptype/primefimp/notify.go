@@ -8,13 +8,13 @@ import (
 )
 
 type Notify struct {
-	Errors     interface{}     `json:"errors"`
+	Errors     any             `json:"errors"`
 	Cmd        string          `json:"cmd"`
 	Component  string          `json:"component"`
 	ParamRaw   json.RawMessage `json:"param"`
 	ChangesRaw json.RawMessage `json:"changes"`
 	Success    bool            `json:"success"`
-	Id         interface{}     `json:"id,omitempty"`
+	Id         any             `json:"id,omitempty"`
 }
 
 type DeleteChange struct {

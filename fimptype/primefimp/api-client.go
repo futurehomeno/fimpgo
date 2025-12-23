@@ -3,9 +3,10 @@ package primefimp
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"runtime/debug"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -30,10 +31,9 @@ type ApiClient struct {
 	subFilters            map[string]NotifyFilter
 	inMsgChan             fimpgo.MessageCh
 	stopFlag              bool
-	isNotifyRouterStarted bool
+	isNotifyRouterStarted atomic.Bool
 	notifChMux            sync.RWMutex
 	isVincAppsSyncEnabled bool
-	isConnPoolEnabled     bool
 	cloudService          string
 	responsePayloadType   string
 	globalPrefix          string
@@ -136,7 +136,7 @@ func (mh *ApiClient) ReloadSiteToCache(retry int) error {
 
 // LoadVincResponseFromFile Loads site from file . File should be in exactly the same format as vinculum response
 func (mh *ApiClient) LoadVincResponseFromFile(fileName string) error {
-	bSite, err := ioutil.ReadFile(fileName)
+	bSite, err := os.ReadFile(fileName)
 	if err != nil {
 		return err
 	}
@@ -179,7 +179,7 @@ func (mh *ApiClient) UnregisterChannel(channelId string) {
 
 func (mh *ApiClient) StartNotifyRouter() {
 	go func() {
-		mh.isNotifyRouterStarted = true
+		mh.isNotifyRouterStarted.Store(true)
 		for {
 			if mh.stopFlag {
 				break
@@ -187,14 +187,15 @@ func (mh *ApiClient) StartNotifyRouter() {
 			mh.notifyRouter()
 			log.Info("[fimpgo] Restarting notify router")
 		}
-		log.Info("[fimpgo] Notify router stopped ")
+
+		log.Info("[fimpgo] Notify router stopped")
 	}()
 }
 
 // Stop : This is destructor
 func (mh *ApiClient) Stop() {
 	mh.sClient.Stop()
-	if mh.isNotifyRouterStarted {
+	if mh.isNotifyRouterStarted.Load() {
 		mh.stopFlag = true
 		mh.inMsgChan <- &fimpgo.Message{}
 	}
@@ -282,44 +283,49 @@ func (mh *ApiClient) notifyRouter() {
 	mh.inMsgChan = make(fimpgo.MessageCh, 10)
 	mh.mqttTransport.RegisterChannel(mh.clientID, mh.inMsgChan)
 	if err := mh.mqttTransport.Subscribe(VincEventTopic); err != nil {
-		log.Error("[fimpgo] error subscribing to the vinculum event topic: ", err)
+		log.Error("[fimpgo] Subscribe to vinculum event topic err:", err)
 	}
 
 	for msg := range mh.inMsgChan {
 		if mh.stopFlag {
 			break
 		}
+
 		if msg.Topic != VincEventTopic {
 			continue
 		}
+
 		notif, err := FimpToNotify(msg)
 		if err != nil {
 			log.Warnf("[fimpgo] Cast %v to Notify err: %v", msg, err)
 			continue
-		} else {
-			mh.UpdateSite(notif)
-			if mh.isNotifyRouterStarted { // make sure notify router is started
-				mh.notifChMux.RLock()
-				for cid, nfCh := range mh.notifySubChannels { // check all subfilters
-					nfFilter, ok := mh.subFilters[cid]
-					var send bool
-					if ok {
-						if nfFilter.Cmd == notif.Cmd && nfFilter.Component == notif.Component {
-							send = true
-						}
-					} else {
+		}
+
+		if err := mh.UpdateSite(notif); err != nil {
+			log.Warnf("[fimpgo] Update site from notify err: %v", err)
+		}
+
+		if mh.isNotifyRouterStarted.Load() { // make sure notify router is started
+			mh.notifChMux.RLock()
+			for cid, nfCh := range mh.notifySubChannels { // check all subfilters
+				nfFilter, ok := mh.subFilters[cid]
+				var send bool
+				if ok {
+					if nfFilter.Cmd == notif.Cmd && nfFilter.Component == notif.Component {
 						send = true
 					}
-					if send {
-						select {
-						case nfCh <- *notif: // send notification to corresponding subchannel if there is match
-						default:
-							log.Warnf("[fimpgo] Send channel %s is blocked ", cid)
-						}
+				} else {
+					send = true
+				}
+				if send {
+					select {
+					case nfCh <- *notif: // send notification to corresponding subchannel if there is match
+					default:
+						log.Warnf("[fimpgo] Send channel %s is blocked ", cid)
 					}
 				}
-				mh.notifChMux.RUnlock()
 			}
+			mh.notifChMux.RUnlock()
 		}
 	}
 }
@@ -348,7 +354,7 @@ func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, e
 	return mh.sClient.SendReqRespFimp(reqAddr.Serialize(), responseAddress, msg, 5, true)
 }
 
-func (mh *ApiClient) sendSetRequest(component string, value interface{}) (*fimpgo.FimpMessage, error) {
+func (mh *ApiClient) sendSetRequest(component string, value any) (*fimpgo.FimpMessage, error) {
 	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
 	respAddr := mh.responseAddress()
 	responseAddress := respAddr.Serialize()

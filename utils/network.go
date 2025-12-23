@@ -6,8 +6,9 @@ import (
 )
 
 var (
-	errNoAvailableInterface = errors.New("no available interface")
-	errNoAvailableAddress   = errors.New("no available address")
+	errNoAvailableInterface  = errors.New("no available interface")
+	errNoAvailableAddress    = errors.New("no available address")
+	errNotSupportedInterface = errors.New("not supported interface")
 )
 
 // RoutedInterface returns a network interface that can route IP
@@ -18,7 +19,7 @@ func RoutedInterface(network string, flags net.Flags) (*net.Interface, error) {
 	switch network {
 	case "ip", "ip4", "ip6":
 	default:
-		return nil, errNoAvailableInterface
+		return nil, errNotSupportedInterface
 	}
 	ift, err := net.Interfaces()
 	if err != nil {
@@ -33,7 +34,7 @@ func RoutedInterface(network string, flags net.Flags) (*net.Interface, error) {
 		}
 		return &ifi, nil
 	}
-	return nil, errNoAvailableInterface
+	return nil, errNoAvailableAddress
 }
 
 func hasRoutableIP(network string, ifi *net.Interface) (net.IP, bool) {

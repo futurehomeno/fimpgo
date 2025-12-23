@@ -61,17 +61,6 @@ jobs:
       - build
       - golangci
 
-    services:
-      mosquitto:
-        image: eclipse-mosquitto:2
-        ports:
-          - 1883:1883
-        options: >-
-          --health-cmd "mosquitto_sub -h localhost -t '$$SYS/#' -C 1"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
 
@@ -85,12 +74,43 @@ jobs:
           export "GH_TOKEN=${{ secrets.GH_OAUTH_TOKEN }}"
           git config --global url."https://$GH_TOKEN@github.com/".insteadOf "https://github.com/"
 
-      - name: Run tests
-        env:
-          MQTT_HOST: localhost
-          MQTT_PORT: "1883"
+      - name: Create Mosquitto config
         run: |
-          make test
+          mkdir -p .ci
+          cat > .ci/mosquitto.conf <<EOF
+          listener 1883
+          allow_anonymous true
+          persistence false
+          EOF
+
+      - name: Start Mosquitto
+        run: |
+          docker run -d --name mosquitto \
+            -p 1883:1883 \
+            -v "$PWD/.ci/mosquitto.conf:/mosquitto/config/mosquitto.conf" \
+            eclipse-mosquitto:2
+
+      - name: Wait for Mosquitto
+        run: |
+          for i in {1..5}; do
+            nc -z 127.0.0.1 1883 && exit 0
+            sleep 2
+          done
+          echo "Mosquitto not ready"
+          docker logs mosquitto
+          exit 1
+
+      - name: Run tests
+        run: |
+          set -o pipefail
+          go test ./... -v -count=1 -timeout=5m --failfast | tee test.log
+
+      - name: Upload test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-log
+          path: test.log
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
