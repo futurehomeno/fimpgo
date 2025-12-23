@@ -462,18 +462,19 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 	case CompressedJsonPayload:
 		fimpMsg, err = mh.compressor.DecompressFimpMsg(msg.Payload())
 	default:
-		// This means unknown binary payload, for instance compressed message
-		log.Warnf("[fimpgo] Unknown payloadType=%v", addr.PayloadType)
+		// This means unknown binary payload , for instance compressed message
+		log.Errorf("[fimpgo] Unknown PayloadType=%s topic=%s", addr.PayloadType, topic)
+		return
+	}
+
+	if err != nil {
+		log.Trace(string(msg.Payload()))
+		log.Errorf("[fimpgo] Processing payload from topic=%s err: %v", topic, err)
+		return
 	}
 
 	if mh.msgHandler != nil {
-		if err == nil {
-			mh.msgHandler(topic, addr, fimpMsg, msg.Payload())
-		} else {
-			log.Trace(string(msg.Payload()))
-			log.Errorf("[fimpgo] Processing payload err:%v", err)
-			return
-		}
+		mh.msgHandler(topic, addr, fimpMsg, msg.Payload())
 	}
 
 	mh.channelRegMux.Lock()
