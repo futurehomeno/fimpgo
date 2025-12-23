@@ -2,7 +2,6 @@ package primefimp
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
 )
 
 // Site object
@@ -112,8 +111,8 @@ func (s *Site) FindIndex(comp string, id int) int {
 			}
 		}
 	default:
-		log.Error("Component does not support find index.")
 	}
+
 	return -1
 }
 

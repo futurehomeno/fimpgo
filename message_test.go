@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/buger/jsonparser"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -55,7 +56,6 @@ func TestNewBoolMessage(t *testing.T) {
 	if val == false {
 		t.Error("Wrong value")
 	}
-	t.Log("ok")
 }
 
 func TestNewFloatMessage(t *testing.T) {
@@ -69,7 +69,6 @@ func TestNewFloatMessage(t *testing.T) {
 	if val != 35.5 {
 		t.Error("Wrong value")
 	}
-	t.Log("ok")
 }
 
 func TestNewObjectMessage(t *testing.T) {
@@ -85,8 +84,15 @@ func TestNewObjectMessage(t *testing.T) {
 		Field2: 2,
 	})
 	msg := NewMessage("evt.timeline.report", "kind-owl", VTypeObject, obj, nil, nil, nil)
-	bObj, _ := msg.SerializeToJson()
-	t.Log("ok", string(bObj))
+	serVal, err := msg.SerializeToJson()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !strings.HasPrefix(string(serVal), `{"type":"evt.timeline.report","serv":"kind-owl","val_t":"object","val":[{"Field1":1,"Field2":2}],"tags":null,"props":null,"ver":"1","corid":"","ctime":"`) {
+		t.Error("Serialization failed")
+	}
 }
 
 func TestFimpMessage_SerializeBool(t *testing.T) {
@@ -95,7 +101,10 @@ func TestFimpMessage_SerializeBool(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log(string(serVal))
+
+	if !strings.HasPrefix(string(serVal), `{"type":"cmd.binary.set","serv":"out_bin_switch","val_t":"bool","val":true,"tags":null,"props":null,"ver":"1","corid":"","ctime":"`) {
+		t.Error("Serialization failed")
+	}
 }
 
 func TestFimpMessage_SerializeFloat(t *testing.T) {
@@ -106,8 +115,10 @@ func TestFimpMessage_SerializeFloat(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log(string(serVal))
 
+	if !strings.HasPrefix(string(serVal), `{"type":"evt.sensor.report","serv":"temp_sensor","val_t":"float","val":35.5,"tags":null,"props":{"unit":"C"},"ver":"1","corid":"","ctime":"`) {
+		t.Error("Serialization failed")
+	}
 }
 
 func BenchmarkFimpMessage_Serialize(b *testing.B) {
@@ -135,10 +146,7 @@ func BenchmarkFimpMessage_Serialize2(b *testing.B) {
 func TestNewMessageFromBytes_CorruptedPayload1(t *testing.T) {
 	msgString := "{123456789-=#$%"
 	_, err := NewMessageFromBytes([]byte(msgString))
-	if err != nil {
-		t.Log(err)
-	}
-	t.Log("ok")
+	assert.Equal(t, jsonparser.KeyPathNotFoundError, err)
 }
 
 func TestNewMessageFromBytes_BoolValue(t *testing.T) {
@@ -154,7 +162,6 @@ func TestNewMessageFromBytes_BoolValue(t *testing.T) {
 	if fimp.Properties["p1"] != "pv1" {
 		t.Error("Wrong props value")
 	}
-	t.Log("ok")
 }
 
 func TestNewMessageFromBytes_BoolInt(t *testing.T) {
@@ -167,7 +174,6 @@ func TestNewMessageFromBytes_BoolInt(t *testing.T) {
 	if val != 1234 {
 		t.Error("Wrong value ", val)
 	}
-	t.Log("ok")
 }
 
 func TestNewMessageFromBytesWithProps(t *testing.T) {
@@ -180,7 +186,6 @@ func TestNewMessageFromBytesWithProps(t *testing.T) {
 	if val != 1234 {
 		t.Error("Wrong value ", val)
 	}
-	t.Log("ok")
 }
 
 func TestFimpMessage_GetStrArrayValue(t *testing.T) {
@@ -291,10 +296,10 @@ func TestFimpMessage_GetFloatMapValue(t *testing.T) {
 		t.Error(err)
 	}
 	if val["param2"] != 2.5 {
-		t.Error("Wrong map result")
+		t.Error("Wrong param2")
 	}
-	if val["param3"] == 5 {
-		t.Log("OK")
+	if val["param3"] != 5 {
+		t.Error("Wrong param3")
 	}
 }
 
@@ -315,7 +320,7 @@ func TestFimpMessage_GetBoolMapValue(t *testing.T) {
 }
 
 func TestProps_GetIntValue(t *testing.T) {
-	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"int","val":1234,"props":{"param1":1,"param2":2},"tags":null}`
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"int","val":1234,"props":{"param1":"1","param2":"2"},"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -347,7 +352,7 @@ func TestProps_GetStringValue(t *testing.T) {
 }
 
 func TestProps_GetFloatValue(t *testing.T) {
-	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"float","val":1.5,"props":{"param1":1.5,"param2":2.5},"tags":null}`
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"float","val":1.5,"props":{"param1":"1.5","param2":"2.5"},"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -364,7 +369,7 @@ func TestProps_GetFloatValue(t *testing.T) {
 }
 
 func TestProps_GetBoolValue(t *testing.T) {
-	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"bool","val":true,"props":{"param1":true,"param2":false},"tags":null}`
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"bool","val":true,"props":{"param1":"true","param2":"false"},"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -421,14 +426,10 @@ func TestFimpMessage_GetObjectValue(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	strMsg := string(binMsg)
-	t.Log(strMsg)
-	if strings.Contains(strMsg, "\"param2\":\"val2\"") {
-		t.Log("All good")
-	} else {
-		t.Error("Something wrong witgh serialization")
-	}
 
+	if !assert.Equal(t, string(binMsg), `{"type":"cmd.config.set","serv":"dev_sys","val_t":"object","val":{"param1":"val1","param2":"val2"},"tags":null,"props":{"test":"1"},"ver":"","corid":"","ctime":"","uid":""}`) {
+		t.Error("Serialization failed")
+	}
 }
 
 func BenchmarkFimpMessage_GetObjectValue(b *testing.B) {

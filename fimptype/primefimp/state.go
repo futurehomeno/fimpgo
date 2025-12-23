@@ -3,10 +3,11 @@ package primefimp
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+
 	"github.com/buger/jsonparser"
 	"github.com/futurehomeno/fimpgo"
 	"github.com/pkg/errors"
-	"reflect"
 )
 
 /*
@@ -257,12 +258,12 @@ func (sa StateAttribute) GetFirstPropAsString(propName string) (string, error) {
 }
 
 /*
-	Attribute Value
+Attribute Value
 */
 type StateAttributeValue struct {
 	Timestamp string            `json:"ts"`
 	ValType   string            `json:"val_t"`
-	Val       interface{}       `json:"val"`
+	Val       any               `json:"val"`
 	Props     map[string]string `json:"props"`
 }
 
@@ -429,7 +430,7 @@ func (sav StateAttributeValue) GetStrMapValue() (map[string]string, error) {
 		return strMapVal, nil
 	}
 
-	iMapVal, ok := sav.Val.(map[string]interface{})
+	iMapVal, ok := sav.Val.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf(wrongValueFormat, "map[string]string", reflect.ValueOf(sav.Val))
 	}

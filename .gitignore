@@ -2,3 +2,5 @@
 .DS_Store
 .vscode
 fimpcli
+build/*
+build/

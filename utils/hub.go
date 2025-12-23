@@ -3,10 +3,11 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
+	"os"
 	"time"
 )
+
 const EnvBeta = "beta"
 const EnvProd = "prod"
 
@@ -31,17 +32,17 @@ func NewHubUtils() *HubUtils {
 	return &HubUtils{hubInfoFilePath: "/var/lib/futurehome/hub/hub.json"}
 }
 
-func (cs *HubUtils) GetHubInfo() (*HubInfo,error) {
+func (cs *HubUtils) GetHubInfo() (*HubInfo, error) {
 	hubInfo := &HubInfo{}
-	configFileBody, err := ioutil.ReadFile(cs.hubInfoFilePath)
+	configFileBody, err := os.ReadFile(cs.hubInfoFilePath)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	err = json.Unmarshal(configFileBody, hubInfo)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
-	return hubInfo,nil
+	return hubInfo, nil
 }
 
 func GetNonce() string {

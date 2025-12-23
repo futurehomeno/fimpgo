@@ -19,8 +19,8 @@ type ThingInclusionReport struct {
 	WakeUpInterval string `json:"wakeup_interval"` // Wakeup interval for battery powered devices in seconds, value "-1" indicates that it is not applicable.
 	Security       string `json:"security"`        // Level of communication security, either insecure or secure.
 
-	TechSpecificProps map[string]string                 `json:"tech_specific_props"` // Optional custom properties of the thing specific to the technology adapter.
-	PropSets          map[string]map[string]interface{} `json:"prop_set"`            // Optional map of custom property sets of services specific to the technology adapter. These sets can be referenced from service definition.
+	TechSpecificProps map[string]string         `json:"tech_specific_props"` // Optional custom properties of the thing specific to the technology adapter.
+	PropSets          map[string]map[string]any `json:"prop_set"`            // Optional map of custom property sets of services specific to the technology adapter. These sets can be referenced from service definition.
 }
 
 // ThingExclusionReport is the object send as value in thing exclusion reports.

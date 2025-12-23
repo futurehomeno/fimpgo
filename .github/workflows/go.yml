@@ -1,0 +1,161 @@
+name: Go
+
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.25'
+
+    - name: Build
+      shell: bash
+      run: |
+        export "GH_TOKEN=${{ secrets.GH_OAUTH_TOKEN }}"
+        git config --global url."https://$GH_TOKEN@github.com/".insteadOf "https://github.com/"
+        make build-arm
+
+    - name: Upload .deb artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: fimpgo-armhf
+        path: package/build/*.deb
+
+  golangci:
+    name: linter
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - uses: reviewdog/action-golangci-lint@v2
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+          fail_level: error
+      - uses: reviewdog/action-staticcheck@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+          fail_level: error
+
+  test:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - golangci
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Configure git auth
+        run: |
+          export "GH_TOKEN=${{ secrets.GH_OAUTH_TOKEN }}"
+          git config --global url."https://$GH_TOKEN@github.com/".insteadOf "https://github.com/"
+
+      - name: Create Mosquitto config
+        run: |
+          mkdir -p .ci
+          cat > .ci/mosquitto.conf <<EOF
+          listener 1883
+          allow_anonymous true
+          persistence false
+          EOF
+
+      - name: Start Mosquitto
+        run: |
+          docker run -d --name mosquitto \
+            -p 1883:1883 \
+            -v "$PWD/.ci/mosquitto.conf:/mosquitto/config/mosquitto.conf" \
+            eclipse-mosquitto:2
+
+      - name: Wait for Mosquitto
+        run: |
+          for i in {1..5}; do
+            nc -z 127.0.0.1 1883 && exit 0
+            sleep 2
+          done
+          echo "Mosquitto not ready"
+          docker logs mosquitto
+          exit 1
+
+      - name: Run tests
+        run: |
+          set -o pipefail
+          go test ./... -v -count=1 -timeout=5m --failfast | tee test.log
+
+      - name: Upload test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-log
+          path: test.log
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./artifacts
+
+    - name: Determine previous tag
+      id: prevtag
+      run: |
+        LAST_TAG=$(git describe --tags --abbrev=0 --match "v*" --exclude "${GITHUB_REF_NAME}")
+        echo "last_tag=$LAST_TAG" >> $GITHUB_OUTPUT
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        LAST=${{ steps.prevtag.outputs.last_tag }}
+        echo "### Changes since \"$LAST\"" > changes.md
+        echo "" >> changes.md
+
+        # Parse commit messages for "(#123)" pattern - works for squash/merge/rebase
+        PRS=$(git log "$LAST"..HEAD --pretty=format:"%s" | grep -E "\(#[0-9]+\)")
+
+        if [[ -z "$PRS" ]]; then
+          echo "_No PRs found in this release range._" >> changes.md
+          exit 0
+        fi
+
+        echo "$PRS" >> changes.md
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        body_path: changes.md
+        files: artifacts/fimpgo-armhf/*.deb
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

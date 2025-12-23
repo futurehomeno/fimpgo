@@ -10,7 +10,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/golang-jwt/jwt"
+	jwt "github.com/golang-jwt/jwt/v5"
 )
 
 type JsonEcKey struct {
@@ -139,16 +139,16 @@ func (kp *EcdsaKey) ImportJsonPrivateKey(jkey JsonEcKey) error {
 }
 
 // SignStringES256 signs string and returns as result .
-func SignStringES256(payload string, keys *EcdsaKey) (string, error) {
+func SignStringES256(payload string, keys *EcdsaKey) ([]byte, error) {
 	signingMethodES256 := &jwt.SigningMethodECDSA{Name: "ES256", Hash: crypto.SHA256, KeySize: 32, CurveBits: 256}
 	signature, err := signingMethodES256.Sign(payload, keys.PrivateKey())
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	return signature, nil
 }
 
-func VerifyStringES256(payload, sig string, key *EcdsaKey) bool {
+func VerifyStringES256(payload string, sig []byte, key *EcdsaKey) bool {
 	signingMethodES256 := &jwt.SigningMethodECDSA{Name: "ES256", Hash: crypto.SHA256, KeySize: 32, CurveBits: 256}
 	err := signingMethodES256.Verify(payload, sig, key.PublicKey())
 	if err == nil {
