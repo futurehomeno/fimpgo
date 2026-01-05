@@ -152,7 +152,6 @@ func NewMqttTransportFromConnection(client MQTT.Client, subQos byte, pubQos byte
 }
 
 func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Option) *MqttTransport {
-
 	applyDefaults(&configs)
 
 	// apply extra options
@@ -168,6 +167,7 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Optio
 	mh.mqttOptions.SetDefaultPublishHandler(mh.onMessage)
 	mh.mqttOptions.SetCleanSession(configs.CleanSession)
 	mh.mqttOptions.SetAutoReconnect(true)
+	mh.mqttOptions.SetConnectRetry(true)
 	mh.mqttOptions.SetConnectionLostHandler(configs.connectionLostHandler)
 	mh.mqttOptions.SetOnConnectHandler(mh.onConnect)
 
