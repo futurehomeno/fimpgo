@@ -5,17 +5,19 @@ import (
 )
 
 type ConnStateT struct {
-	mu      sync.Mutex
-	started chan struct{}
-	done    chan struct{}
-	once    sync.Once
+	mu          sync.Mutex
+	started     chan struct{}
+	done        chan struct{}
+	onceStarted sync.Once
+	onceDone    sync.Once
 }
 
 func (c *ConnStateT) Init() {
 	c.mu.Lock()
 	c.started = make(chan struct{})
 	c.done = make(chan struct{})
-	c.once = sync.Once{}
+	c.onceStarted = sync.Once{}
+	c.onceDone = sync.Once{}
 	c.mu.Unlock()
 }
 
@@ -23,7 +25,7 @@ func (c *ConnStateT) OnConnect() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.once.Do(func() {
+	c.onceStarted.Do(func() {
 		close(c.started)
 	})
 }
@@ -32,7 +34,7 @@ func (c *ConnStateT) OnDone() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.once.Do(func() {
+	c.onceDone.Do(func() {
 		close(c.done)
 	})
 }

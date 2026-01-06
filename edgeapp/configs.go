@@ -66,6 +66,10 @@ func (cf *Configs) SaveToFile() error {
 	cf.ConfiguredBy = "auto"
 	cf.ConfiguredAt = time.Now().Format(time.RFC3339)
 	bpayload, err := json.Marshal(cf)
+	if err != nil {
+		return err
+	}
+
 	err = os.WriteFile(cf.path, bpayload, 0664)
 	if err != nil {
 		return err

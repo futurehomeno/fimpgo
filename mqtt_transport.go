@@ -327,7 +327,7 @@ func (mh *MqttTransport) Start() error {
 func (mh *MqttTransport) Stop() {
 	mh.client.Disconnect(250)
 
-	if mh.connState.IsConnected() {
+	if !mh.connState.IsConnected() {
 		return
 	}
 

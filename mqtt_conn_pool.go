@@ -136,8 +136,6 @@ func (cp *MqttConnectionPool) getConnectionById(connId int) *MqttTransport {
 }
 
 func (cp *MqttConnectionPool) genConnId() int {
-	rand.New(rand.NewSource(int64(time.Now().Nanosecond())))
-
 	for {
 		id := rand.Int()
 		if _, ok := cp.connPool[id]; !ok {
