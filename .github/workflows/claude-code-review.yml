@@ -1,0 +1,18 @@
+# Copy this file to your repo's .github/workflows/claude-code-review.yml
+# Enables automatic PR reviews by Claude
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, ready_for_review, synchronize]
+
+jobs:
+  review:
+    uses: futurehomeno/github-actions/.github/workflows/claude-code-review.yml@main
+    with:
+      model: ${{ vars.CLAUDE_MODEL }}
+      max_turns: ${{ fromJson(vars.CLAUDE_REVIEW_MAX_TURNS) }}
+      timeout_minutes: ${{ fromJson(vars.CLAUDE_REVIEW_TIMEOUT_MINUTES) }}
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
