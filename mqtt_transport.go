@@ -9,6 +9,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
@@ -69,9 +70,11 @@ type MqttTransport struct {
 	subFilters     map[string]FimpFilter
 	subFilterFuncs map[string]FilterFunc
 
-	done      chan struct{}
-	wg        sync.WaitGroup
-	mainQueue chan MQTT.Message
+	doneSignal           chan struct{}
+	doneWg               sync.WaitGroup
+	mainQueue            chan MQTT.Message
+	mainQueueOverflowCnt atomic.Uint32
+	onErrorCb            func(err error)
 
 	globalTopicPrefixMux sync.RWMutex
 	globalTopicPrefix    string
@@ -315,8 +318,8 @@ func (mh *MqttTransport) Start() error {
 		return err
 	}
 
-	mh.done = make(chan struct{})
-	mh.wg.Add(1)
+	mh.doneSignal = make(chan struct{})
+	mh.doneWg.Add(1)
 	go mh.handleIncomingMessages()
 
 	return nil
@@ -326,9 +329,9 @@ func (mh *MqttTransport) Start() error {
 func (mh *MqttTransport) Stop() {
 	mh.client.Disconnect(250)
 
-	close(mh.done)
-	mh.wg.Wait()
-	mh.done = nil
+	close(mh.doneSignal)
+	mh.doneWg.Wait()
+	mh.doneSignal = nil
 }
 
 // Subscribe - subscribing for topic
@@ -415,18 +418,30 @@ func (mh *MqttTransport) onConnect(_ MQTT.Client) {
 func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	select {
 	case mh.mainQueue <- msg:
+		mh.mainQueueOverflowCnt.Store(0)
 		return
 	default:
-		log.Panic("[fimpgo] Main msg queue overflow")
+		mh.mainQueueOverflowCnt.Add(1)
+
+		// stop MQTT and inform higher layer when unrecoverable situation occurs
+		if mh.mainQueueOverflowCnt.Load() > 20 {
+			mh.Stop()
+
+			if mh.onErrorCb != nil {
+				mh.onErrorCb(errors.New("main msg queue stuck"))
+			}
+		} else {
+			log.Error("[fimpgo] Main msg queue overflow")
+		}
 	}
 }
 
 func (mh *MqttTransport) handleIncomingMessages() {
-	defer mh.wg.Done()
+	defer mh.doneWg.Done()
 
 	for {
 		select {
-		case <-mh.done:
+		case <-mh.doneSignal:
 			return
 		case msg := <-mh.mainQueue:
 			mh.handleIncomingMessage(msg)
@@ -454,6 +469,7 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 		log.Errorf("[fimpgo] Processing topic=%v err:%v", topic, err)
 		return
 	}
+
 	var fimpMsg *FimpMessage
 
 	switch addr.PayloadType {
@@ -499,7 +515,6 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 			log.Warnf("[fimpgo] Channel %s not read for %d sec", i, mh.receiveChTimeout)
 		}
 	}
-
 }
 
 // isChannelInterested validates if channel is interested in message. Filtering is executed against either static filters or filter function

@@ -297,7 +297,10 @@ func (mh *ApiClient) notifyRouter() {
 			log.Warnf("[fimpgo] Cast %v to Notify err: %v", msg, err)
 			continue
 		} else {
-			mh.UpdateSite(notif)
+			if err := mh.UpdateSite(notif); err != nil {
+				log.Warnf("[fimpgo] Update site err: %v", err)
+			}
+
 			if mh.isNotifyRouterStarted { // make sure notify router is started
 				mh.notifChMux.RLock()
 				for cid, nfCh := range mh.notifySubChannels { // check all subfilters

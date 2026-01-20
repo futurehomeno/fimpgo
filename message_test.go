@@ -73,7 +73,6 @@ func TestNewFloatMessage(t *testing.T) {
 }
 
 func TestNewObjectMessage(t *testing.T) {
-
 	type Event struct {
 		Field1 int
 		Field2 int
@@ -85,29 +84,28 @@ func TestNewObjectMessage(t *testing.T) {
 		Field2: 2,
 	})
 	msg := NewMessage("evt.timeline.report", "kind-owl", VTypeObject, obj, nil, nil, nil)
-	bObj, _ := msg.SerializeToJson()
-	t.Log("ok", string(bObj))
+	_, err := msg.SerializeToJson()
+	if err != nil {
+		t.FailNow()
+	}
 }
 
 func TestFimpMessage_SerializeBool(t *testing.T) {
 	msg := NewBoolMessage("cmd.binary.set", "out_bin_switch", true, nil, nil, nil)
-	serVal, err := msg.SerializeToJson()
+	_, err := msg.SerializeToJson()
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log(string(serVal))
 }
 
 func TestFimpMessage_SerializeFloat(t *testing.T) {
 	props := Props{}
 	props["unit"] = "C"
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", 35.5, props, nil, nil)
-	serVal, err := msg.SerializeToJson()
+	_, err := msg.SerializeToJson()
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log(string(serVal))
-
 }
 
 func BenchmarkFimpMessage_Serialize(b *testing.B) {
@@ -422,7 +420,7 @@ func TestFimpMessage_GetObjectValue(t *testing.T) {
 		t.Error(err)
 	}
 	strMsg := string(binMsg)
-	t.Log(strMsg)
+
 	if strings.Contains(strMsg, "\"param2\":\"val2\"") {
 		t.Log("All good")
 	} else {

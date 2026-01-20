@@ -30,7 +30,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: fimpgo-armhf
-        path: package/build/*.deb
+        path: build/fimpgo_*
 
   golangci:
     name: linter
