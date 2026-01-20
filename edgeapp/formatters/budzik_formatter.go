@@ -3,7 +3,7 @@ package formatters
 import (
 	"fmt"
 
-	"github.com/containerd/log"
+	log "github.com/sirupsen/logrus"
 )
 
 type BudzikFormatter struct {
