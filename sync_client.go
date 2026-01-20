@@ -17,6 +17,7 @@ type SyncClient struct {
 	inboundBufferSize   int // Inbound message channel buffer size
 	stopSignalCh        chan bool
 	globalPrefix        string
+	mqttStarted         bool
 }
 
 // SetGlobalPrefix configures global prefix/site_id . Most be used from backend services.
@@ -72,6 +73,8 @@ func (sc *SyncClient) Connect(serverURI string, clientID string, username string
 		if err != nil {
 			return err
 		}
+
+		sc.mqttStarted = true
 	}
 
 	return nil
@@ -79,7 +82,9 @@ func (sc *SyncClient) Connect(serverURI string, clientID string, username string
 
 // Stop has to be invoked to stop message listener
 func (sc *SyncClient) Stop() {
-	sc.mqttTransport.Stop()
+	if sc.mqttStarted {
+		sc.mqttTransport.Stop()
+	}
 }
 
 // AddSubscription has to be invoked before Send methods
@@ -146,7 +151,7 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	}
 
 	if err = conn.PublishToTopic(topic, fimpMsg); err != nil {
-		return nil, fmt.Errorf("publish: %w", errSubscribe)
+		return nil, fmt.Errorf("publish: %w", errPublish)
 	}
 
 	select {
