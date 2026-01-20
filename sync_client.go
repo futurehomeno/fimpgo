@@ -137,16 +137,16 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 
 	if autoSubscribe && responseTopic != "" {
 		if err = conn.Subscribe(responseTopic); err != nil {
-			return nil, fmt.Errorf("[fimpgo] Subscribe err: %s", err)
+			return nil, fmt.Errorf("subscribe: %w", errSubscribe)
 		}
 	} else if responseTopic != "" {
 		if err = conn.Subscribe(responseTopic); err != nil {
-			return nil, fmt.Errorf("[fimpgo] Subscribe err: %s", err)
+			return nil, fmt.Errorf("subscribe: %w", errSubscribe)
 		}
 	}
 
 	if err = conn.PublishToTopic(topic, fimpMsg); err != nil {
-		return nil, fmt.Errorf("[fimpgo] Publish err: %s", err)
+		return nil, fmt.Errorf("publish: %w", errSubscribe)
 	}
 
 	select {

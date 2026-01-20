@@ -126,7 +126,7 @@ func TestSyncClient_SendFimp(t *testing.T) {
 			t.Fatalf("Error %v", err)
 		}
 		if val != expVal {
-			t.Fatalf("Wong result exp=%.2f got=%.2f ", expVal, val)
+			t.Fatalf("Wrong result exp=%.2f got=%.2f ", expVal, val)
 		}
 
 		expVal += 0.1
@@ -182,7 +182,7 @@ func TestSyncClient_SendFimpWithTopicResponse(t *testing.T) {
 
 		val, _ := response.GetFloatValue()
 		if val != expVal {
-			t.Fatalf("Wong result exp=%.2f got=%.2f ", expVal, val)
+			t.Fatalf("Wrong result exp=%.2f got=%.2f ", expVal, val)
 		}
 
 		expVal += 0.1
