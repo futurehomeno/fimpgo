@@ -97,7 +97,10 @@ func TestSyncClient_SendFimp(t *testing.T) {
 	mqtt.RegisterChannel("test", inboundChan)
 	// Actual test
 	syncClient := NewSyncClient(mqtt)
-	syncClient.AddSubscription("#")
+	if err := syncClient.AddSubscription("#"); err != nil {
+		t.Error("Subscription error:", err)
+	}
+
 	counter := 0
 	for i := range 5 {
 		t.Log("Iteration = ", i)
@@ -150,7 +153,10 @@ func TestSyncClient_SendFimpWithTopicResponse(t *testing.T) {
 	mqtt.RegisterChannel("test", inboundChan)
 	// Actual test
 	syncClient := NewSyncClient(mqtt)
-	syncClient.AddSubscription("#")
+	if err := syncClient.AddSubscription("#"); err != nil {
+		t.Error("Subscription error:", err)
+	}
+
 	counter := 0
 	for i := range 5 {
 		t.Log("Iteration = ", i)
