@@ -63,9 +63,9 @@ func (sc *SyncClient) init() {
 
 // Connect establishes internal connection to mqtt broker and initializes mqtt
 // Should be used if MqttTransport instance is not provided in constructor .
-func (sc *SyncClient) Connect(serverURI string, clientID string, username string, password string, cleanSession bool, subQos byte, pubQos byte) error {
+func (sc *SyncClient) Connect(serverURI string, clientID string, username string, password string, cleanSession bool, subQos byte, pubQos byte, errHandler func(error)) error {
 	if sc.mqttTransport == nil {
-		sc.mqttTransport = NewMqttTransport(serverURI, clientID, username, password, cleanSession, subQos, pubQos)
+		sc.mqttTransport = NewMqttTransport(serverURI, clientID, username, password, cleanSession, subQos, pubQos, errHandler)
 		err := sc.mqttTransport.Start()
 		if err != nil {
 			return err

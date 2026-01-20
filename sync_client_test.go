@@ -34,8 +34,13 @@ func TestSyncClient_Connect(t *testing.T) {
 
 	// Actual test
 	syncClient := NewSyncClientV2(nil, 20, 20)
-	syncClient.Connect("tcp://localhost:1883", "fimpgotest2", "", "", true, 1, 1)
-	syncClient.AddSubscription("pt:j1/mt:evt/rt:app/rn:testapp/ad:1")
+	if err := syncClient.Connect("tcp://localhost:1883", "fimpgotest2", "", "", true, 1, 1, nil); err != nil {
+		t.Error("Connection error:", err)
+	}
+	if err := syncClient.AddSubscription("pt:j1/mt:evt/rt:app/rn:testapp/ad:1"); err != nil {
+		t.Error("Subscription error:", err)
+	}
+
 	var counter int32
 	iterations := 1000
 	for it := range iterations {
