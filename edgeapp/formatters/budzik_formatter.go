@@ -3,7 +3,7 @@ package formatters
 import (
 	"fmt"
 
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 type BudzikFormatter struct {
@@ -11,9 +11,23 @@ type BudzikFormatter struct {
 	LevelDesc       []string
 }
 
-func (f *BudzikFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+func (f *BudzikFormatter) Format(entry *log.Entry) ([]byte, error) {
 	timestamp := entry.Time.Format(f.TimestampFormat)
-	return fmt.Appendf(nil, "%s %s %s\n", timestamp, f.LevelDesc[entry.Level], entry.Message), nil
+
+	level := "D"
+
+	if int(entry.Level) >= 0 && int(entry.Level) < len(f.LevelDesc) {
+		level = f.LevelDesc[int(entry.Level)]
+	}
+
+	ret := fmt.Appendf(nil, "%s %s %s", timestamp, level, entry.Message)
+	for k, v := range entry.Data {
+		ret = fmt.Appendf(ret, " %s=%v", k, v)
+	}
+
+	ret = fmt.Appendf(ret, "\n")
+
+	return ret, nil
 }
 
 func NewBudzikFormatter() *BudzikFormatter {
