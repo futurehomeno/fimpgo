@@ -30,7 +30,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: fimpgo-armhf
-        path: package/build/*.deb
+        path: build/fimpgo_*
 
   golangci:
     name: linter
@@ -118,7 +118,7 @@ jobs:
     needs: test
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
@@ -156,6 +156,6 @@ jobs:
         tag_name: ${{ github.ref_name }}
         name: Release ${{ github.ref_name }}
         body_path: changes.md
-        files: artifacts/fimpgo-armhf/*.deb
+        files: artifacts/**
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

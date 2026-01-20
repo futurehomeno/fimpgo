@@ -16,7 +16,7 @@ func main() {
 	flag.Parse()
 	log.SetLevel(log.DebugLevel)
 	log.Infof("Broker url %s", *mqttHost)
-	mqtt := fimpgo.NewMqttTransport("tcp://"+*mqttHost, "", "", "", true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport("tcp://"+*mqttHost, "", "", "", true, 1, 1, nil)
 	err := mqtt.Start()
 	if err != nil {
 		log.Error("Error connecting to broker ", err)

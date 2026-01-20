@@ -72,7 +72,6 @@ func TestNewFloatMessage(t *testing.T) {
 }
 
 func TestNewObjectMessage(t *testing.T) {
-
 	type Event struct {
 		Field1 int
 		Field2 int
