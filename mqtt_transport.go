@@ -43,6 +43,7 @@ type MqttConnectionConfigs struct {
 	MainQueueSize       int
 
 	connectionLostHandler MQTT.ConnectionLostHandler
+	errorHandler          func(err error)
 }
 
 type Message struct {
@@ -74,7 +75,7 @@ type MqttTransport struct {
 	doneWg               sync.WaitGroup
 	mainQueue            chan MQTT.Message
 	mainQueueOverflowCnt atomic.Uint32
-	onErrorCb            func(err error)
+	errorHandler         func(err error)
 
 	globalTopicPrefixMux sync.RWMutex
 	globalTopicPrefix    string
@@ -109,7 +110,7 @@ func (mh *MqttTransport) SetOptions(options *MQTT.ClientOptions) {
 type MessageHandler func(topic string, addr *Address, iotMsg *FimpMessage, rawPayload []byte)
 
 // NewMqttTransport constructor. serverUri="tcp://localhost:1883"
-func NewMqttTransport(serverURI, clientID, username, password string, cleanSession bool, subQos byte, pubQos byte) *MqttTransport {
+func NewMqttTransport(serverURI, clientID, username, password string, cleanSession bool, subQos byte, pubQos byte, errHandler func(error)) *MqttTransport {
 	mh := MqttTransport{}
 	mh.mqttOptions = MQTT.NewClientOptions().AddBroker(serverURI)
 	mh.mqttOptions.SetClientID(clientID)
@@ -137,6 +138,7 @@ func NewMqttTransport(serverURI, clientID, username, password string, cleanSessi
 	mh.receiveChTimeout = 10
 	mh.syncPublishTimeout = time.Second * 5
 	mh.compressor = NewMsgCompressor("", "")
+	mh.errorHandler = errHandler
 	return &mh
 }
 
@@ -214,6 +216,8 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Optio
 			log.Error("[fimpgo] Certificate loading err:", err.Error())
 		}
 	}
+
+	mh.errorHandler = configs.errorHandler
 	return &mh
 }
 
@@ -427,8 +431,8 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 		if mh.mainQueueOverflowCnt.Load() > 20 {
 			mh.Stop()
 
-			if mh.onErrorCb != nil {
-				mh.onErrorCb(errors.New("main msg queue stuck"))
+			if mh.errorHandler != nil {
+				mh.errorHandler(errors.New("main msg queue stuck"))
 			}
 		} else {
 			log.Error("[fimpgo] Main msg queue overflow")
