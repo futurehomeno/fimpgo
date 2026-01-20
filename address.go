@@ -107,7 +107,7 @@ func NewAddressFromString(address string) (*Address, error) {
 
 			}
 		} else {
-			return nil, errors.New("malformed address")
+			return nil, errors.New("Incorrectly formatted address")
 		}
 	}
 

@@ -318,9 +318,7 @@ func (mh *MqttTransport) Start() error {
 	mh.incMsgsWg = sync.WaitGroup{}
 	mh.incMsgsWg.Add(1)
 	go mh.handleIncomingMessages()
-	mh.connState.WaitConnected()
-
-	return nil
+	return mh.connState.WaitConnected(5 * time.Second)
 }
 
 // Stop stops adapter . Adapter can't be started again using Start . In order to start adapter it has to be re-initialized

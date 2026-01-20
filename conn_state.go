@@ -1,7 +1,9 @@
 package fimpgo
 
 import (
+	"fmt"
 	"sync"
+	"time"
 )
 
 type ConnStateT struct {
@@ -51,11 +53,17 @@ func (c *ConnStateT) IsConnected() bool {
 	}
 }
 
-func (c *ConnStateT) WaitConnected() {
+func (c *ConnStateT) WaitConnected(timeout time.Duration) error {
 	c.mu.Lock()
 	ch := c.started
 	c.mu.Unlock()
-	<-ch
+
+	select {
+	case <-time.After(timeout):
+		return fmt.Errorf("timeout")
+	case <-ch:
+		return nil
+	}
 }
 
 func (c *ConnStateT) DoneC() <-chan struct{} {

@@ -1,8 +1,11 @@
 package edgeapp
 
+import "testing"
+
 // TODO: these tests require a running FH broker on cube.local address
-/*
+
 func TestFhOAuth2Client_ExchangeRefreshToken(t *testing.T) {
+	t.Skip()
 	client := NewFhOAuth2Client("netatmo", "auth_test", "beta")
 	client.SetParameters("tcp://cube.local:1883", "", "", 0, 0, 0, 0)
 	err := client.Init()
@@ -15,4 +18,4 @@ func TestFhOAuth2Client_ExchangeRefreshToken(t *testing.T) {
 		t.Error("Can't fetch token", err)
 		t.FailNow()
 	}
-}*/
+}
