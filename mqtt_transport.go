@@ -170,6 +170,7 @@ func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Optio
 	mh.mqttOptions.SetConnectRetry(true)
 	mh.mqttOptions.SetConnectionLostHandler(configs.connectionLostHandler)
 	mh.mqttOptions.SetOnConnectHandler(mh.onConnect)
+	mh.mqttOptions.SetWriteTimeout(time.Second * 30)
 
 	//create and start a client using the above ClientOptions
 	mh.client = MQTT.NewClient(mh.mqttOptions)
@@ -295,26 +296,14 @@ func (mh *MqttTransport) Client() MQTT.Client {
 	return mh.client
 }
 
-// Start , starts adapter async.
+// Start connects to mqtt broker
 func (mh *MqttTransport) Start() error {
-	log.Info("<MqttAd> Connecting to MQTT broker ")
+	log.Debug("<MqttAd> Connecting to the broker")
 
-	var err error
-	var delay time.Duration
-
-	for i := 1; i < mh.startFailRetryCount; i++ {
-		if token := mh.client.Connect(); token.Wait() && token.Error() == nil {
-			break
-		} else {
-			err = token.Error()
-		}
-		delay = time.Duration(i) * time.Duration(i)
-		log.Infof("<MqttAd> Connection failed , retrying after %d sec.... ", delay)
-		time.Sleep(delay * time.Second)
-	}
-
-	if err != nil {
-		return err
+	if token := mh.client.Connect(); token.Wait() && token.Error() == nil {
+		log.Info("<MqttAd> Connected to the broker")
+	} else {
+		return token.Error()
 	}
 
 	mh.done = make(chan struct{})
