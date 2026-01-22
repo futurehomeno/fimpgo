@@ -462,8 +462,8 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 		fimpMsg, err = mh.compressor.DecompressFimpMsg(msg.Payload())
 	default:
 		// This means unknown binary payload , for instance compressed message
-		log.Errorf("[fimpgo] Unknown PayloadType=%s topic=%s", addr.PayloadType, topic)
-		return
+		log.Warnf("[fimpgo] Unknown PayloadType=%s topic=%s", addr.PayloadType, topic)
+		fimpMsg, err = NewMessageFromBytes(msg.Payload())
 	}
 
 	if err != nil {
