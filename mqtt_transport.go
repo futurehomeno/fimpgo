@@ -463,12 +463,12 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 	default:
 		// This means unknown binary payload , for instance compressed message
 		log.Warnf("[fimpgo] Unknown PayloadType=%s topic=%s", addr.PayloadType, topic)
-		fimpMsg, err = NewMessageFromBytes(msg.Payload())
+		return
 	}
 
 	if err != nil {
-		log.Trace(string(msg.Payload()))
 		log.Errorf("[fimpgo] Processing payload from topic=%s err: %v", topic, err)
+		log.Tracef("[fimpgo] Payload preview (len=%d): %.100s", len(msg.Payload()), msg.Payload())
 		return
 	}
 
