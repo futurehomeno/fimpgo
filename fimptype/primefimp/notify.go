@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/futurehomeno/fimpgo"
-	log "github.com/sirupsen/logrus"
 )
 
 type Notify struct {
@@ -137,11 +136,9 @@ func (ntf *Notify) GetHub() *Hub {
 }
 
 func (ntf *Notify) GetDeleteChange() *DeleteChange {
-	log.Debug("Delete change requested")
 	var result DeleteChange
 	err := json.Unmarshal(ntf.ChangesRaw, &result)
 	if err != nil {
-		log.Error(err)
 		return nil
 	}
 	return &result

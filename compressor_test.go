@@ -28,8 +28,6 @@ func TestNewMsgCompressor(t *testing.T) {
 		}
 		if fimpMsg.Service != "temp_sensor" {
 			t.Fatal("Incorrect service name ")
-		} else {
-			t.Log("All good")
 		}
 	}
 }
@@ -77,8 +75,6 @@ func TestNewMsgCompressor2(t *testing.T) {
 		fimpMsg.GetObjectValue(&v1)
 		if fimpMsg.Service != "test" || v1.HwVersion != "hw_version" {
 			t.Fatal("Incorrect service name ")
-		} else {
-			t.Log("All good")
 		}
 	}
 }

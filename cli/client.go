@@ -2,8 +2,14 @@ package main
 
 import (
 	"flag"
+
 	"github.com/futurehomeno/fimpgo"
 	log "github.com/sirupsen/logrus"
+)
+
+var (
+	mqtt *fimpgo.MqttTransport
+	done = make(chan struct{})
 )
 
 func onMsg(topic string, addr *fimpgo.Address, iotMsg *fimpgo.FimpMessage, rawMessage []byte) {
@@ -11,12 +17,17 @@ func onMsg(topic string, addr *fimpgo.Address, iotMsg *fimpgo.FimpMessage, rawMe
 	log.Infof("Message received with type: %s", iotMsg.Type)
 }
 
+func onMqttError(err error) {
+	log.Errorf("Mqtt err: %s", err.Error())
+	close(done)
+}
+
 func main() {
 	mqttHost := flag.String("host", "localhost:1883", "MQTT broker URL , for instance cube.local:1883")
 	flag.Parse()
 	log.SetLevel(log.DebugLevel)
 	log.Infof("Broker url %s", *mqttHost)
-	mqtt := fimpgo.NewMqttTransport("tcp://"+*mqttHost, "", "", "", true, 1, 1)
+	mqtt = fimpgo.NewMqttTransport("tcp://"+*mqttHost, "", "", "", true, 1, 1, onMqttError)
 	err := mqtt.Start()
 	log.Infof("Connected to broker %s", *mqttHost)
 	if err != nil {
@@ -36,6 +47,5 @@ func main() {
 		log.Error(err)
 	}
 
-	select {}
-
+	<-done
 }

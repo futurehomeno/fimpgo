@@ -2,7 +2,6 @@ package utils
 
 import (
 	"errors"
-	log "github.com/sirupsen/logrus"
 	"net"
 )
 
@@ -10,6 +9,7 @@ var (
 	errNoAvailableInterface = errors.New("no available interface")
 	errNoAvailableAddress   = errors.New("no available address")
 )
+
 // RoutedInterface returns a network interface that can route IP
 // traffic and satisfies flags.
 //
@@ -36,14 +36,12 @@ func RoutedInterface(network string, flags net.Flags) (*net.Interface, error) {
 	return nil, errNoAvailableInterface
 }
 
-
 func hasRoutableIP(network string, ifi *net.Interface) (net.IP, bool) {
 	ifat, err := ifi.Addrs()
 	if err != nil {
 		return nil, false
 	}
 	for _, ifa := range ifat {
-		log.Debug("Intf name ",ifa.String())
 		switch ifa := ifa.(type) {
 		case *net.IPAddr:
 			if ip, ok := routableIP(network, ifa.IP); ok {
@@ -62,7 +60,7 @@ func routableIP(network string, ip net.IP) (net.IP, bool) {
 	if !ip.IsLoopback() && !ip.IsLinkLocalUnicast() && !ip.IsGlobalUnicast() {
 		return nil, false
 	}
-	log.Debug("IP is routable ",ip.IsLoopback())
+
 	switch network {
 	case "ip4":
 		if ip := ip.To4(); ip != nil {

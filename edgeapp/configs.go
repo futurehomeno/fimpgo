@@ -3,12 +3,13 @@ package edgeapp
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/futurehomeno/fimpgo/utils"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/futurehomeno/fimpgo/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 type Configs struct {
@@ -84,9 +85,9 @@ func (cf *Configs) GetDefaultDir() string {
 func (cf *Configs) LoadDefaults() error {
 	configFile := filepath.Join(cf.WorkDir, "data", "config.json")
 	if err := os.Remove(configFile); err != nil {
-		log.Error(err)
+		log.Error("[edgeapp] ", err)
 	}
-	log.Info("Config file doesn't exist.Loading default config")
+	log.Info("[edgeapp] Config file doesn't exist.Loading default config")
 	defaultConfigFile := filepath.Join(cf.WorkDir, "defaults", "config.json")
 	return utils.CopyFile(defaultConfigFile, configFile)
 }

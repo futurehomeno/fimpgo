@@ -10,7 +10,7 @@ import (
 
 func TestSyncClient_Connect(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
@@ -34,11 +34,16 @@ func TestSyncClient_Connect(t *testing.T) {
 
 	// Actual test
 	syncClient := NewSyncClientV2(nil, 20, 20)
-	syncClient.Connect("tcp://localhost:1883", "fimpgotest2", "", "", true, 1, 1)
-	syncClient.AddSubscription("pt:j1/mt:evt/rt:app/rn:testapp/ad:1")
+	if err := syncClient.Connect("tcp://localhost:1883", "fimpgotest2", "", "", true, 1, 1, nil); err != nil {
+		t.Error("Connection error:", err)
+	}
+	if err := syncClient.AddSubscription("pt:j1/mt:evt/rt:app/rn:testapp/ad:1"); err != nil {
+		t.Error("Subscription error:", err)
+	}
+
 	var counter int32
 	iterations := 1000
-	for it := 0; it < iterations; it++ {
+	for it := range iterations {
 		i := it
 		go func() {
 			log.Debug("Iteration = ", i)
@@ -73,7 +78,7 @@ func TestSyncClient_Connect(t *testing.T) {
 
 func TestSyncClient_SendFimp(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
@@ -97,9 +102,12 @@ func TestSyncClient_SendFimp(t *testing.T) {
 	mqtt.RegisterChannel("test", inboundChan)
 	// Actual test
 	syncClient := NewSyncClient(mqtt)
-	syncClient.AddSubscription("#")
+	if err := syncClient.AddSubscription("#"); err != nil {
+		t.Error("Subscription error:", err)
+	}
+
 	counter := 0
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		t.Log("Iteration = ", i)
 		adr := Address{MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
 		msg := NewFloatMessage("cmd.sensor.get_report", "temp_sensor", float64(35.5), nil, nil, nil)
@@ -126,7 +134,7 @@ func TestSyncClient_SendFimp(t *testing.T) {
 
 func TestSyncClient_SendFimpWithTopicResponse(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
@@ -150,9 +158,12 @@ func TestSyncClient_SendFimpWithTopicResponse(t *testing.T) {
 	mqtt.RegisterChannel("test", inboundChan)
 	// Actual test
 	syncClient := NewSyncClient(mqtt)
-	syncClient.AddSubscription("#")
+	if err := syncClient.AddSubscription("#"); err != nil {
+		t.Error("Subscription error:", err)
+	}
+
 	counter := 0
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		t.Log("Iteration = ", i)
 		reqAddr := Address{MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
 		respAddr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}

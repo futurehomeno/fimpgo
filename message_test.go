@@ -55,7 +55,6 @@ func TestNewBoolMessage(t *testing.T) {
 	if val == false {
 		t.Error("Wrong value")
 	}
-	t.Log("ok")
 }
 
 func TestNewFloatMessage(t *testing.T) {
@@ -69,11 +68,9 @@ func TestNewFloatMessage(t *testing.T) {
 	if val != 35.5 {
 		t.Error("Wrong value")
 	}
-	t.Log("ok")
 }
 
 func TestNewObjectMessage(t *testing.T) {
-
 	type Event struct {
 		Field1 int
 		Field2 int
@@ -85,29 +82,28 @@ func TestNewObjectMessage(t *testing.T) {
 		Field2: 2,
 	})
 	msg := NewMessage("evt.timeline.report", "kind-owl", VTypeObject, obj, nil, nil, nil)
-	bObj, _ := msg.SerializeToJson()
-	t.Log("ok", string(bObj))
+	_, err := msg.SerializeToJson()
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestFimpMessage_SerializeBool(t *testing.T) {
 	msg := NewBoolMessage("cmd.binary.set", "out_bin_switch", true, nil, nil, nil)
-	serVal, err := msg.SerializeToJson()
+	_, err := msg.SerializeToJson()
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log(string(serVal))
 }
 
 func TestFimpMessage_SerializeFloat(t *testing.T) {
 	props := Props{}
 	props["unit"] = "C"
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", 35.5, props, nil, nil)
-	serVal, err := msg.SerializeToJson()
+	_, err := msg.SerializeToJson()
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log(string(serVal))
-
 }
 
 func BenchmarkFimpMessage_Serialize(b *testing.B) {
@@ -136,9 +132,8 @@ func TestNewMessageFromBytes_CorruptedPayload1(t *testing.T) {
 	msgString := "{123456789-=#$%"
 	_, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
-	t.Log("ok")
 }
 
 func TestNewMessageFromBytes_BoolValue(t *testing.T) {
@@ -154,7 +149,6 @@ func TestNewMessageFromBytes_BoolValue(t *testing.T) {
 	if fimp.Properties["p1"] != "pv1" {
 		t.Error("Wrong props value")
 	}
-	t.Log("ok")
 }
 
 func TestNewMessageFromBytes_BoolInt(t *testing.T) {
@@ -180,7 +174,6 @@ func TestNewMessageFromBytesWithProps(t *testing.T) {
 	if val != 1234 {
 		t.Error("Wrong value ", val)
 	}
-	t.Log("ok")
 }
 
 func TestFimpMessage_GetStrArrayValue(t *testing.T) {
@@ -291,10 +284,10 @@ func TestFimpMessage_GetFloatMapValue(t *testing.T) {
 		t.Error(err)
 	}
 	if val["param2"] != 2.5 {
-		t.Error("Wrong map result")
+		t.Error("Wrong map result param2")
 	}
-	if val["param3"] == 5 {
-		t.Log("OK")
+	if val["param3"] != 5 {
+		t.Error("Wrong map result param3")
 	}
 }
 
@@ -315,7 +308,7 @@ func TestFimpMessage_GetBoolMapValue(t *testing.T) {
 }
 
 func TestProps_GetIntValue(t *testing.T) {
-	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"int","val":1234,"props":{"param1":1,"param2":2},"tags":null}`
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"int","val":1234,"props":{"param1":"1","param2":"2"},"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -347,7 +340,7 @@ func TestProps_GetStringValue(t *testing.T) {
 }
 
 func TestProps_GetFloatValue(t *testing.T) {
-	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"float","val":1.5,"props":{"param1":1.5,"param2":2.5},"tags":null}`
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"float","val":1.5,"props":{"param1":"1.5","param2":"2.5"},"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -364,7 +357,7 @@ func TestProps_GetFloatValue(t *testing.T) {
 }
 
 func TestProps_GetBoolValue(t *testing.T) {
-	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"bool","val":true,"props":{"param1":true,"param2":false},"tags":null}`
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"bool","val":true,"props":{"param1":"true","param2":"false"},"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
@@ -422,13 +415,10 @@ func TestFimpMessage_GetObjectValue(t *testing.T) {
 		t.Error(err)
 	}
 	strMsg := string(binMsg)
-	t.Log(strMsg)
-	if strings.Contains(strMsg, "\"param2\":\"val2\"") {
-		t.Log("All good")
-	} else {
+
+	if !strings.Contains(strMsg, "\"param2\":\"val2\"") {
 		t.Error("Something wrong witgh serialization")
 	}
-
 }
 
 func BenchmarkFimpMessage_GetObjectValue(b *testing.B) {
