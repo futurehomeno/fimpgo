@@ -55,7 +55,6 @@ func TestNewBoolMessage(t *testing.T) {
 	if val == false {
 		t.Error("Wrong value")
 	}
-	t.Log("ok")
 }
 
 func TestNewFloatMessage(t *testing.T) {
@@ -69,7 +68,6 @@ func TestNewFloatMessage(t *testing.T) {
 	if val != 35.5 {
 		t.Error("Wrong value")
 	}
-	t.Log("ok")
 }
 
 func TestNewObjectMessage(t *testing.T) {
@@ -86,7 +84,7 @@ func TestNewObjectMessage(t *testing.T) {
 	msg := NewMessage("evt.timeline.report", "kind-owl", VTypeObject, obj, nil, nil, nil)
 	_, err := msg.SerializeToJson()
 	if err != nil {
-		t.FailNow()
+		t.Error(err)
 	}
 }
 
@@ -134,9 +132,8 @@ func TestNewMessageFromBytes_CorruptedPayload1(t *testing.T) {
 	msgString := "{123456789-=#$%"
 	_, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
-		t.Log(err)
+		t.Error(err)
 	}
-	t.Log("ok")
 }
 
 func TestNewMessageFromBytes_BoolValue(t *testing.T) {
@@ -152,7 +149,6 @@ func TestNewMessageFromBytes_BoolValue(t *testing.T) {
 	if fimp.Properties["p1"] != "pv1" {
 		t.Error("Wrong props value")
 	}
-	t.Log("ok")
 }
 
 func TestNewMessageFromBytes_BoolInt(t *testing.T) {
@@ -178,7 +174,6 @@ func TestNewMessageFromBytesWithProps(t *testing.T) {
 	if val != 1234 {
 		t.Error("Wrong value ", val)
 	}
-	t.Log("ok")
 }
 
 func TestFimpMessage_GetStrArrayValue(t *testing.T) {
@@ -289,10 +284,10 @@ func TestFimpMessage_GetFloatMapValue(t *testing.T) {
 		t.Error(err)
 	}
 	if val["param2"] != 2.5 {
-		t.Error("Wrong map result")
+		t.Error("Wrong map result param2")
 	}
-	if val["param3"] == 5 {
-		t.Log("OK")
+	if val["param3"] != 5 {
+		t.Error("Wrong map result param3")
 	}
 }
 
@@ -421,12 +416,9 @@ func TestFimpMessage_GetObjectValue(t *testing.T) {
 	}
 	strMsg := string(binMsg)
 
-	if strings.Contains(strMsg, "\"param2\":\"val2\"") {
-		t.Log("All good")
-	} else {
+	if !strings.Contains(strMsg, "\"param2\":\"val2\"") {
 		t.Error("Something wrong witgh serialization")
 	}
-
 }
 
 func BenchmarkFimpMessage_GetObjectValue(b *testing.B) {

@@ -19,12 +19,10 @@ func onMsg(topic string, addr *fimpgo.Address, iotMsg *fimpgo.FimpMessage, rawMe
 
 func onMqttError(err error) {
 	log.Errorf("Mqtt err: %s", err.Error())
-	mqtt.Stop()
 	close(done)
 }
 
 func main() {
-
 	mqttHost := flag.String("host", "localhost:1883", "MQTT broker URL , for instance cube.local:1883")
 	flag.Parse()
 	log.SetLevel(log.DebugLevel)

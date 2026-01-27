@@ -10,7 +10,7 @@ import (
 
 func TestSyncClient_Connect(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
@@ -78,7 +78,7 @@ func TestSyncClient_Connect(t *testing.T) {
 
 func TestSyncClient_SendFimp(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
@@ -134,7 +134,7 @@ func TestSyncClient_SendFimp(t *testing.T) {
 
 func TestSyncClient_SendFimpWithTopicResponse(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {

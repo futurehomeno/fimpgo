@@ -1,6 +1,6 @@
 .idea
 .DS_Store
 .vscode
-fimpcli
+fimpgo
 build/*
 build/

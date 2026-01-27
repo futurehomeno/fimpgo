@@ -23,7 +23,7 @@ var isCorrect = make(map[int]bool)
 
 func TestMqttTransport_Publish(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
@@ -50,7 +50,7 @@ func TestMqttTransport_Publish(t *testing.T) {
 
 func TestMqttTransport_PublishStopPublish(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
@@ -73,7 +73,7 @@ func TestMqttTransport_PublishStopPublish(t *testing.T) {
 		t.Error("Wrong message")
 	}
 	time.Sleep(time.Second * 5)
-	mqtt = NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt = NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
 	err = mqtt.Start()
 	t.Log("Connected 2")
 	if err != nil {
@@ -89,7 +89,7 @@ func TestMqttTransport_PublishStopPublish(t *testing.T) {
 func TestMqttTransport_PublishSync(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	MQTT.DEBUG = log.StandardLogger()
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
@@ -118,7 +118,7 @@ func TestMqttTransport_PublishSync(t *testing.T) {
 
 func TestMqttTransport_SubUnsub(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
 	err := mqtt.Start()
 	t.Log("Connected")
 	if err != nil {
@@ -148,7 +148,7 @@ func TestMqttTransport_SubUnsub(t *testing.T) {
 func TestMqttTransport_PublishTls(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	// for test replace XYZ with actual AWS IoT core address and ABC with actual clientid
-	mqtt := NewMqttTransport("ssl://a1ds8ixdqbiw53-ats.iot.eu-central-1.amazonaws.com:443", "00000000alexdevtest", "", "", false, 1, 1)
+	mqtt := NewMqttTransport("ssl://a1ds8ixdqbiw53-ats.iot.eu-central-1.amazonaws.com:443", "00000000alexdevtest", "", "", false, 1, 1, nil)
 
 	// for test enter valid site-id
 	mqtt.SetGlobalTopicPrefix("331D092F-4685-4CC9-8337-2598E6F5D8D5")
@@ -234,7 +234,7 @@ func TestMqttTransport_PublishTls_2(t *testing.T) {
 
 func TestMqttTransport_TestChannels(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
 	err := mqtt.Start()
 	t.Log("Connected")
 	time.Sleep(time.Second * 1)
@@ -278,13 +278,13 @@ func TestMqttTransport_TestChannels(t *testing.T) {
 func TestMqttTransport_TestResponder(t *testing.T) {
 	log.SetLevel(log.TraceLevel)
 	var isResponseReceived bool
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest-1", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest-1", "", "", true, 1, 1, nil)
 	err := mqtt.Start()
 	t.Log("Connected")
 	time.Sleep(time.Second * 1)
 	mqtt.Subscribe("#")
 
-	mqtt2 := NewMqttTransport("tcp://localhost:1883", "fimpgotest-2", "", "", true, 1, 1)
+	mqtt2 := NewMqttTransport("tcp://localhost:1883", "fimpgotest-2", "", "", true, 1, 1, nil)
 	err = mqtt2.Start()
 	t.Log("Connected")
 	time.Sleep(time.Second * 1)
@@ -339,7 +339,7 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 func TestMqttTransport_TestChannelsWithFilters(t *testing.T) {
 
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
 	err := mqtt.Start()
 	t.Log("Connected")
 	time.Sleep(time.Second * 1)

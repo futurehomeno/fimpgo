@@ -125,7 +125,7 @@ func (oac *FhOAuth2Client) SetParameters(mqttServerUri, authCodeApiUrl, refreshT
 // ConfigureFimpSyncClient configures fimp sync client , which is used to obtain Hub token from cloud bridge.
 func (oac *FhOAuth2Client) ConfigureFimpSyncClient() error {
 	if oac.mqt == nil {
-		oac.mqt = fimpgo.NewMqttTransport(oac.mqttServerURI, oac.mqttClientID, "", "", true, 1, 1)
+		oac.mqt = fimpgo.NewMqttTransport(oac.mqttServerURI, oac.mqttClientID, "", "", true, 1, 1, nil)
 		err := oac.mqt.Start()
 		if err != nil {
 			log.Error("Error connecting to broker ", err)
@@ -148,6 +148,8 @@ func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
 	}
 	responseTopic := fmt.Sprintf("pt:j1/mt:rsp/rt:app/rn:%s/ad:1", oac.appName)
 	if err := oac.syncClient.AddSubscription(responseTopic); err != nil {
+		oac.syncClient.Stop()
+		oac.mqt.Stop()
 		return err
 	}
 

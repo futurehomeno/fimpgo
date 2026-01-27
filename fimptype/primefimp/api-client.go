@@ -274,7 +274,7 @@ func (mh *ApiClient) UpdateSite(notif *Notify) error {
 func (mh *ApiClient) notifyRouter() {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Errorf("[fimpgo] isChannelInterested crash %v", r)
+			log.Errorf("[fimpgo] notifyRouter crash %v", r)
 			log.Info(debug.Stack())
 		}
 	}()
@@ -282,7 +282,7 @@ func (mh *ApiClient) notifyRouter() {
 	mh.inMsgChan = make(fimpgo.MessageCh, 10)
 	mh.mqttTransport.RegisterChannel(mh.clientID, mh.inMsgChan)
 	if err := mh.mqttTransport.Subscribe(VincEventTopic); err != nil {
-		log.Error("[fimpgo] error subscribing to the vinculum event topic: ", err)
+		log.Error("[fimpgo] Subscribe to the vinculum event topic err: ", err)
 	}
 
 	for msg := range mh.inMsgChan {
@@ -317,7 +317,7 @@ func (mh *ApiClient) notifyRouter() {
 						select {
 						case nfCh <- *notif: // send notification to corresponding subchannel if there is match
 						default:
-							log.Warnf("[fimpgo] Send channel %s is blocked ", cid)
+							log.Warnf("[fimpgo] Send channel %s is blocked", cid)
 						}
 					}
 				}
