@@ -7,7 +7,7 @@ import (
 	"errors"
 	"strings"
 
-	jwt "github.com/golang-jwt/jwt/v5"
+	jwt "github.com/golang-jwt/jwt"
 
 	"github.com/futurehomeno/fimpgo"
 	"github.com/futurehomeno/fimpgo/security"

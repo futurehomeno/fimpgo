@@ -85,8 +85,8 @@ func TestSignMessageES256_TestKey(t *testing.T) {
 	}
 }
 
-/*
 func TestSignMessageES256_TestVerify(t *testing.T) {
+	t.Skip()
 	pubKey := security.JsonEcKey{
 		X: "f149023bb33138b6bfc6458c50b21c4ed67004b25d8ae201a2fea3731a9da694",
 		Y: "6ce19554fbb2104de755c01aeb247fc3fb99b122b3ade55bbb2332b3c9acdd66",
@@ -112,6 +112,7 @@ func TestSignMessageES256_TestVerify(t *testing.T) {
 }
 
 func TestSignMessageES256_TestVerify2(t *testing.T) {
+	t.Skip()
 	keyStore := security.NewKeyStore("../testdata/hub/pub_key_store.json", false)
 	keyStore.LoadFromDisk()
 	signedMsgTxt := "{\n  \"corid\": \"\",\n  \"ctime\": \"2020-05-27T16:16:06.410681\",\n  \"props\": {\n    \"user_id\": \"emiliana.guzik@gmail.com\",\n    \"device_id\": \"9c69f39059f27185\",\n    \"sig\": \"IECSBikTtYEFPJSt5LBa3UCcvnHSvXF2ksOQGoFbC4Ktw82-l7ogaWLp3opKZUUOvUnjlX_giQ7-NsgFgSFl-Q\",\n    \"alg\": \"ES256\"\n  },\n  \"serv\": \"door_lock\",\n  \"tags\": null,\n  \"type\": \"cmd.transport.signed\",\n  \"uid\": \"9ac54db0-a024-11ea-c1f3-0f1c4cea82d3\",\n  \"val_t\": \"bin\",\n  \"ver\": null,\n  \"val\": \"eyJjb3JpZCI6IiIsImN0aW1lIjoiMjAyMC0wNS0yN1QxNjoxNjowNi4wNzU3MDAiLCJwcm9wcyI6bnVsbCwic2VydiI6ImRvb3JfbG9jayIsInRhZ3MiOm51bGwsInR5cGUiOiJjbWQubG9jay5zZXQiLCJ1aWQiOiI5YTkyMmZjMC1hMDI0LTExZWEtZWZhMy02ZDU4ZDJjMTNkZjkiLCJ2YWxfdCI6ImJvb2wiLCJ2ZXIiOm51bGwsInZhbCI6ZmFsc2UsInJlc3BfdG8iOm51bGwsInNyYyI6ImFwcCJ9\",\n  \"resp_to\": null,\n  \"src\": \"app\"\n}"
@@ -126,4 +127,3 @@ func TestSignMessageES256_TestVerify2(t *testing.T) {
 		t.FailNow()
 	}
 }
-*/
