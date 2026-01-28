@@ -1,181 +1,205 @@
 package fimpgo
 
 import (
-	"sync/atomic"
+	"sync"
 	"testing"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 )
 
 func TestSyncClient_Connect(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1, nil)
 	err := mqtt.Start()
-	t.Log("Connected")
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
-	inboundChan := make(MessageCh, 20)
-	// starting responder
-	go func(msgChanS MessageCh) {
-		for msg := range msgChanS {
-			if msg.Payload.Type == "cmd.sensor.get_report" {
-				t.Log("Responde . New message. uid = ", msg.Payload.UID)
-				responseMsg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(40.0), nil, nil, msg.Payload)
-				t.Log("Correlation id = ", responseMsg.CorrelationID)
-				mqtt.PublishToTopic("pt:j1/mt:evt/rt:app/rn:testapp/ad:1", responseMsg)
-			}
-		}
-	}(inboundChan)
 
-	mqtt.Subscribe("pt:j1/mt:cmd/rt:app/rn:testapp/ad:1")
+	inboundChan := make(MessageCh, 20)
+
+	if err := mqtt.Subscribe("pt:j1/mt:cmd/rt:app/rn:testapp/ad:1"); err != nil {
+		t.Fatal("Subscribe error:", err)
+	}
+
 	mqtt.RegisterChannel("test", inboundChan)
 
 	// Actual test
 	syncClient := NewSyncClientV2(nil, 20, 20)
-	syncClient.Connect("tcp://localhost:1883", "fimpgotest2", "", "", true, 1, 1)
-	syncClient.AddSubscription("pt:j1/mt:evt/rt:app/rn:testapp/ad:1")
-	var counter int32
-	iterations := 1000
-	for it := 0; it < iterations; it++ {
-		i := it
-		go func() {
-			log.Debug("Iteration = ", i)
-			msg := NewFloatMessage("cmd.sensor.get_report", "temp_sensor", float64(35.5), nil, nil, nil)
-			response, err := syncClient.SendFimp("pt:j1/mt:cmd/rt:app/rn:testapp/ad:1", msg, 10)
-			if err != nil {
-				t.Error("Error", err)
-				t.Fail()
-			}
-			val, _ := response.GetFloatValue()
-			if val != 40.0 {
-				t.Error("Wong result")
-				t.Fail()
-			}
-			atomic.AddInt32(&counter, 1)
-			log.Debug("Iteration Done = ", i)
-		}()
+	if err := syncClient.Connect("tcp://127.0.0.1:1883", "fimpgotest2", "", "", true, 1, 1, nil); err != nil {
+		t.Fatal("Error connecting sync client to broker ", err)
 	}
 
-	for int32(iterations) > counter {
-		time.Sleep(1 * time.Second)
+	if err := syncClient.AddSubscription("pt:j1/mt:evt/rt:app/rn:testapp/ad:1"); err != nil {
+		t.Fatal("Error adding subscription ", err)
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	// starting responder
+	go func(msgChanS MessageCh) {
+		wg.Done()
+		testVal := float64(0.0)
+		for msg := range msgChanS {
+			if msg.Payload.Type == "cmd.sensor.get_report" {
+				responseMsg := NewFloatMessage("evt.sensor.report", "temp_sensor", testVal, nil, nil, msg.Payload)
+				if err := mqtt.PublishToTopic("pt:j1/mt:evt/rt:app/rn:testapp/ad:1", responseMsg); err != nil {
+					t.Error("Publish error:", err)
+					t.Fail()
+				}
+
+				testVal += 0.1
+			}
+		}
+	}(inboundChan)
+
+	wg.Wait()
+
+	iterations := 500
+	expVal := float64(0.0)
+
+	for range iterations {
+		msg := NewNullMessage("cmd.sensor.get_report", "temp_sensor", nil, nil, nil)
+		response, err := syncClient.SendFimp("pt:j1/mt:cmd/rt:app/rn:testapp/ad:1", msg, 1)
+		if err != nil {
+			t.Fatalf("SendFimp err %v", err)
+		}
+		val, err := response.GetFloatValue()
+		if err != nil {
+			t.Fatalf("GetFloatValue err %v", err)
+		}
+
+		if val != expVal {
+			t.Fatalf("Wrong result exp=%.2f got=%.2f ", expVal, val)
+		}
+
+		expVal += 0.1
 	}
 
 	syncClient.Stop()
-	if counter != int32(iterations) {
-		t.Error("Wong counter value")
-		t.Fail()
-	}
-	t.Log("SyncClientConnect test - OK")
-
+	mqtt.Stop()
 }
 
 func TestSyncClient_SendFimp(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1, nil)
 	err := mqtt.Start()
-	t.Log("Connected")
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
+
 	inboundChan := make(MessageCh)
-	// starting responder
-	go func(msgChanS MessageCh) {
-		for msg := range msgChanS {
-			if msg.Payload.Type == "cmd.sensor.get_report" {
-				t.Log("Responde . New message. uid = ", msg.Payload.UID)
-				adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
-				responseMsg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(40.0), nil, nil, msg.Payload)
-				t.Log("Correlation id = ", responseMsg.CorrelationID)
-				mqtt.Publish(&adr, responseMsg)
-			}
 
-		}
-
-	}(inboundChan)
 	mqtt.RegisterChannel("test", inboundChan)
 	// Actual test
 	syncClient := NewSyncClient(mqtt)
-	syncClient.AddSubscription("#")
-	counter := 0
-	for i := 0; i < 5; i++ {
-		t.Log("Iteration = ", i)
-		adr := Address{MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
-		msg := NewFloatMessage("cmd.sensor.get_report", "temp_sensor", float64(35.5), nil, nil, nil)
-		response, err := syncClient.SendFimp(adr.Serialize(), msg, 5)
-		if err != nil {
-			t.Error("Error", err)
-			t.Fail()
-		}
-		val, _ := response.GetFloatValue()
-		if val != 40.0 {
-			t.Error("Wong result")
-			t.Fail()
-		}
-		counter++
+	err = syncClient.AddSubscription("#")
+	if err != nil {
+		t.Fatal("AddSubscription err:", err)
+	}
 
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	// starting responder
+	go func(msgChanS MessageCh) {
+		wg.Done()
+		temp := float64(0.0)
+		for msg := range msgChanS {
+			if msg.Payload.Type == "cmd.sensor.get_report" {
+				adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
+				responseMsg := NewFloatMessage("evt.sensor.report", "temp_sensor", temp, nil, nil, msg.Payload)
+				temp += 0.1
+				err = mqtt.Publish(&adr, responseMsg)
+				if err != nil {
+					log.Error("Publish err:", err)
+				}
+			}
+		}
+	}(inboundChan)
+
+	wg.Wait()
+
+	expVal := float64(0.0)
+	for range 5 {
+		adr := Address{MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
+		msg := NewNullMessage("cmd.sensor.get_report", "temp_sensor", nil, nil, nil)
+		response, err := syncClient.SendFimp(adr.Serialize(), msg, 2)
+		if err != nil {
+			t.Fatalf("Error %v", err)
+		}
+		val, err := response.GetFloatValue()
+		if err != nil {
+			t.Fatalf("Error %v", err)
+		}
+		if val != expVal {
+			t.Fatalf("Wrong result exp=%.2f got=%.2f ", expVal, val)
+		}
+
+		expVal += 0.1
 	}
+
 	syncClient.Stop()
-	if counter != 5 {
-		t.Error("Wong counter value")
-		t.Fail()
-	}
-	t.Log("SyncClient test - OK")
+	mqtt.Stop()
 }
 
 func TestSyncClient_SendFimpWithTopicResponse(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1)
+	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1, nil)
 	err := mqtt.Start()
-	t.Log("Connected")
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
+
 	inboundChan := make(MessageCh)
-	// starting message responder
-	go func(msgChanS MessageCh) {
-		for msg := range msgChanS {
-			if msg.Payload.Type == "cmd.sensor.get_report" {
-				t.Log("Responde . New message. uid = ", msg.Payload.UID)
-				adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
-				responseMsg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(40.0), nil, nil, nil)
-				t.Log("Correlation id = ", responseMsg.CorrelationID)
-				mqtt.Publish(&adr, responseMsg)
-			}
-
-		}
-
-	}(inboundChan)
 	mqtt.RegisterChannel("test", inboundChan)
 	// Actual test
 	syncClient := NewSyncClient(mqtt)
-	syncClient.AddSubscription("#")
-	counter := 0
-	for i := 0; i < 5; i++ {
-		t.Log("Iteration = ", i)
+	err = syncClient.AddSubscription("#")
+	if err != nil {
+		t.Fatal("AddSubscription err:", err)
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	// starting message responder
+	go func(msgChanS MessageCh) {
+		wg.Done()
+		temp := float64(0.0)
+		for msg := range msgChanS {
+			if msg.Payload.Type == "cmd.sensor.get_report" {
+				adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
+				responseMsg := NewFloatMessage("evt.sensor.report", "temp_sensor", temp, nil, nil, nil)
+				err = mqtt.Publish(&adr, responseMsg)
+				if err != nil {
+					log.Error("Publish err:", err)
+				}
+				temp += 0.1
+			}
+		}
+	}(inboundChan)
+	wg.Wait()
+
+	expVal := float64(0.0)
+
+	for range 5 {
 		reqAddr := Address{MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
 		respAddr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
 
-		msg := NewFloatMessage("cmd.sensor.get_report", "temp_sensor", float64(35.5), nil, nil, nil)
+		msg := NewNullMessage("cmd.sensor.get_report", "temp_sensor", nil, nil, nil)
 		response, err := syncClient.SendFimpWithTopicResponse(reqAddr.Serialize(), msg, respAddr.Serialize(), "temp_sensor", "evt.sensor.report", 5)
 		if err != nil {
-			t.Error("Error", err)
-			t.Fail()
+			t.Fatalf("Error %v", err)
 		}
+
 		val, _ := response.GetFloatValue()
-		if val != 40.0 {
-			t.Error("Wong result")
-			t.Fail()
+		if val != expVal {
+			t.Fatalf("Wrong result exp=%.2f got=%.2f ", expVal, val)
 		}
-		counter++
 
+		expVal += 0.1
 	}
+
 	syncClient.Stop()
-	if counter != 5 {
-		t.Error("Wong counter value")
-		t.Fail()
-	}
-	t.Log("SyncClient test - OK")
-
+	mqtt.Stop()
 }

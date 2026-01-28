@@ -70,7 +70,7 @@ func (adr *Address) Serialize() string {
 
 func (adr *Address) prepComp(prefix string, comp string) string {
 	if comp == "+" || comp == "#" {
-		return fmt.Sprintf("%s", comp)
+		return comp
 	} else {
 		return fmt.Sprintf("%s:%s", prefix, comp)
 	}
@@ -79,9 +79,9 @@ func (adr *Address) prepComp(prefix string, comp string) string {
 func NewAddressFromString(address string) (*Address, error) {
 	adr := Address{}
 	tokens := strings.Split(address, "/")
-	var err error
-	for index, _ := range tokens {
-		keyVal := strings.Split(tokens[index], ":")
+
+	for index, tok := range tokens {
+		keyVal := strings.Split(tok, ":")
 		// detecting global prefix
 		if len(keyVal) == 1 && index == 0 {
 			adr.GlobalPrefix = keyVal[0]
@@ -111,6 +111,5 @@ func NewAddressFromString(address string) (*Address, error) {
 		}
 	}
 
-	return &adr, err
-
+	return &adr, nil
 }

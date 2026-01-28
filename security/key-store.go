@@ -3,8 +3,6 @@ package security
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
-	"io/ioutil"
 	"os"
 	"time"
 )
@@ -31,11 +29,11 @@ type KeyStore struct {
 	isPrivate        bool // private store should restrict other application from reading key store file.
 }
 
-func NewKeyStore(keyStoreFilePath string,isPrivate bool) *KeyStore {
+func NewKeyStore(keyStoreFilePath string, isPrivate bool) *KeyStore {
 	if keyStoreFilePath == "" {
 		keyStoreFilePath = "/var/lib/futurehome/hub/pub_key_store.json"
 	}
-	return &KeyStore{keyStoreFilePath: keyStoreFilePath,isPrivate: isPrivate}
+	return &KeyStore{keyStoreFilePath: keyStoreFilePath, isPrivate: isPrivate}
 }
 
 // full username is a string which identifies a user on given device
@@ -60,26 +58,25 @@ func (cs *KeyStore) AddSerializedKey(user, device, key, keyType, algo string) er
 	return cs.SaveToDisk()
 }
 
-func (cs *KeyStore) UpdateSerializedKey(userId, deviceId, key, keyType, algo string) (bool,error) {
+func (cs *KeyStore) UpdateSerializedKey(userId, deviceId, key, keyType, algo string) (bool, error) {
 	for i := range cs.keyStore {
 		if cs.keyStore[i].DeviceId == deviceId && cs.keyStore[i].UserId == userId && cs.keyStore[i].KeyType == keyType && cs.keyStore[i].Algorithm == algo {
 			cs.keyStore[i].SerializedKey = key
 			cs.keyStore[i].AddedAt = time.Now().Format(time.RFC3339)
-			return true,cs.SaveToDisk()
+			return true, cs.SaveToDisk()
 
 		}
 	}
-	return false,nil
+	return false, nil
 }
 
 func (cs *KeyStore) UpsertSerializedKey(userId, deviceId, key, keyType, algo string) error {
-	keyExists , err := cs.UpdateSerializedKey(userId,deviceId,key,keyType,algo)
+	keyExists, err := cs.UpdateSerializedKey(userId, deviceId, key, keyType, algo)
 	if !keyExists {
-		err = cs.AddSerializedKey(userId,deviceId,key,keyType,algo)
+		err = cs.AddSerializedKey(userId, deviceId, key, keyType, algo)
 	}
 	return err
 }
-
 
 func (cs *KeyStore) GetKey(userId, deviceId, keyType string) *KeyRecord {
 	for i := range cs.keyStore {
@@ -90,38 +87,38 @@ func (cs *KeyStore) GetKey(userId, deviceId, keyType string) *KeyRecord {
 	return nil
 }
 
-func (cs *KeyStore) GetEcdsaKey(userId, deviceId ,keyType string) (*EcdsaKey,error) {
+func (cs *KeyStore) GetEcdsaKey(userId, deviceId, keyType string) (*EcdsaKey, error) {
 	for i := range cs.keyStore {
-		if cs.keyStore[i].DeviceId == deviceId && cs.keyStore[i].UserId == userId && cs.keyStore[i].Algorithm == AlgEcdsa256 && cs.keyStore[i].KeyType == keyType{
+		if cs.keyStore[i].DeviceId == deviceId && cs.keyStore[i].UserId == userId && cs.keyStore[i].Algorithm == AlgEcdsa256 && cs.keyStore[i].KeyType == keyType {
 			if cs.keyStore[i].EcdsaKey == nil {
 				if cs.keyStore[i].SerializedKey == "" {
-					log.Warn("<kstore> Empty key string")
-					return nil,fmt.Errorf("empty key string")
-				}else {
+					return nil, fmt.Errorf("empty key string")
+				} else {
 					cs.keyStore[i].EcdsaKey = NewEcdsaKey()
+
 					var err error
-					if cs.keyStore[i].KeyType == KeyTypePrivate {
+					switch cs.keyStore[i].KeyType {
+					case KeyTypePrivate:
 						err = cs.keyStore[i].EcdsaKey.ImportX509PrivateKey(cs.keyStore[i].SerializedKey)
-					}else if cs.keyStore[i].KeyType == KeyTypePublic {
+					case KeyTypePublic:
 						err = cs.keyStore[i].EcdsaKey.ImportX509PublicKey(cs.keyStore[i].SerializedKey)
-					}else {
-						return nil,fmt.Errorf("unknown key type %s",keyType)
+					default:
+						return nil, fmt.Errorf("unknown key type %s", keyType)
 					}
+
 					if err != nil {
 						return nil, err
 					}
-					return cs.keyStore[i].EcdsaKey,nil
+					return cs.keyStore[i].EcdsaKey, nil
 				}
-			}else{
-				return cs.keyStore[i].EcdsaKey,nil
+			} else {
+				return cs.keyStore[i].EcdsaKey, nil
 			}
 		}
 	}
-	return nil,fmt.Errorf("key not found")
+	return nil, fmt.Errorf("key not found")
 }
 
-
-//
 func (cs *KeyStore) GetAllUserKeys(userId string) []KeyRecord {
 	var result []KeyRecord
 	for i := range cs.keyStore {
@@ -134,30 +131,27 @@ func (cs *KeyStore) GetAllUserKeys(userId string) []KeyRecord {
 
 func (cs *KeyStore) SaveToDisk() error {
 	bpayload, err := json.Marshal(cs.keyStore)
+	if err != nil {
+		return err
+	}
+
 	var mode os.FileMode
 	if cs.isPrivate {
 		mode = 0600
-	}else {
+	} else {
 		mode = 0664
 	}
-	err = ioutil.WriteFile(cs.keyStoreFilePath, bpayload, mode)
-	if err != nil {
-		return err
-	}
-	return err
-	return nil
+
+	return os.WriteFile(cs.keyStoreFilePath, bpayload, mode)
 }
 
 func (cs *KeyStore) LoadFromDisk() error {
-	configFileBody, err := ioutil.ReadFile(cs.keyStoreFilePath)
+	configFileBody, err := os.ReadFile(cs.keyStoreFilePath)
 	if err != nil {
 		return err
 	}
-	err = json.Unmarshal(configFileBody, &cs.keyStore)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return json.Unmarshal(configFileBody, &cs.keyStore)
 }
 
 // An app should call the method to authenticate message

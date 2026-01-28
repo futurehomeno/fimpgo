@@ -23,7 +23,7 @@ func (clh connectionLostHandler) apply(connectionConfigs *MqttConnectionConfigs)
 }
 
 func defaultConnectionLastHandler(_ mqtt.Client, err error) {
-	log.Errorf("connection lost with MQTT broker . Error : %v", err)
+	log.Errorf("[fimpgo] Connection lost with MQTT broker err: %v", err)
 }
 
 func WithConnectionLostHandler(h mqtt.ConnectionLostHandler) Option {
