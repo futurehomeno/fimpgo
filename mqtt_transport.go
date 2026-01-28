@@ -493,18 +493,19 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 	case CompressedJsonPayload:
 		fimpMsg, err = mh.compressor.DecompressFimpMsg(msg.Payload())
 	default:
-		// This means unknown binary payload, for instance compressed message
-		log.Warnf("[fimpgo] Unknown payloadType=%v", addr.PayloadType)
+		// This means unknown binary payload , for instance compressed message
+		log.Warnf("[fimpgo] Unknown PayloadType=%s topic=%s", addr.PayloadType, topic)
+		return
+	}
+
+	if err != nil {
+		log.Errorf("[fimpgo] Processing payload from topic=%s err: %v", topic, err)
+		log.Tracef("[fimpgo] Payload preview len=%d: %.100s", len(msg.Payload()), msg.Payload())
+		return
 	}
 
 	if mh.msgHandler != nil {
-		if err == nil {
-			mh.msgHandler(topic, addr, fimpMsg, msg.Payload())
-		} else {
-			log.Trace(string(msg.Payload()))
-			log.Errorf("[fimpgo] Processing payload err:%v", err)
-			return
-		}
+		mh.msgHandler(topic, addr, fimpMsg, msg.Payload())
 	}
 
 	mh.channelRegMux.Lock()
@@ -514,14 +515,10 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 		if !mh.isChannelInterested(i, topic, addr, fimpMsg) {
 			continue
 		}
-		var fmsg Message
-		if addr.PayloadType == DefaultPayload || addr.PayloadType == CompressedJsonPayload {
-			fmsg = Message{Topic: topic, Addr: addr, Payload: fimpMsg}
-		} else {
-			// message receiver should do decompressions
-			fmsg = Message{Topic: topic, Addr: addr, RawPayload: msg.Payload()}
-		}
+
+		fmsg := Message{Topic: topic, Addr: addr, Payload: fimpMsg}
 		timer := time.NewTimer(time.Second * time.Duration(mh.receiveChTimeout))
+
 		select {
 		case mh.subChannels[i] <- &fmsg:
 			timer.Stop()
