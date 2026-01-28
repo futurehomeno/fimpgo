@@ -11,7 +11,7 @@ func SecondResponder() {
 	mqt := fimpgo.NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest-2", "", "", true, 1, 1, nil)
 	err := mqt.Start()
 	if err != nil {
-		//t.Error("Error connecting to broker ",err)
+		log.Error("Error connecting to broker ", err)
 	}
 
 	resource := Resource{

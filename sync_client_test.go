@@ -65,7 +65,7 @@ func TestSyncClient_Connect(t *testing.T) {
 		}
 		val, err := response.GetFloatValue()
 		if err != nil {
-			t.Fatalf("SendFimp err %v", err)
+			t.Fatalf("GetFloatValue err %v", err)
 		}
 
 		if val != expVal {
@@ -92,7 +92,10 @@ func TestSyncClient_SendFimp(t *testing.T) {
 	mqtt.RegisterChannel("test", inboundChan)
 	// Actual test
 	syncClient := NewSyncClient(mqtt)
-	syncClient.AddSubscription("#")
+	err = syncClient.AddSubscription("#")
+	if err != nil {
+		t.Fatal("AddSubscription err:", err)
+	}
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -106,7 +109,10 @@ func TestSyncClient_SendFimp(t *testing.T) {
 				adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
 				responseMsg := NewFloatMessage("evt.sensor.report", "temp_sensor", temp, nil, nil, msg.Payload)
 				temp += 0.1
-				mqtt.Publish(&adr, responseMsg)
+				err = mqtt.Publish(&adr, responseMsg)
+				if err != nil {
+					log.Error("Publish err:", err)
+				}
 			}
 		}
 	}(inboundChan)
@@ -148,7 +154,10 @@ func TestSyncClient_SendFimpWithTopicResponse(t *testing.T) {
 	mqtt.RegisterChannel("test", inboundChan)
 	// Actual test
 	syncClient := NewSyncClient(mqtt)
-	syncClient.AddSubscription("#")
+	err = syncClient.AddSubscription("#")
+	if err != nil {
+		t.Fatal("AddSubscription err:", err)
+	}
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -161,7 +170,10 @@ func TestSyncClient_SendFimpWithTopicResponse(t *testing.T) {
 			if msg.Payload.Type == "cmd.sensor.get_report" {
 				adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
 				responseMsg := NewFloatMessage("evt.sensor.report", "temp_sensor", temp, nil, nil, nil)
-				mqtt.Publish(&adr, responseMsg)
+				err = mqtt.Publish(&adr, responseMsg)
+				if err != nil {
+					log.Error("Publish err:", err)
+				}
 				temp += 0.1
 			}
 		}

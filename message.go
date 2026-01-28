@@ -10,6 +10,7 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -380,16 +381,39 @@ func NewBinaryMessage(type_, service string, value []byte, props Props, tags Tag
 func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	fimpmsg := FimpMessage{}
 	var err error
-	fimpmsg.Type, err = jsonparser.GetString(msg, "type")
-	fimpmsg.Service, err = jsonparser.GetString(msg, "serv")
-	fimpmsg.ValueType, err = jsonparser.GetString(msg, "val_t")
-	fimpmsg.UID, _ = jsonparser.GetString(msg, "uid")
-	fimpmsg.CorrelationID, _ = jsonparser.GetString(msg, "corid")
-	fimpmsg.CreationTime, _ = jsonparser.GetString(msg, "ctime")
-	fimpmsg.ResponseToTopic, _ = jsonparser.GetString(msg, "resp_to")
-	fimpmsg.Source, _ = jsonparser.GetString(msg, "src")
-	fimpmsg.Topic, _ = jsonparser.GetString(msg, "topic")
-	fimpmsg.Version, _ = jsonparser.GetString(msg, "ver")
+
+	if fimpmsg.Type, err = jsonparser.GetString(msg, "type"); err != nil {
+		log.Warnf("[fimpgo] NewMessageFromBytes type err: %v", err)
+	}
+	if fimpmsg.Service, err = jsonparser.GetString(msg, "serv"); err != nil {
+		log.Warnf("[fimpgo] NewMessageFromBytes serv err: %v", err)
+	}
+	if fimpmsg.ValueType, err = jsonparser.GetString(msg, "val_t"); err != nil {
+		log.Warnf("[fimpgo] NewMessageFromBytes val_t err: %v", err)
+	}
+	if fimpmsg.UID, err = jsonparser.GetString(msg, "uid"); err != nil {
+		log.Tracef("[fimpgo] NewMessageFromBytes uid err: %v", err)
+	}
+	if fimpmsg.CorrelationID, err = jsonparser.GetString(msg, "corid"); err != nil {
+		log.Tracef("[fimpgo] NewMessageFromBytes coreid err: %v", err)
+	}
+	if fimpmsg.CreationTime, err = jsonparser.GetString(msg, "ctime"); err != nil {
+		log.Tracef("[fimpgo] NewMessageFromBytes ctime err: %v", err)
+	}
+	if fimpmsg.ResponseToTopic, err = jsonparser.GetString(msg, "resp_to"); err != nil {
+		log.Tracef("[fimpgo] NewMessageFromBytes resp_t err: %v", err)
+	}
+	if fimpmsg.Source, err = jsonparser.GetString(msg, "src"); err != nil {
+		log.Debugf("[fimpgo] NewMessageFromBytes src err: %v", err)
+	}
+	if fimpmsg.Topic, err = jsonparser.GetString(msg, "topic"); err != nil {
+		log.Tracef("[fimpgo] NewMessageFromBytes topic err: %v", err)
+	}
+	if fimpmsg.Version, err = jsonparser.GetString(msg, "ver"); err != nil {
+		log.Debugf("[fimpgo] NewMessageFromBytes ver err: %v", err)
+	}
+
+	err = nil
 
 	switch fimpmsg.ValueType {
 	case VTypeString:
@@ -403,37 +427,55 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 	case VTypeBoolArray:
 		val := make([]bool, 0)
 		if _, err := jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-			item, _ := jsonparser.ParseBoolean(value)
+			item, e := jsonparser.ParseBoolean(value)
+			if e != nil {
+				log.Warnf("[fimpgo] Parse VTypeBoolArray err: %v", e)
+				return
+			}
 			val = append(val, item)
 		}, "val"); err != nil {
 			return nil, err
 		}
 
 		fimpmsg.Value = val
+
 	case VTypeStrArray:
 		val := make([]string, 0)
 		if _, err := jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-			item, _ := jsonparser.ParseString(value)
+			item, e := jsonparser.ParseString(value)
+			if e != nil {
+				log.Warnf("[fimpgo] Parse VTypeStrArray err: %v", e)
+			}
 			val = append(val, item)
 		}, "val"); err != nil {
 			return nil, err
 		}
 
 		fimpmsg.Value = val
+
 	case VTypeIntArray:
 		val := make([]int64, 0)
 		if _, err := jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-			item, _ := jsonparser.ParseInt(value)
+			item, e := jsonparser.ParseInt(value)
+			if e != nil {
+				log.Warnf("[fimpgo] Parse VTypeIntArray err: %v", e)
+				return
+			}
 			val = append(val, item)
 
 		}, "val"); err != nil {
 			return nil, err
 		}
 		fimpmsg.Value = val
+
 	case VTypeFloatArray:
 		val := make([]float64, 0)
 		if _, err := jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-			item, _ := jsonparser.ParseFloat(value)
+			item, e := jsonparser.ParseFloat(value)
+			if e != nil {
+				log.Warnf("[fimpgo] Parse VTypeFloatArray err: %v", e)
+				return
+			}
 			val = append(val, item)
 		}, "val"); err != nil {
 			return nil, err
@@ -444,6 +486,9 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 		val := make(map[string]string)
 		if err := jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 			val[string(key)], err = jsonparser.ParseString(value)
+			if err != nil {
+				log.Warnf("[fimpgo] Parse VTypeStrMap err: %v", err)
+			}
 			return nil
 		}, "val"); err != nil {
 			return nil, err
@@ -454,6 +499,9 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 		val := make(map[string]int64)
 		if err := jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 			val[string(key)], err = jsonparser.ParseInt(value)
+			if err != nil {
+				log.Warnf("[fimpgo] Parse VTypeIntMap err: %v", err)
+			}
 			return nil
 		}, "val"); err != nil {
 			return nil, err
@@ -464,6 +512,9 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 		val := make(map[string]float64)
 		if err := jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 			val[string(key)], err = jsonparser.ParseFloat(value)
+			if err != nil {
+				log.Warnf("[fimpgo] Parse VTypeFloatMap err: %v", err)
+			}
 			return nil
 		}, "val"); err != nil {
 			return nil, err
@@ -474,6 +525,9 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 		val := make(map[string]bool)
 		if err := jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 			val[string(key)], err = jsonparser.ParseBoolean(value)
+			if err != nil {
+				log.Warnf("[fimpgo] Parse VTypeBoolMap err: %v", err)
+			}
 			return nil
 		}, "val"); err != nil {
 			return nil, err
@@ -482,6 +536,9 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 
 	case VTypeBinary:
 		fimpmsg.Value, err = jsonparser.GetString(msg, "val")
+		if err != nil {
+			log.Warnf("[fimpgo] GetString val err: %v", err)
+		}
 		//base64val, err := jsonparser.GetString(msg, "val")
 		//if err != nil {
 		//	return nil,err
@@ -493,7 +550,15 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 
 	case VTypeObject:
 		fimpmsg.ValueObj, _, _, err = jsonparser.Get(msg, "val")
+	case VTypeNull:
+		fimpmsg.Value = nil
+	default:
+		return nil, jsonparser.UnknownValueTypeError
 
+	}
+
+	if err != nil {
+		log.Warnf("[fimpgo] NewMessageFromBytes val=%s err: %v", fimpmsg.ValueType, err)
 	}
 
 	if properties, dt, _, err := jsonparser.Get(msg, "props"); dt != jsonparser.NotExist && dt != jsonparser.Null && err == nil {

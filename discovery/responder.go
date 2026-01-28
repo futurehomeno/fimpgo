@@ -96,7 +96,7 @@ func (sr *ServiceDiscoveryResponder) responder() {
 				logrus.Error("[fimpgo] Discovery responder publish err:", err)
 			}
 		case <-sr.stopSignal:
-			break
+			return
 		}
 	}
 }

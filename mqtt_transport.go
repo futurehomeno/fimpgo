@@ -416,7 +416,7 @@ func (mh *MqttTransport) onConnect(client MQTT.Client) {
 	defer mh.subMutex.Unlock()
 
 	options := client.OptionsReader()
-	log.Infof("[fimpgo] Connected to the MQTT broker %s", options.ClientID())
+	log.Infof("[fimpgo] '%s' cnnected to the MQTT broker", options.ClientID())
 
 	if len(mh.subs) > 0 {
 		if token := mh.client.SubscribeMultiple(mh.subs, nil); token.Wait() && token.Error() != nil {
@@ -762,11 +762,16 @@ func (mh *MqttTransport) getCACertPool() (*x509.CertPool, error) {
 	certs.AppendCertsFromPEM(pemData)
 
 	cafile = filepath.Join(mh.certDir, "root-ca-2.pem")
-	pemData, err = os.ReadFile(cafile)
+	if pemData, err = os.ReadFile(cafile); err != nil {
+		return nil, err
+	}
+
 	certs.AppendCertsFromPEM(pemData)
 
 	cafile = filepath.Join(mh.certDir, "root-ca-3.pem")
-	pemData, err = os.ReadFile(cafile)
+	if pemData, err = os.ReadFile(cafile); err != nil {
+		return nil, err
+	}
 	certs.AppendCertsFromPEM(pemData)
 	log.Infof("[fimpgo] CA certificates are loaded")
 	return certs, nil

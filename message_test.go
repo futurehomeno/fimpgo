@@ -145,7 +145,7 @@ func BenchmarkFimpMessage_Serialize2(b *testing.B) {
 func TestNewMessageFromBytes_CorruptedPayload1(t *testing.T) {
 	msgString := "{123456789-=#$%"
 	_, err := NewMessageFromBytes([]byte(msgString))
-	assert.Equal(t, jsonparser.KeyPathNotFoundError, err)
+	assert.Equal(t, jsonparser.UnknownValueTypeError, err)
 }
 
 func TestNewMessageFromBytes_BoolValue(t *testing.T) {
@@ -155,7 +155,7 @@ func TestNewMessageFromBytes_BoolValue(t *testing.T) {
 		t.Error(err)
 	}
 	val, err := fimp.GetBoolValue()
-	if val != true {
+	if val != true || err != nil {
 		t.Error("Wrong value")
 	}
 	if fimp.Properties["p1"] != "pv1" {
@@ -170,7 +170,7 @@ func TestNewMessageFromBytes_BoolInt(t *testing.T) {
 		t.Error(err)
 	}
 	val, err := fimp.GetIntValue()
-	if val != 1234 {
+	if val != 1234 || err != nil {
 		t.Error("Wrong value ", val)
 	}
 }
@@ -182,7 +182,7 @@ func TestNewMessageFromBytesWithProps(t *testing.T) {
 		t.Error(err)
 	}
 	val, err := fimp.GetIntValue()
-	if val != 1234 {
+	if val != 1234 || err != nil {
 		t.Error("Wrong value ", val)
 	}
 }
@@ -336,16 +336,16 @@ func TestProps_GetIntValue(t *testing.T) {
 }
 
 func TestProps_GetStringValue(t *testing.T) {
-	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"str","val":"val1","props":{"param1":"val1","param2":"val2"},"tags":null}`
+	msgString := `{"serv":"dev_sys","type":"cmd.config.set","val_t":"string","val":"val1","props":{"param1":"val1","param2":"val2"},"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
 	if err != nil {
 		t.Error(err)
 	}
 
 	props := fimp.Properties
-	val, _ := props.GetStringValue("param1")
+	val, ok := props.GetStringValue("param1")
 
-	if val != "val1" {
+	if val != "val1" || !ok {
 		t.Error("Wrong map result")
 	}
 }

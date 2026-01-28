@@ -1,18 +1,30 @@
 package primefimp
 
+import (
+	"os"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/futurehomeno/fimpgo"
+	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
+)
+
 var brokerUrl = "tcp://cube.local:1883"
 var brokerUser = ""
 var brokerPass = ""
 var testSiteGuid = ""
 var awsIotEndpoint = "ssl://xxxxxxxxxx.iot.xxxxxxx.amazonaws.com:443"
 
-/*
 func TestPrimeFimp_ClientApi_Update(t *testing.T) {
+	t.Skip()
 	log.SetLevel(log.DebugLevel)
 
 	uuid := uuid.New().String()
 	validClientID := strings.ReplaceAll(uuid, "-", "")[0:22]
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1, nil)
 	err := mqtt.Start()
 	if err != nil {
 		t.Fatal("Error connecting to broker ", err)
@@ -37,10 +49,11 @@ func TestPrimeFimp_ClientApi_Update(t *testing.T) {
 }
 
 func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
+	t.Skip()
 	log.SetLevel(log.TraceLevel)
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1, nil)
 	err := mqtt.Start()
 	if err != nil {
 		t.Fatal("Error connecting to broker ", err)
@@ -67,10 +80,11 @@ func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
 }
 
 func TestPrimeFimp_SiteLazyLoading(t *testing.T) {
+	t.Skip()
 	log.SetLevel(log.DebugLevel)
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1, nil)
 	err := mqtt.Start()
 	if err != nil {
 		t.Fatal("Error connecting to broker ", err)
@@ -91,14 +105,18 @@ func TestPrimeFimp_SiteLazyLoading(t *testing.T) {
 }
 
 func TestPrimeFimp_LoadStates(t *testing.T) {
+	t.Skip()
 	log.SetLevel(log.DebugLevel)
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
-	mqtt := fimpgo.NewMqttTransport(awsIotEndpoint, validClientID, brokerUser, brokerPass, true, 1, 1)
-	mqtt.ConfigureTls("awsiot.private.key", "awsiot.crt", "./datatools/certs", true)
+	mqtt := fimpgo.NewMqttTransport(awsIotEndpoint, validClientID, brokerUser, brokerPass, true, 1, 1, nil)
+	err := mqtt.ConfigureTls("awsiot.private.key", "awsiot.crt", "./datatools/certs", true)
+	if err != nil {
+		t.Fatal("ConfigureTls err: ", err)
+	}
 	mqtt.SetGlobalTopicPrefix(testSiteGuid)
 
-	err := mqtt.Start()
+	err = mqtt.Start()
 	if err != nil {
 		t.Fatal("Error connecting to broker ", err)
 	}
@@ -121,6 +139,7 @@ func TestPrimeFimp_LoadStates(t *testing.T) {
 }
 
 func TestPrimeFimp_LoadStatesWithConnPool(t *testing.T) {
+	t.Skip()
 	log.SetLevel(log.DebugLevel)
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
@@ -195,10 +214,11 @@ func TestPrimeFimp_LoadStatesWithConnPool(t *testing.T) {
 }
 
 func TestPrimeFimp_ClientApi_Notify_With_Filter(t *testing.T) {
+	t.Skip()
 	log.SetLevel(log.TraceLevel)
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1, nil)
 	err := mqtt.Start()
 	if err != nil {
 		t.Fatal("Error connecting to broker ", err)
@@ -236,21 +256,18 @@ func TestPrimeFimp_ClientApi_Notify_With_Filter(t *testing.T) {
 				if addarea > 0 && deletearea > 0 && editarea > 0 {
 					client.Stop()
 					closeChan <- "shit"
-					break
 				}
 			case <-notifyAreaDelete:
 				deletearea++
 				if addarea > 0 && deletearea > 0 && editarea > 0 {
 					client.Stop()
 					closeChan <- "shit"
-					break
 				}
 			case <-notifyAreaEdit:
 				editarea++
 				if addarea > 0 && deletearea > 0 && editarea > 0 {
 					client.Stop()
 					closeChan <- "shit"
-					break
 				}
 			}
 		}
@@ -320,13 +337,13 @@ func TestPrimefimp_LoadStateFromFile(t *testing.T) {
 	const meterElecDevices = 7
 	filteredDevices := state.Devices.FilterDevicesByService("meter_elec")
 	if len(filteredDevices) != meterElecDevices {
-		t.Fatal(fmt.Sprintf("meter_elec devices count does not match. expected %d, got %d", meterElecDevices, len(filteredDevices)))
+		t.Fatalf("meter_elec devices count does not match. expected %d, got %d", meterElecDevices, len(filteredDevices))
 	}
 
 	// tue current state.json file has 6 attributes with the "meter" name
 	const meterAttributes = 7
 	filteredDevices = state.Devices.FilterDevicesByAttribute("meter")
 	if len(filteredDevices) != meterAttributes {
-		t.Fatal(fmt.Sprintf("meter_elec devices count does not match. expected %d, got %d", meterAttributes, len(filteredDevices)))
+		t.Fatalf("meter_elec devices count does not match. expected %d, got %d", meterAttributes, len(filteredDevices))
 	}
-}*/
+}

@@ -95,14 +95,17 @@ func (cs *KeyStore) GetEcdsaKey(userId, deviceId, keyType string) (*EcdsaKey, er
 					return nil, fmt.Errorf("empty key string")
 				} else {
 					cs.keyStore[i].EcdsaKey = NewEcdsaKey()
+
 					var err error
-					if cs.keyStore[i].KeyType == KeyTypePrivate {
+					switch cs.keyStore[i].KeyType {
+					case KeyTypePrivate:
 						err = cs.keyStore[i].EcdsaKey.ImportX509PrivateKey(cs.keyStore[i].SerializedKey)
-					} else if cs.keyStore[i].KeyType == KeyTypePublic {
+					case KeyTypePublic:
 						err = cs.keyStore[i].EcdsaKey.ImportX509PublicKey(cs.keyStore[i].SerializedKey)
-					} else {
+					default:
 						return nil, fmt.Errorf("unknown key type %s", keyType)
 					}
+
 					if err != nil {
 						return nil, err
 					}

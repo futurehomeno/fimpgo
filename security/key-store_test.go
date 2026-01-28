@@ -10,7 +10,10 @@ func TestKeyStore_GetEcdsaKey(t *testing.T) {
 	textToSign := "super important test message"
 	store := NewKeyStore("test-key-store.json", false)
 	ecKey := NewEcdsaKey()
-	ecKey.Generate()
+	err := ecKey.Generate()
+	if err != nil {
+		t.Fatal("Generate err:", err)
+	}
 
 	_, public := ecKey.ExportX509EncodedKeys()
 

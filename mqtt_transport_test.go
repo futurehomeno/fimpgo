@@ -22,8 +22,6 @@ func onMsg(topic string, addr *Address, iotMsg *FimpMessage, rawMessage []byte) 
 	}
 }
 
-var isCorrect = make(map[int]bool)
-
 func TestMqttTransport_Publish(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1, nil)
@@ -39,7 +37,10 @@ func TestMqttTransport_Publish(t *testing.T) {
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
 	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
-	mqtt.Publish(&adr, msg)
+	err = mqtt.Publish(&adr, msg)
+	if err != nil {
+		t.Fatal("Publish err:", err)
+	}
 
 	result := <-msgChan
 
@@ -65,7 +66,10 @@ func TestMqttTransport_PublishStopPublish(t *testing.T) {
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
 	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
-	mqtt.Publish(&adr, msg)
+	err = mqtt.Publish(&adr, msg)
+	if err != nil {
+		t.Fatal("Publish err:", err)
+	}
 
 	result := <-msgChan
 	if result != 1 {
@@ -145,11 +149,23 @@ func TestMqttTransport_SubUnsub(t *testing.T) {
 	}
 
 	// unsubscribe and send message, shall not receive it
-	mqtt.Unsubscribe("pt:j1/mt:evt/#")
+	err = mqtt.Unsubscribe("pt:j1/mt:evt/#")
+	if err != nil {
+		t.Fatal("Unsubscribe err:", err)
+	}
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
 	adr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
-	mqtt.PublishSync(&adr, msg)
+	err = mqtt.PublishSync(&adr, msg)
+	if err != nil {
+		t.Error("PublishSync err:", err)
+		t.FailNow()
+	}
+
+	err = mqtt.Publish(&adr, msg)
+	if err != nil {
+		t.Fatal("Publish err:", err)
+	}
 
 	select {
 	case <-msgChan:
@@ -189,7 +205,10 @@ func TestMqttTransport_PublishTls(t *testing.T) {
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
 	adr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
-	mqtt.Publish(&adr, msg)
+	err = mqtt.Publish(&adr, msg)
+	if err != nil {
+		t.Fatal("Publish err:", err)
+	}
 
 	result := <-msgChan
 
@@ -240,7 +259,10 @@ func TestMqttTransport_PublishTls_2(t *testing.T) {
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
 	adr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
-	mqtt.Publish(&adr, msg)
+	err = mqtt.Publish(&adr, msg)
+	if err != nil {
+		t.Fatal("Publish err:", err)
+	}
 
 	result := <-msgChan
 	if result != 1 {
@@ -291,7 +313,10 @@ func TestMqttTransport_TestChannels(t *testing.T) {
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
 	adr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
-	mqtt.Publish(&adr, msg)
+	err = mqtt.Publish(&adr, msg)
+	if err != nil {
+		t.Fatal("Generate err:", err)
+	}
 
 	expVals := map[int]bool{1: true, 2: true}
 
@@ -371,7 +396,10 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 	msg := NewFloatMessage("cmd.test.get_response", "tester", float64(35.5), nil, nil, nil)
 	msg.ResponseToTopic = "pt:j1c1/mt:rsp/rt:app/rn:response_tester/ad:1"
 	adr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "test", ResourceAddress: "1"}
-	mqtt.Publish(&adr, msg)
+	err = mqtt.Publish(&adr, msg)
+	if err != nil {
+		t.Fatal("Publish err:", err)
+	}
 
 	select {
 	case <-rspReceived:
@@ -383,7 +411,10 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 
 	mqtt.UnregisterChannel("chan1")
 	mqtt.UnregisterChannel("chan2")
-	mqtt.Unsubscribe("#")
+	err = mqtt.Unsubscribe("#")
+	if err != nil {
+		t.Fatal("AddSubscription err:", err)
+	}
 	mqtt.Stop()
 }
 
@@ -470,7 +501,10 @@ func TestMqttTransport_TestChannelsWithFilters(t *testing.T) {
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
 	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
-	mqtt.Publish(&adr, msg)
+	err = mqtt.Publish(&adr, msg)
+	if err != nil {
+		t.Fatal("Publish err:", err)
+	}
 
 	expVals := map[int]bool{1: true, 2: true, 3: true, 5: true}
 

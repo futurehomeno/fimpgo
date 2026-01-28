@@ -47,7 +47,7 @@ func NewBufferedStream(bufferSizeLimit int, bufferInterval time.Duration, compre
 	if su.bufferInterval != 0 {
 		su.ticker = time.NewTicker(time.Second * su.bufferInterval)
 		go func() {
-			for _ = range su.ticker.C {
+			for range su.ticker.C {
 				if su.Size() > 0 {
 					su.FlushBuffer()
 				}
@@ -88,7 +88,7 @@ func (su *BufferedStream) Size() int {
 func (su *BufferedStream) FlushBuffer() {
 	//var payload []byte
 	su.lock.Lock()
-	su.serializeBuffer()
+	_ = su.serializeBuffer()
 	su.buffer = su.buffer[:0] // setting size to 0 without allocation
 	su.lock.Unlock()
 }
@@ -106,11 +106,14 @@ func (su *BufferedStream) ConfigureChanelSink(size int) chan []byte {
 }
 
 func (su *BufferedStream) serializeBuffer() error {
-	for i, _ := range su.buffer {
+	for i := range su.buffer {
 		if su.buffer[i].ValueType == fimpgo.VTypeObject {
-			su.buffer[i].GetObjectValue(&su.buffer[i].Value)
+			if err := su.buffer[i].GetObjectValue(&su.buffer[i].Value); err != nil {
+				return err
+			}
 		}
 	}
+
 	bPayload, err := json.Marshal(su.buffer)
 	if err != nil {
 		return err

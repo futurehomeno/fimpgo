@@ -23,6 +23,11 @@ func TestSignMessageES256(t *testing.T) {
 	}
 
 	_, err = got.SerializeToJson()
+	if err != nil {
+		t.Error("SerializeToJson")
+		t.FailNow()
+	}
+
 	if err = keys.Generate(); err != nil {
 		t.Error("SerializedKey generation error", err)
 		t.FailNow()
@@ -99,7 +104,6 @@ func TestSignMessageES256_TestVerify(t *testing.T) {
 	}
 	signedMsgTxt := "{\"type\":\"evt.transport.signed\",\"serv\":\"temp_sensor\",\"val_t\":\"bin\",\"val\":\"eyJjb3JpZCI6bnVsbCwiY3RpbWUiOiIyMDIwLTA1LTE1VDExOjI5OjQ4Ljc1NzY4MSIsInByb3BzIjpudWxsLCJzZXJ2IjoiZmhidXRsZXIiLCJ0YWdzIjpudWxsLCJ0eXBlIjoiY21kLmdhdGV3YXkuZ2V0X2FjdGl2ZV9hZGFwdGVycyIsInVpZCI6IjlmMjJlYzkwLTk2OGUtMTFlYS1kZTdmLWViYTk3ODNhZjQwMCIsInZhbF90Ijoic3RyaW5nIiwidmVyIjpudWxsLCJ2YWwiOiIiLCJyZXNwX3RvIjoicHQ6ajEvbXQ6cnNwL3J0OmNsb3VkL3JuOnJlbW90ZS1jbGllbnQvYWQ6c21hcnRob21lLWFwcCIsInNyYyI6ImFwcCJ9\",\"tags\":null,\"props\":{\"sig\":\"SCwiI0yRhv4vydSND-Khpi2uCkoSjLOHmdZeKnELmkMtZOnxCuVpMs1A9zNPfXBprL3xN4_n8WT__IM8kpjEhA\",\"user_id\":\"alex@gmail.com\"},\"ver\":\"1\",\"corid\":\"\",\"ctime\":\"2020-05-14T10:56:32.385+02:00\",\"uid\":\"6ad4ae68-7458-44a9-8cdc-fcc8551689e5\"}"
 	signedMsg, err := fimpgo.NewMessageFromBytes([]byte(signedMsgTxt))
-
 	if err != nil {
 		t.Error("Wrong message")
 		t.FailNow()
@@ -114,13 +118,27 @@ func TestSignMessageES256_TestVerify(t *testing.T) {
 func TestSignMessageES256_TestVerify2(t *testing.T) {
 	t.Skip()
 	keyStore := security.NewKeyStore("../testdata/hub/pub_key_store.json", false)
-	keyStore.LoadFromDisk()
+	err := keyStore.LoadFromDisk()
+	if err != nil {
+		t.Error("LoadFromDisk err:", err)
+		t.FailNow()
+	}
+
 	signedMsgTxt := "{\n  \"corid\": \"\",\n  \"ctime\": \"2020-05-27T16:16:06.410681\",\n  \"props\": {\n    \"user_id\": \"emiliana.guzik@gmail.com\",\n    \"device_id\": \"9c69f39059f27185\",\n    \"sig\": \"IECSBikTtYEFPJSt5LBa3UCcvnHSvXF2ksOQGoFbC4Ktw82-l7ogaWLp3opKZUUOvUnjlX_giQ7-NsgFgSFl-Q\",\n    \"alg\": \"ES256\"\n  },\n  \"serv\": \"door_lock\",\n  \"tags\": null,\n  \"type\": \"cmd.transport.signed\",\n  \"uid\": \"9ac54db0-a024-11ea-c1f3-0f1c4cea82d3\",\n  \"val_t\": \"bin\",\n  \"ver\": null,\n  \"val\": \"eyJjb3JpZCI6IiIsImN0aW1lIjoiMjAyMC0wNS0yN1QxNjoxNjowNi4wNzU3MDAiLCJwcm9wcyI6bnVsbCwic2VydiI6ImRvb3JfbG9jayIsInRhZ3MiOm51bGwsInR5cGUiOiJjbWQubG9jay5zZXQiLCJ1aWQiOiI5YTkyMmZjMC1hMDI0LTExZWEtZWZhMy02ZDU4ZDJjMTNkZjkiLCJ2YWxfdCI6ImJvb2wiLCJ2ZXIiOm51bGwsInZhbCI6ZmFsc2UsInJlc3BfdG8iOm51bGwsInNyYyI6ImFwcCJ9\",\n  \"resp_to\": null,\n  \"src\": \"app\"\n}"
 	msg, err := fimpgo.NewMessageFromBytes([]byte(signedMsgTxt))
+	if err != nil {
+		t.Error("Msg signedMsgTxt Err:", err)
+		t.FailNow()
+	}
 	userId := msg.Properties["user_id"]
 	deviceId := msg.Properties["device_id"]
 	// The error is from this call
 	key, err := keyStore.GetEcdsaKey(userId, deviceId, security.KeyTypePublic)
+	if err != nil {
+		t.Error("GetEcdsaKey err:", err)
+		t.FailNow()
+	}
+
 	_, err = GetVerifiedMessageES256(msg, key)
 	if err != nil {
 		t.Error("Message can't be verified. Err:", err)

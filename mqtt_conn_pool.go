@@ -5,6 +5,8 @@ import (
 	"math/rand"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type connection struct {
@@ -120,7 +122,10 @@ func (cp *MqttConnectionPool) ReturnConnection(connId int) {
 	cp.mux.RLock()
 	con, ok := cp.connPool[connId]
 	if ok {
-		con.mqConnection.UnsubscribeAll()
+		err := con.mqConnection.UnsubscribeAll()
+		if err != nil {
+			log.Warnf("UnsubscribeAll err: %v", err)
+		}
 		con.isIdle = true
 		con.idleSince = time.Now()
 	}

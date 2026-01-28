@@ -3,16 +3,10 @@ package primefimp
 import (
 	"encoding/json"
 	"os"
-	"strings"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
-
-func clientId() string {
-	return strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
-}
 
 func TestMode(t *testing.T) {
 	tb, _ := os.ReadFile("testdata/mode.json")
