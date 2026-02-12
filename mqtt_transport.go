@@ -300,7 +300,7 @@ func (mh *MqttTransport) Client() MQTT.Client {
 func (mh *MqttTransport) Start() error {
 	log.Debug("<MqttAd> Connecting to the broker")
 
-	if token := mh.client.Connect(); token.Wait() && token.Error() == nil {
+	if token := mh.client.Connect(); token.WaitTimeout(15*time.Second) && token.Error() == nil {
 		log.Info("<MqttAd> Connected to the broker")
 	} else {
 		return token.Error()
@@ -392,7 +392,7 @@ func (mh *MqttTransport) onConnect(_ MQTT.Client) {
 
 	log.Infof("<MqttAd> Connection established with MQTT broker .")
 	if len(mh.subs) > 0 {
-		if token := mh.client.SubscribeMultiple(mh.subs, nil); token.Wait() && token.Error() != nil {
+		if token := mh.client.SubscribeMultiple(mh.subs, nil); token.WaitTimeout(15*time.Second) && token.Error() != nil {
 			log.Error("Can't subscribe. Error :", token.Error())
 		}
 	}
