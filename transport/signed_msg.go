@@ -3,7 +3,6 @@ package transport
 import (
 	"crypto"
 	"encoding/base64"
-	"encoding/hex"
 	"errors"
 	"strings"
 
@@ -83,12 +82,12 @@ func SignMessageES256(payload *fimpgo.FimpMessage, requestMsg *fimpgo.FimpMessag
 	if err != nil {
 		return nil, err
 	}
-	signedMsg.Properties["sig"] = hex.EncodeToString(signature)
+
+	signedMsg.Properties["sig"] = base64.RawURLEncoding.EncodeToString(signature)
 	return signedMsg, nil
 }
 
 func GetVerifiedMessageES256(signedMsg *fimpgo.FimpMessage, key *security.EcdsaKey) (*fimpgo.FimpMessage, error) {
-
 	if signedMsg.Type != "cmd.transport.signed" && signedMsg.Type != "evt.transport.signed" {
 		return nil, errors.New("incorrect message type")
 	}
@@ -101,7 +100,7 @@ func GetVerifiedMessageES256(signedMsg *fimpgo.FimpMessage, key *security.EcdsaK
 		return nil, errors.New("missing signature")
 	}
 
-	sig, err := hex.DecodeString(sigStr)
+	sig, err := base64.RawURLEncoding.DecodeString(sigStr)
 	if err != nil {
 		return nil, err
 	}

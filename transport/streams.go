@@ -78,7 +78,7 @@ func (su *BufferedStream) EnqueueMessage(topic string, msg *fimpgo.FimpMessage) 
 	su.lock.Lock()
 	su.buffer = append(su.buffer, *msg)
 	su.lock.Unlock()
-	log.Tracef("Msg queued len(buffer)=%d maxSize=%d", len(su.buffer), su.bufferMaxSize)
+	log.Tracef("[fimpgo] Msg queued len(buffer)=%d maxSize=%d", len(su.buffer), su.bufferMaxSize)
 }
 
 func (su *BufferedStream) Size() int {
@@ -86,7 +86,6 @@ func (su *BufferedStream) Size() int {
 }
 
 func (su *BufferedStream) FlushBuffer() {
-	//var payload []byte
 	su.lock.Lock()
 	su.serializeBuffer()
 	su.buffer = su.buffer[:0] // setting size to 0 without allocation
