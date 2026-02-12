@@ -263,8 +263,8 @@ func (msg *FimpMessage) SerializeToJson() ([]byte, error) {
 			jsonBA, err = jsonparser.Set(jsonBA, msg.ValueObj, "val")
 		}
 	}
-	return jsonBA, err
 
+	return jsonBA, err
 }
 
 // GetCreationTime returns parsed creation time of the message.

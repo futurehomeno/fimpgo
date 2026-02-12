@@ -273,7 +273,7 @@ func (mh *ApiClient) notifyRouter() {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Errorf("[fimpgo] isChannelInterested crash %v", r)
-			log.Info(debug.Stack())
+			log.Info(string(debug.Stack()))
 		}
 	}()
 

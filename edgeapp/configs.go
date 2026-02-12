@@ -31,7 +31,7 @@ type Configs struct {
 func NewConfigs(workDir string) *Configs {
 	conf := &Configs{WorkDir: workDir}
 	if err := conf.initFiles(); err != nil {
-		log.Error(err)
+		log.Errorf("[edgeapp] New config err: %s", err)
 	}
 	return conf
 }
@@ -39,7 +39,7 @@ func NewConfigs(workDir string) *Configs {
 func (cf *Configs) initFiles() error {
 	cf.path = filepath.Join(cf.WorkDir, "data", "config.json")
 	if !utils.FileExists(cf.path) {
-		log.Info("Config file doesn't exist.Loading default config")
+		log.Warn("[edgeapp] Config file not found. Load default")
 		defaultConfigFile := filepath.Join(cf.WorkDir, "defaults", "config.json")
 		err := utils.CopyFile(defaultConfigFile, cf.path)
 		if err != nil {
@@ -90,7 +90,7 @@ func (cf *Configs) LoadDefaults() error {
 	if err := os.Remove(configFile); err != nil {
 		log.Error("[edgeapp] ", err)
 	}
-	log.Info("[edgeapp] Config file doesn't exist.Loading default config")
+
 	defaultConfigFile := filepath.Join(cf.WorkDir, "defaults", "config.json")
 	return utils.CopyFile(defaultConfigFile, configFile)
 }
@@ -102,11 +102,6 @@ func (cf *Configs) SetCustomConfigs(config any) {
 func (cf *Configs) GetCustomConfigs() any {
 	return cf.CustomConfigs
 }
-
-//func (cf *Configs) IsConfigured()bool {
-//	// TODO : Add logic here
-//	return true
-//}
 
 type ConfigReport struct {
 	OpStatus string    `json:"op_status"`

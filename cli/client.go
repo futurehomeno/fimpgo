@@ -13,43 +13,46 @@ var (
 )
 
 func onMsg(topic string, addr *fimpgo.Address, iotMsg *fimpgo.FimpMessage, rawMessage []byte) {
-	log.Infof("New msg  %s", topic)
+	log.Infof("[fimpgo] New msg %s", topic)
 }
 
 func onMqttError(err error) {
-	log.Errorf("Mqtt err: %s", err.Error())
+	log.Errorf("[fimpgo] Mqtt err: %s", err.Error())
+
+	if mqtt.Client().IsConnected() {
+		close(done)
+	}
+
 	mqtt.Stop()
-	close(done)
 }
 
 func main() {
-
 	mqttHost := flag.String("host", "localhost:1883", "MQTT broker URL , for instance cube.local:1883")
 	flag.Parse()
 	log.SetLevel(log.DebugLevel)
-	log.Infof("Broker url %s", *mqttHost)
+	log.Infof("[fimpgo] Broker url %s", *mqttHost)
 	mqtt = fimpgo.NewMqttTransport("tcp://"+*mqttHost, "", "", "", true, 1, 1, onMqttError)
 	err := mqtt.Start()
 	if err != nil {
-		log.Error("Error connecting to broker ", err)
+		log.Error("[fimpgo] Error connecting to broker ", err)
 		return
 	}
 
-	log.Infof("Connected to broker %s", *mqttHost)
+	log.Infof("[fimpgo] ';'%s' connected to the broker", *mqttHost)
 
 	mqtt.SetMessageHandler(onMsg)
 
 	if err := mqtt.Subscribe("#"); err != nil {
-		log.Error(err)
+		log.Errorf("[fimpgo] Subscribe # err: %v", err)
 		return
 	}
 
-	log.Info("Publishing message")
+	log.Info("[fimpgo] Publish message")
 
 	msg := fimpgo.NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
 	adr := fimpgo.Address{MsgType: fimpgo.MsgTypeEvt, ResourceType: fimpgo.ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
 	if err := mqtt.Publish(&adr, msg); err != nil {
-		log.Error(err)
+		log.Errorf("[fimpgo] Publish err: %v", err)
 	}
 
 	<-done

@@ -88,7 +88,10 @@ func (su *BufferedStream) Size() int {
 func (su *BufferedStream) FlushBuffer() {
 	//var payload []byte
 	su.lock.Lock()
-	_ = su.serializeBuffer()
+	if err := su.serializeBuffer(); err != nil {
+		log.Warnf("[fimpgo] Serialize buffer err: %v", err)
+	}
+
 	su.buffer = su.buffer[:0] // setting size to 0 without allocation
 	su.lock.Unlock()
 }

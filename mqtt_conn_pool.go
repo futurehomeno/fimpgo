@@ -124,7 +124,7 @@ func (cp *MqttConnectionPool) ReturnConnection(connId int) {
 	if ok {
 		err := con.mqConnection.UnsubscribeAll()
 		if err != nil {
-			log.Warnf("UnsubscribeAll err: %v", err)
+			log.Warnf("[fimpgo] UnsubscribeAll err: %v", err)
 		}
 		con.isIdle = true
 		con.idleSince = time.Now()

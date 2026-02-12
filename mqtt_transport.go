@@ -308,9 +308,10 @@ func (mh *MqttTransport) Client() MQTT.Client {
 func (mh *MqttTransport) Start() error {
 	var err error
 	mh.connState.Init()
+	const timeout = 10 * time.Second
 
 	for i := 1; i <= mh.startFailRetryCount; i++ {
-		if token := mh.client.Connect(); token.Wait() && token.Error() == nil {
+		if token := mh.client.Connect(); token.WaitTimeout(timeout) && token.Error() == nil {
 			break
 		} else {
 			err = token.Error()
@@ -326,19 +327,25 @@ func (mh *MqttTransport) Start() error {
 
 	mh.incMsgsWg = sync.WaitGroup{}
 	mh.incMsgsWg.Add(1)
-	go mh.handleIncomingMessages()
-	return mh.connState.WaitConnected(5 * time.Second)
+
+	ret := mh.connState.WaitConnected(timeout)
+
+	if ret == nil {
+		go mh.handleIncomingMessages()
+	}
+
+	return ret
 }
 
 // Stop stops adapter . Adapter can't be started again using Start . In order to start adapter it has to be re-initialized
 func (mh *MqttTransport) Stop() {
 	mh.client.Disconnect(250)
+	mh.connState.OnDone()
 
 	if !mh.connState.IsConnected() {
 		return
 	}
 
-	mh.connState.OnDone()
 	mh.incMsgsWg.Wait()
 	time.Sleep(100 * time.Millisecond)
 }
@@ -416,7 +423,7 @@ func (mh *MqttTransport) onConnect(client MQTT.Client) {
 	defer mh.subMutex.Unlock()
 
 	options := client.OptionsReader()
-	log.Infof("[fimpgo] '%s' cnnected to the MQTT broker", options.ClientID())
+	log.Infof("[fimpgo] '%s' connected to the broker", options.ClientID())
 
 	if len(mh.subs) > 0 {
 		if token := mh.client.SubscribeMultiple(mh.subs, nil); token.Wait() && token.Error() != nil {

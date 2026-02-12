@@ -20,7 +20,7 @@ func NewMsgCompressor(alg, compLevel string) *MsgCompressor {
 	comp := &MsgCompressor{}
 	comp.compressor, err = gzip.NewWriterLevel(&comp.compressionBuffer, gzip.BestCompression)
 	if err != nil {
-		log.Error("Compressor can't be initiated .Err:", err)
+		log.Error("[fimpgo] Compressor not initiated err:", err)
 	}
 
 	return comp
