@@ -667,7 +667,7 @@ func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error 
 		topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
 	}
 	if err == nil {
-		log.Trace("[fimpgo] Publishing msg to topic:", topic)
+		log.Warn("[fimpgo] Publishing msg to topic:", topic)
 		token := mh.client.Publish(topic, mh.pubQos, false, bytm)
 		if token.WaitTimeout(mh.syncPublishTimeout) && token.Error() == nil {
 			return nil

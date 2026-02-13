@@ -23,7 +23,7 @@ const (
 	CmdDelete = "delete"
 	CmdAdd    = "add"
 
-	wrongValueFormat = "wrong value type. expected %+v, got %+v"
+	wrongValueFormat = "invlidValueFormat. expected %+v, got %+v"
 
 	ServiceOutBinSwitch = "out_bin_switch"
 	ServiceOutLvlSwitch = "out_lvl_switch"

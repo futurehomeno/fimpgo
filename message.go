@@ -14,24 +14,24 @@ import (
 )
 
 const (
-	TimeFormat       = "2006-01-02T15:04:05.999Z07:00"
-	VTypeString      = "string"
-	VTypeInt         = "int"
-	VTypeFloat       = "float"
-	VTypeBool        = "bool"
-	VTypeStrMap      = "str_map"
-	VTypeIntMap      = "int_map"
-	VTypeFloatMap    = "float_map"
-	VTypeBoolMap     = "bool_map"
-	VTypeStrArray    = "str_array"
-	VTypeIntArray    = "int_array"
-	VTypeFloatArray  = "float_array"
-	VTypeBoolArray   = "bool_array"
-	VTypeObject      = "object"
-	VTypeBase64      = "base64"
-	VTypeBinary      = "bin"
-	VTypeNull        = "null"
-	wrongValueFormat = "wrong value type. expected %+v, got %+v"
+	TimeFormat         = "2006-01-02T15:04:05.999Z07:00"
+	VTypeString        = "string"
+	VTypeInt           = "int"
+	VTypeFloat         = "float"
+	VTypeBool          = "bool"
+	VTypeStrMap        = "str_map"
+	VTypeIntMap        = "int_map"
+	VTypeFloatMap      = "float_map"
+	VTypeBoolMap       = "bool_map"
+	VTypeStrArray      = "str_array"
+	VTypeIntArray      = "int_array"
+	VTypeFloatArray    = "float_array"
+	VTypeBoolArray     = "bool_array"
+	VTypeObject        = "object"
+	VTypeBase64        = "base64"
+	VTypeBinary        = "bin"
+	VTypeNull          = "null"
+	invalidValueFormat = "invalid value=%v type=%s exp=%T"
 
 	Val = "val"
 )
@@ -53,7 +53,7 @@ func (p Props) GetIntValue(key string) (int, bool, error) {
 
 	i, err := strconv.ParseInt(val, 10, 64)
 	if err != nil {
-		return 0, true, fmt.Errorf("property %s has wrong value type, expected int, got %s", key, val)
+		return 0, true, fmt.Errorf("property %s value=%v invalid type exp=int got=%T", key, val, val)
 	}
 
 	return int(i), true, nil
@@ -76,7 +76,7 @@ func (p Props) GetFloatValue(key string) (float64, bool, error) {
 
 	f, err := strconv.ParseFloat(val, 64)
 	if err != nil {
-		return 0, true, fmt.Errorf("property %s has wrong value type, expected float, got %s", key, val)
+		return 0, true, fmt.Errorf("property %s value=%v invalid type exp=float64 got=%T", key, val, val)
 	}
 
 	return f, true, nil
@@ -90,7 +90,7 @@ func (p Props) GetBoolValue(key string) (bool, bool, error) {
 
 	b, err := strconv.ParseBool(val)
 	if err != nil {
-		return false, true, fmt.Errorf("property %s has wrong value type, expected bool, got %s", key, val)
+		return false, true, fmt.Errorf("property %s value=%v invalid type exp=bool got=%T", key, val, val)
 	}
 
 	return b, true, nil
@@ -104,7 +104,7 @@ func (p Props) GetTimestampValue(key string) (time.Time, bool, error) {
 
 	t := ParseTime(val)
 	if t.IsZero() {
-		return time.Time{}, true, fmt.Errorf("property %s has wrong value type, expected RFC3339 timestamp, got %s", key, val)
+		return time.Time{}, true, fmt.Errorf("property %s value=%v has invalid type exp=RFC3339 got=%T", key, val, val)
 	}
 
 	return t, true, nil
@@ -152,11 +152,16 @@ func (msg *FimpMessage) SetValue(value any, valType string) {
 }
 
 func (msg *FimpMessage) GetIntValue() (int, error) {
-	val, ok := msg.Value.(int)
-	if ok {
+	switch val := msg.Value.(type) {
+	case int64:
+		return int(val), nil
+	case int:
 		return val, nil
+	case uint:
+		return int(val), nil
 	}
-	return 0, fmt.Errorf(wrongValueFormat, "int", reflect.ValueOf(msg.Value))
+
+	return 0, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "int", msg.Value)
 }
 
 func (msg *FimpMessage) GetStringValue() (string, error) {
@@ -164,7 +169,7 @@ func (msg *FimpMessage) GetStringValue() (string, error) {
 	if ok {
 		return val, nil
 	}
-	return "", fmt.Errorf(wrongValueFormat, "string", reflect.ValueOf(msg.Value))
+	return "", fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "string", msg.Value)
 }
 
 func (msg *FimpMessage) GetBoolValue() (bool, error) {
@@ -172,7 +177,7 @@ func (msg *FimpMessage) GetBoolValue() (bool, error) {
 	if ok {
 		return val, nil
 	}
-	return false, fmt.Errorf(wrongValueFormat, "bool", reflect.ValueOf(msg.Value))
+	return false, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "bool", msg.Value)
 }
 
 func (msg *FimpMessage) GetFloatValue() (float64, error) {
@@ -180,7 +185,7 @@ func (msg *FimpMessage) GetFloatValue() (float64, error) {
 	if ok {
 		return val, nil
 	}
-	return 0, fmt.Errorf(wrongValueFormat, "float64", reflect.ValueOf(msg.Value))
+	return 0, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "float64", msg.Value)
 }
 
 func (msg *FimpMessage) GetStrArrayValue() ([]string, error) {
@@ -188,7 +193,7 @@ func (msg *FimpMessage) GetStrArrayValue() ([]string, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, fmt.Errorf(wrongValueFormat, "[]string", reflect.ValueOf(msg.Value))
+	return nil, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "[]string", msg.Value)
 }
 
 func (msg *FimpMessage) GetIntArrayValue() ([]int, error) {
@@ -196,7 +201,7 @@ func (msg *FimpMessage) GetIntArrayValue() ([]int, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, fmt.Errorf(wrongValueFormat, "[]int", reflect.ValueOf(msg.Value))
+	return nil, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "[]int", msg.Value)
 }
 
 func (msg *FimpMessage) GetFloatArrayValue() ([]float64, error) {
@@ -204,7 +209,7 @@ func (msg *FimpMessage) GetFloatArrayValue() ([]float64, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, fmt.Errorf(wrongValueFormat, "[]float64", reflect.ValueOf(msg.Value))
+	return nil, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "[]float64", msg.Value)
 }
 
 func (msg *FimpMessage) GetBoolArrayValue() ([]bool, error) {
@@ -212,7 +217,7 @@ func (msg *FimpMessage) GetBoolArrayValue() ([]bool, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, fmt.Errorf(wrongValueFormat, "[]bool", reflect.ValueOf(msg.Value))
+	return nil, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "[]bool", msg.Value)
 }
 
 func (msg *FimpMessage) GetStrMapValue() (map[string]string, error) {
@@ -220,7 +225,7 @@ func (msg *FimpMessage) GetStrMapValue() (map[string]string, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, fmt.Errorf(wrongValueFormat, "map[string]string", reflect.ValueOf(msg.Value))
+	return nil, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "map[string]string", msg.Value)
 }
 
 func (msg *FimpMessage) GetIntMapValue() (map[string]int, error) {
@@ -228,7 +233,7 @@ func (msg *FimpMessage) GetIntMapValue() (map[string]int, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, fmt.Errorf(wrongValueFormat, "map[string]int", reflect.ValueOf(msg.Value))
+	return nil, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "map[string]int", msg.Value)
 }
 
 func (msg *FimpMessage) GetFloatMapValue() (map[string]float64, error) {
@@ -236,7 +241,7 @@ func (msg *FimpMessage) GetFloatMapValue() (map[string]float64, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, fmt.Errorf(wrongValueFormat, "map[string]float64", reflect.ValueOf(msg.Value))
+	return nil, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "map[string]float64", msg.Value)
 }
 
 func (msg *FimpMessage) GetBoolMapValue() (map[string]bool, error) {
@@ -244,7 +249,7 @@ func (msg *FimpMessage) GetBoolMapValue() (map[string]bool, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, fmt.Errorf(wrongValueFormat, "map[string]bool", reflect.ValueOf(msg.Value))
+	return nil, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "map[string]bool", msg.Value)
 }
 
 func (msg *FimpMessage) GetRawObjectValue() []byte {
@@ -404,7 +409,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 		log.Tracef("[fimpgo] NewMessageFromBytes resp_t err: %v", err)
 	}
 	if fimpmsg.Source, err = jsonparser.GetString(msg, "src"); err != nil {
-		log.Debugf("[fimpgo] NewMessageFromBytes src err: %v", err)
+		log.Tracef("[fimpgo] NewMessageFromBytes src err: %v", err)
 	}
 	if fimpmsg.Topic, err = jsonparser.GetString(msg, "topic"); err != nil {
 		log.Tracef("[fimpgo] NewMessageFromBytes topic err: %v", err)

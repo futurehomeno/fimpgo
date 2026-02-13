@@ -326,10 +326,10 @@ func (sav *StateAttributeValue) parse() error {
 		}, fimpgo.Val)
 		sav.Val = val
 	case fimpgo.VTypeFloatMap:
-		val := make(map[string]bool)
+		val := make(map[string]float64)
 		err = jsonparser.ObjectEach(b, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 			var e error
-			val[string(key)], e = jsonparser.ParseBoolean(value)
+			val[string(key)], e = jsonparser.ParseFloat(value)
 			return e
 		}, fimpgo.Val)
 		sav.Val = val

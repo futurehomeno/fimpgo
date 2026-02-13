@@ -129,14 +129,17 @@ func (cp *MqttConnectionPool) ReturnConnection(connId int) {
 	defer cp.mux.RUnlock()
 
 	con, ok := cp.connPool[connId]
-	if ok {
-		err := con.mqConnection.UnsubscribeAll()
-		if err != nil {
-			log.Warnf("[fimpgo] UnsubscribeAll err: %v", err)
-		}
-		con.isIdle = true
-		con.idleSince = time.Now()
+	if !ok {
+		log.Debugf("No connection=%d to return", connId)
+		return
 	}
+
+	err := con.mqConnection.UnsubscribeAll()
+	if err != nil {
+		log.Warnf("[fimpgo] UnsubscribeAll err: %v", err)
+	}
+	con.isIdle = true
+	con.idleSince = time.Now()
 }
 
 // getConnectionById returns connection from pool or creates new connection
@@ -155,26 +158,30 @@ func (cp *MqttConnectionPool) genConnId() int {
 func (cp *MqttConnectionPool) cleanupProcess() {
 	for {
 		<-cp.poolCheckTick.C
-		cp.poolCheckTick.Stop()
-		cp.poolCheckTick = nil
 
 		if !cp.isActive {
 			break
 		}
+
 		cp.mux.Lock()
 		if len(cp.connPool) > cp.size {
 			for i := range cp.connPool {
-				if cp.connPool[i].isIdle {
-					if (time.Since(cp.connPool[i].idleSince) > (cp.maxIdleAge)) && (len(cp.connPool) > cp.size) {
-						conn := cp.getConnectionById(i)
-						if conn != nil {
-							conn.Stop()
-							delete(cp.connPool, i) // it is safe to delete map element in the loop
-						}
+				if !cp.connPool[i].isIdle {
+					continue
+				}
+
+				if (time.Since(cp.connPool[i].idleSince) > cp.maxIdleAge) && (len(cp.connPool) > cp.size) {
+					conn := cp.getConnectionById(i)
+					if conn != nil {
+						conn.Stop()
+						delete(cp.connPool, i) // it is safe to delete map element in the loop
 					}
 				}
 			}
 		}
 		cp.mux.Unlock()
 	}
+
+	cp.poolCheckTick.Stop()
+	cp.poolCheckTick = nil
 }

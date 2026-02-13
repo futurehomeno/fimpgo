@@ -157,7 +157,7 @@ func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
 	var err error
 	var response *fimpgo.FimpMessage
 	for range oac.cbRetry {
-		response, err = oac.syncClient.SendFimp("pt:j1/mt:cmd/rt:app/rn:clbridge/ad:1", reqMsg, int(time.Second*oac.cbRetryDelay))
+		response, err = oac.syncClient.SendFimp("pt:j1/mt:cmd/rt:app/rn:clbridge/ad:1", reqMsg, int(oac.cbRetryDelay))
 		if err == nil {
 			break
 		}
@@ -210,7 +210,7 @@ func (oac *FhOAuth2Client) postMsg(req any, url string) (*OAuth2TokenResponse, e
 		if err == nil && resp.StatusCode < 400 {
 			break
 		}
-		log.Error("[edgeapp] Error response from auth endpoint.Retrying...")
+		log.Error("[edgeapp] Response from auth endpoint err: ", err)
 		time.Sleep(time.Second * oac.retryDelay)
 	}
 	if err != nil {

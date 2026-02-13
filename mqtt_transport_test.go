@@ -2,6 +2,7 @@ package fimpgo
 
 import (
 	"math/rand"
+	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -102,9 +103,12 @@ func TestMqttTransport_PublishSync(t *testing.T) {
 			return
 		}
 
+		t.Logf("msg %s %v", topic, *iotMsg)
+
 		val, err := iotMsg.GetIntValue()
 		if err != nil {
-			log.Warnf("Wrong value %t err: %v", iotMsg.Value, err)
+			t.Error(string(debug.Stack()))
+			t.Error(err)
 		} else {
 			cnt.Add(int64(val))
 		}
@@ -114,7 +118,7 @@ func TestMqttTransport_PublishSync(t *testing.T) {
 		t.Fatal("Subscribe err:", err)
 	}
 
-	msg := NewIntMessage("evt.sensor.report", "temp_sensor", int(35), nil, nil, nil)
+	msg := NewIntMessage("evt.sensor.report", "temp_sensor", 35, nil, nil, nil)
 	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
 
 	expVal := int(0)
@@ -131,7 +135,7 @@ func TestMqttTransport_PublishSync(t *testing.T) {
 	time.Sleep(200 * time.Millisecond)
 	mqtt.Stop()
 
-	assert.Equal(t, expVal, cnt.Load())
+	assert.Equal(t, expVal, int(cnt.Load()))
 }
 
 func TestMqttTransport_SubUnsub(t *testing.T) {
