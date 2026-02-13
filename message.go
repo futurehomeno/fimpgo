@@ -197,10 +197,21 @@ func (msg *FimpMessage) GetStrArrayValue() ([]string, error) {
 }
 
 func (msg *FimpMessage) GetIntArrayValue() ([]int, error) {
+	val64, ok := msg.Value.([]int64)
+	if ok {
+		ret := []int{}
+
+		for _, v := range val64 {
+			ret = append(ret, int(v))
+		}
+		return ret, nil
+	}
+
 	val, ok := msg.Value.([]int)
 	if ok {
 		return val, nil
 	}
+
 	return nil, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "[]int", msg.Value)
 }
 
@@ -229,6 +240,16 @@ func (msg *FimpMessage) GetStrMapValue() (map[string]string, error) {
 }
 
 func (msg *FimpMessage) GetIntMapValue() (map[string]int, error) {
+	val64, ok := msg.Value.(map[string]int64)
+	if ok {
+		ret := map[string]int{}
+
+		for k, v := range val64 {
+			ret[k] = int(v)
+		}
+		return ret, nil
+	}
+
 	val, ok := msg.Value.(map[string]int)
 	if ok {
 		return val, nil
@@ -330,7 +351,7 @@ func NewStringMessage(type_ string, service string, value string, props Props, t
 }
 
 func NewIntMessage(type_ string, service string, value int, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
-	return NewMessage(type_, service, VTypeInt, value, props, tags, requestMessage)
+	return NewMessage(type_, service, VTypeInt, int64(value), props, tags, requestMessage)
 }
 
 func NewFloatMessage(type_ string, service string, value float64, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
@@ -361,7 +382,7 @@ func NewStrMapMessage(type_ string, service string, value map[string]string, pro
 	return NewMessage(type_, service, VTypeStrMap, value, props, tags, requestMessage)
 }
 
-func NewIntMapMessage(type_ string, service string, value map[string]int, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
+func NewIntMapMessage(type_ string, service string, value map[string]int64, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeIntMap, value, props, tags, requestMessage)
 }
 
@@ -456,14 +477,14 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 		fimpmsg.Value = val
 
 	case VTypeIntArray:
-		val := make([]int, 0)
+		val := make([]int64, 0)
 		_, err = jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, e := jsonparser.ParseInt(value)
 			if e != nil {
 				log.Warnf("[fimpgo] Parse VTypeIntArray err: %v", e)
 				return
 			}
-			val = append(val, int(item))
+			val = append(val, int64(item))
 		}, "val")
 
 		fimpmsg.Value = val
@@ -496,13 +517,13 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 		fimpmsg.Value = val
 
 	case VTypeIntMap:
-		val := make(map[string]int)
+		val := make(map[string]int64)
 		err = jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 			tempInt, e := jsonparser.ParseInt(value)
 			if e != nil {
 				log.Warnf("[fimpgo] Parse VTypeIntMap err: %v", e)
 			} else {
-				val[string(key)] = int(tempInt)
+				val[string(key)] = int64(tempInt)
 			}
 			return e
 		}, "val")
