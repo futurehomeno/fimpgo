@@ -365,6 +365,10 @@ func (sav StateAttributeValue) GetIntValue() (int, error) {
 	if ok {
 		return val, nil
 	}
+	val64, ok := sav.Val.(int64)
+	if ok {
+		return int(val64), nil
+	}
 	return -1, fmt.Errorf(wrongValueFormat, "int", reflect.ValueOf(sav.Val))
 }
 
