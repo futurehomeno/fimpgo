@@ -95,9 +95,8 @@ func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
 	client.RegisterChannel(channelID, notifyCh) // (channelId string, ch chan Notify)
 	client.StartNotifyRouter()
 	// Notify router is started. Now please, make 3 "add", "edit" or "delete" actions to finalize the test.
-	i := 0
 	limit := 3
-	for range 3 {
+	for i := range 3 {
 		msg := <-notifyCh
 		log.Infof("Check %d/%d: New notify message of cmd = %s,comp = %s", i, limit, msg.Cmd, msg.Component)
 	}

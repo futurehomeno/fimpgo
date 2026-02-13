@@ -275,7 +275,7 @@ func (mh *ApiClient) notifyRouter() {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Errorf("[fimpgo] notifyRouter crash %v", r)
-			log.Error(debug.Stack())
+			log.Error(string(debug.Stack()))
 		}
 	}()
 
