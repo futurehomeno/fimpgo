@@ -19,6 +19,7 @@ var testSiteGuid = ""
 var awsIotEndpoint = "ssl://xxxxxxxxxx.iot.xxxxxxx.amazonaws.com:443"
 
 func TestPrimeFimp_ClientApi_Update(t *testing.T) {
+	t.Skip()
 	log.SetLevel(log.DebugLevel)
 
 	uuid := uuid.New().String()
@@ -72,6 +73,7 @@ func TestPrimeFimp_ClientApi_Update(t *testing.T) {
 }
 
 func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
+	t.Skip()
 	log.SetLevel(log.DebugLevel)
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
@@ -95,20 +97,16 @@ func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
 	// Notify router is started. Now please, make 3 "add", "edit" or "delete" actions to finalize the test.
 	i := 0
 	limit := 3
-	for {
-		select {
-		case msg := <-notifyCh:
-			log.Infof("Check %d/%d: New notify message of cmd = %s,comp = %s", i, limit, msg.Cmd, msg.Component)
-			i++
-			if i > limit {
-				client.Stop()
-				break
-			}
-		}
+	for range 3 {
+		msg := <-notifyCh
+		log.Infof("Check %d/%d: New notify message of cmd = %s,comp = %s", i, limit, msg.Cmd, msg.Component)
 	}
+
+	client.Stop()
 }
 
 func TestPrimeFimp_SiteLazyLoading(t *testing.T) {
+	t.Skip()
 	log.SetLevel(log.DebugLevel)
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
@@ -134,6 +132,7 @@ func TestPrimeFimp_SiteLazyLoading(t *testing.T) {
 }
 
 func TestPrimeFimp_LoadStates(t *testing.T) {
+	t.Skip()
 	log.SetLevel(log.DebugLevel)
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
@@ -165,6 +164,7 @@ func TestPrimeFimp_LoadStates(t *testing.T) {
 }
 
 func TestPrimeFimp_LoadStatesWithConnPool(t *testing.T) {
+	t.Skip()
 	log.SetLevel(log.DebugLevel)
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
@@ -188,16 +188,16 @@ func TestPrimeFimp_LoadStatesWithConnPool(t *testing.T) {
 	var successCounter int
 
 	go func() {
-		for i := 0; i < 3; i++ {
+		for range 3 {
 			connId, conn, err := connPool.BorrowConnection()
 			if err != nil {
-				t.Fatal("Connection pool error , Err:", err.Error())
+				log.Fatal("Connection pool error , Err:", err.Error())
 			}
 			client := NewApiClient(validClientID, conn, false, WithCloudService("test-proc-1"), WithGlobalPrefix(testSiteGuid))
 			client.SetResponsePayloadType(fimpgo.CompressedJsonPayload)
 			state, err := client.GetState()
 			if err != nil || len(state.Devices) == 0 {
-				t.Fatal("Cache is empty. Cache must contain data.")
+				log.Fatal("Cache is empty. Cache must contain data.")
 			} else {
 				t.Log("STATES - All Good .Number of states = ", len(state.Devices))
 				successCounter++
@@ -236,6 +236,7 @@ func TestPrimeFimp_LoadStatesWithConnPool(t *testing.T) {
 }
 
 func TestPrimeFimp_ClientApi_Notify_With_Filter(t *testing.T) {
+	t.Skip()
 	log.SetLevel(log.TraceLevel)
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]

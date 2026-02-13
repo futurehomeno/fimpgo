@@ -426,7 +426,7 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 		return
 	default:
 
-		if mh.mainQueueOverflowCnt.Load() > 20 {
+		if mh.mainQueueOverflowCnt.Add(1) > 20 {
 			// stop MQTT and inform higher layer when unrecoverable situation occurs
 			mh.Stop()
 
@@ -436,8 +436,6 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 		} else {
 			log.Error("[fimpgo] Main msg queue overflow")
 		}
-
-		mh.mainQueueOverflowCnt.Add(1)
 	}
 }
 
