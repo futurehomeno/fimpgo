@@ -220,7 +220,12 @@ func (oac *FhOAuth2Client) postMsg(req any, url string) (*OAuth2TokenResponse, e
 		return nil, fmt.Errorf("server status code=%d", resp.StatusCode)
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Errorf("Close body err: %v", err)
+		}
+	}()
+
 	bData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
