@@ -435,6 +435,16 @@ func (sav StateAttributeValue) GetIntArrayValue() ([]int, error) {
 	if ok {
 		return val, nil
 	}
+
+	val64, ok := sav.Val.([]int64)
+	if ok {
+		ret := []int{}
+
+		for _, r := range val64 {
+			ret = append(ret, int(r))
+		}
+		return ret, nil
+	}
 	return nil, fmt.Errorf(wrongValueFormat, "[]int]", reflect.ValueOf(sav.Val))
 }
 
@@ -467,6 +477,16 @@ func (sav StateAttributeValue) GetIntMapValue() (map[string]int, error) {
 	val, ok := sav.Val.(map[string]int)
 	if ok {
 		return val, nil
+	}
+
+	val64, ok := sav.Val.(map[string]int)
+	if ok {
+		ret := map[string]int{}
+
+		for k, v := range val64 {
+			ret[k] = int(v)
+		}
+		return ret, nil
 	}
 	return nil, fmt.Errorf(wrongValueFormat, "map[string]int", reflect.ValueOf(sav.Val))
 }
