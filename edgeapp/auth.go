@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/futurehomeno/edgeapp"
-	"github.com/futurehomeno/edgeapp/utils"
+	"github.com/futurehomeno/fimpgo"
+	"github.com/futurehomeno/fimpgo/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -40,10 +40,10 @@ type OAuth2PasswordProxyRequest struct {
 
 type FhOAuth2Client struct {
 	hubToken           string
-	syncClient         *edgeapp.SyncClient
+	syncClient         *fimpgo.SyncClient
 	appName            string
 	partnerName        string
-	mqt                *edgeapp.MqttTransport
+	mqt                *fimpgo.MqttTransport
 	mqttServerURI      string
 	mqttClientID       string
 	refreshTokenApiUrl string
@@ -125,16 +125,16 @@ func (oac *FhOAuth2Client) SetParameters(mqttServerUri, authCodeApiUrl, refreshT
 // ConfigureFimpSyncClient configures fimp sync client , which is used to obtain Hub token from cloud bridge.
 func (oac *FhOAuth2Client) ConfigureFimpSyncClient() error {
 	if oac.mqt == nil {
-		oac.mqt = edgeapp.NewMqttTransport(oac.mqttServerURI, oac.mqttClientID, "", "", true, 1, 1, nil)
+		oac.mqt = fimpgo.NewMqttTransport(oac.mqttServerURI, oac.mqttClientID, "", "", true, 1, 1, nil)
 		err := oac.mqt.Start()
 		if err != nil {
 			log.Error("[edgeapp] Error connecting to broker ", err)
 			return err
 		}
 		log.Debug("[edgeapp] Auth mqtt client connected")
-		oac.syncClient = edgeapp.NewSyncClient(oac.mqt)
+		oac.syncClient = fimpgo.NewSyncClient(oac.mqt)
 	} else {
-		log.Error("[edgeapp] Mqtt client is not configured")
+		log.Error("[edgeapp] Mqtt client already configured")
 	}
 	return nil
 }
@@ -143,25 +143,25 @@ func (oac *FhOAuth2Client) ConfigureFimpSyncClient() error {
 func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
 	if oac.mqt == nil || oac.syncClient == nil {
 		if err := oac.ConfigureFimpSyncClient(); err != nil {
-			log.Errorf("[edgeapp] Configure FIMP sync client err: %v", err)
+			return fmt.Errorf("[edgeapp] Configure FIMP sync client err: %v", err)
 		}
 	}
+
 	responseTopic := fmt.Sprintf("pt:j1/mt:rsp/rt:app/rn:%s/ad:1", oac.appName)
 	if err := oac.syncClient.AddSubscription(responseTopic); err != nil {
 		return err
 	}
 
-	reqMsg := edgeapp.NewStringMessage("cmd.clbridge.get_auth_token", "clbridge", "", nil, nil, nil)
+	reqMsg := fimpgo.NewStringMessage("cmd.clbridge.get_auth_token", "clbridge", "", nil, nil, nil)
 	reqMsg.ResponseToTopic = responseTopic
 	var err error
-	var response *edgeapp.FimpMessage
+	var response *fimpgo.FimpMessage
 	for range oac.cbRetry {
-		response, err = oac.syncClient.SendFimp("pt:j1/mt:cmd/rt:app/rn:clbridge/ad:1", reqMsg, 5)
+		response, err = oac.syncClient.SendFimp("pt:j1/mt:cmd/rt:app/rn:clbridge/ad:1", reqMsg, int(time.Second*oac.cbRetryDelay))
 		if err == nil {
 			break
 		}
-		log.Error("[edgeapp] CB is not responding.Retrying")
-		time.Sleep(time.Second * oac.cbRetryDelay)
+		log.Errorf("[edgeapp] No rsp from Cb err=%v", err)
 	}
 
 	oac.syncClient.Stop()
@@ -217,9 +217,10 @@ func (oac *FhOAuth2Client) postMsg(req any, url string) (*OAuth2TokenResponse, e
 		return nil, err
 	}
 	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("error %s response from server", resp.Status)
+		return nil, fmt.Errorf("server status code=%d", resp.StatusCode)
 	}
 
+	defer resp.Body.Close()
 	bData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err

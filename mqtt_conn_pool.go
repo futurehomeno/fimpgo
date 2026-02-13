@@ -2,8 +2,8 @@ package fimpgo
 
 import (
 	"fmt"
-	"math/rand"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -22,6 +22,7 @@ type MqttConnectionPool struct {
 	mux            sync.RWMutex
 	connTemplate   MqttConnectionConfigs
 	connPool       map[int]*connection
+	nextID         uint64
 	clientIdPrefix string
 	initSize       int           // init size
 	size           int           // normal size
@@ -81,18 +82,22 @@ func (cp *MqttConnectionPool) IdleConnections() int {
 }
 
 func (cp *MqttConnectionPool) createConnection() (int, error) {
-	connId := cp.genConnId()
 	if len(cp.connPool) >= cp.maxSize {
 		return 0, fmt.Errorf("too many connections=%d", len(cp.connPool))
 	}
+
+	connId := cp.genConnId()
 	conf := cp.connTemplate
 	conf.ClientID = fmt.Sprintf("%s_%d", cp.clientIdPrefix, connId)
 	newConnection := NewMqttTransportFromConfigs(conf)
 	err := newConnection.Start()
-	cp.connPool[connId] = &connection{
-		mqConnection: newConnection,
-		isIdle:       false,
-		startedAt:    time.Now(),
+
+	if err == nil {
+		cp.connPool[connId] = &connection{
+			mqConnection: newConnection,
+			isIdle:       false,
+			startedAt:    time.Now(),
+		}
 	}
 
 	return connId, err
@@ -100,8 +105,9 @@ func (cp *MqttConnectionPool) createConnection() (int, error) {
 
 // BorrowConnection returns first available connection from the pool or creates new connection
 func (cp *MqttConnectionPool) BorrowConnection() (int, *MqttTransport, error) {
-	defer cp.mux.Unlock()
 	cp.mux.Lock()
+	defer cp.mux.Unlock()
+
 	for i := range cp.connPool {
 		if cp.connPool[i].isIdle {
 			if cp.connPool[i].mqConnection.Client().IsConnected() {
@@ -112,14 +118,16 @@ func (cp *MqttConnectionPool) BorrowConnection() (int, *MqttTransport, error) {
 			}
 		}
 	}
+
 	connId, err := cp.createConnection()
 	return connId, cp.getConnectionById(connId), err
 }
 
 // ReturnConnection returns connection to pool by setting inUse status to false
 func (cp *MqttConnectionPool) ReturnConnection(connId int) {
-	defer cp.mux.RUnlock()
 	cp.mux.RLock()
+	defer cp.mux.RUnlock()
+
 	con, ok := cp.connPool[connId]
 	if ok {
 		err := con.mqConnection.UnsubscribeAll()
@@ -141,17 +149,15 @@ func (cp *MqttConnectionPool) getConnectionById(connId int) *MqttTransport {
 }
 
 func (cp *MqttConnectionPool) genConnId() int {
-	for {
-		id := rand.Int()
-		if _, ok := cp.connPool[id]; !ok {
-			return id
-		}
-	}
+	return int(atomic.AddUint64(&cp.nextID, 1))
 }
 
 func (cp *MqttConnectionPool) cleanupProcess() {
 	for {
 		<-cp.poolCheckTick.C
+		cp.poolCheckTick.Stop()
+		cp.poolCheckTick = nil
+
 		if !cp.isActive {
 			break
 		}
@@ -161,8 +167,10 @@ func (cp *MqttConnectionPool) cleanupProcess() {
 				if cp.connPool[i].isIdle {
 					if (time.Since(cp.connPool[i].idleSince) > (cp.maxIdleAge)) && (len(cp.connPool) > cp.size) {
 						conn := cp.getConnectionById(i)
-						conn.Stop()
-						delete(cp.connPool, i) // it is safe to delete map element in the loop
+						if conn != nil {
+							conn.Stop()
+							delete(cp.connPool, i) // it is safe to delete map element in the loop
+						}
 					}
 				}
 			}

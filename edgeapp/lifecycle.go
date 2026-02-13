@@ -101,7 +101,7 @@ func (al *Lifecycle) ConfigState() State {
 }
 
 func (al *Lifecycle) SetConfigState(configState State) {
-	log.Debug("[edgeapp] New CONFIG state = ", configState)
+	log.Debug("[edgeapp] New CONFIG state=", configState)
 	al.configState = configState
 	for i := range al.systemEventBus {
 		select {
@@ -117,7 +117,7 @@ func (al *Lifecycle) AuthState() State {
 }
 
 func (al *Lifecycle) SetAuthState(authState State) {
-	log.Debug("[edgeapp] New AUTH state = ", authState)
+	log.Debug("[edgeapp] New AUTH state=", authState)
 	al.authState = authState
 
 	for i := range al.systemEventBus {

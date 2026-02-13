@@ -52,6 +52,9 @@ func NewBufferedStream(bufferSizeLimit int, bufferInterval time.Duration, compre
 					su.FlushBuffer()
 				}
 			}
+
+			su.ticker.Stop()
+			su.ticker = nil
 		}()
 	}
 

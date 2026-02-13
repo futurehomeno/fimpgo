@@ -98,7 +98,7 @@ func (sc *SyncClient) RemoveSubscription(topic string) error {
 }
 
 // SendFimpWithTopicResponse send message over mqtt and awaits response from responseTopic with responseService and responseMsgType
-func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessage, responseTopic string, responseService string, responseMsgType string, timeout int64, autoSubscribe bool) (*FimpMessage, error) {
+func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessage, responseTopic string, responseService string, responseMsgType string, timeout int, autoSubscribe bool) (*FimpMessage, error) {
 	var conId int
 	var conn *MqttTransport
 	var inboundCh = make(MessageCh, 10)
@@ -106,19 +106,23 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	var chanName = uuid.New().String()
 
 	defer func() {
-		if autoSubscribe && responseTopic != "" && conn != nil {
+		if conn == nil {
+			return
+		}
+
+		if autoSubscribe && responseTopic != "" {
 			if err := conn.Unsubscribe(responseTopic); err != nil {
 				log.Error("[fimpgo] Error unsubscribing from topic:", err)
 			}
 		}
-		if conn != nil {
-			conn.UnregisterChannel(chanName)
-			close(inboundCh)
-			if sc.isConnPoolEnabled {
-				// force unset global prefix
-				conn.SetGlobalTopicPrefix("")
-				sc.mqttConnPool.ReturnConnection(conId)
-			}
+
+		conn.UnregisterChannel(chanName)
+		close(inboundCh)
+
+		if sc.isConnPoolEnabled {
+			// force unset global prefix
+			conn.SetGlobalTopicPrefix("")
+			sc.mqttConnPool.ReturnConnection(conId)
 		}
 	}()
 
@@ -144,10 +148,6 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 		if err = conn.Subscribe(responseTopic); err != nil {
 			return nil, fmt.Errorf("subscribe: %w", errSubscribe)
 		}
-	} else if responseTopic != "" {
-		if err = conn.Subscribe(responseTopic); err != nil {
-			return nil, fmt.Errorf("subscribe: %w", errSubscribe)
-		}
 	}
 
 	if err = conn.PublishToTopic(topic, fimpMsg); err != nil {
@@ -163,23 +163,23 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 }
 
 // SendReqRespFimp sends msg to topic and expects to receive response on response topic . If autoSubscribe is set to true , the system will automatically subscribe and unsubscribe from response topic.
-func (sc *SyncClient) SendReqRespFimp(cmdTopic, responseTopic string, reqMsg *FimpMessage, timeout int64, autoSubscribe bool) (*FimpMessage, error) {
+func (sc *SyncClient) SendReqRespFimp(cmdTopic, responseTopic string, reqMsg *FimpMessage, timeout int, autoSubscribe bool) (*FimpMessage, error) {
 	return sc.sendFimpWithTopicResponse(cmdTopic, reqMsg, responseTopic, "", "", timeout, autoSubscribe)
 }
 
 // SendFimp sends message over mqtt and blocks until request is received or timeout is reached .
 // messages are correlated using uid->corid
-func (sc *SyncClient) SendFimp(topic string, fimpMsg *FimpMessage, timeout int64) (*FimpMessage, error) {
+func (sc *SyncClient) SendFimp(topic string, fimpMsg *FimpMessage, timeout int) (*FimpMessage, error) {
 	return sc.SendFimpWithTopicResponse(topic, fimpMsg, "", "", "", timeout)
 }
 
 // SendFimpWithTopicResponse send message over mqtt and awaits response from responseTopic with responseService and responseMsgType (the method is for backward compatibility)
-func (sc *SyncClient) SendFimpWithTopicResponse(topic string, fimpMsg *FimpMessage, responseTopic string, responseService string, responseMsgType string, timeout int64) (*FimpMessage, error) {
+func (sc *SyncClient) SendFimpWithTopicResponse(topic string, fimpMsg *FimpMessage, responseTopic string, responseService string, responseMsgType string, timeout int) (*FimpMessage, error) {
 	return sc.sendFimpWithTopicResponse(topic, fimpMsg, responseTopic, responseService, responseMsgType, timeout, false)
 }
 
 // startResponseListener starts response listener , it blocks callers proc until response is received or timeout.
-func (sc *SyncClient) startResponseListener(requestMsg *FimpMessage, respMsgType, respService, respTopic string, inboundCh MessageCh, timeout int64) chan *FimpMessage {
+func (sc *SyncClient) startResponseListener(requestMsg *FimpMessage, respMsgType, respService, respTopic string, inboundCh MessageCh, timeout int) chan *FimpMessage {
 	respChan := make(chan *FimpMessage)
 
 	go func() {

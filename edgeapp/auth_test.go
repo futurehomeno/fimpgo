@@ -3,7 +3,6 @@ package edgeapp
 import "testing"
 
 // TODO: these tests require a running FH broker on cube.local address
-
 func TestFhOAuth2Client_ExchangeRefreshToken(t *testing.T) {
 	t.Skip()
 	client := NewFhOAuth2Client("netatmo", "auth_test", "beta")

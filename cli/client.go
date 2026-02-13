@@ -38,7 +38,7 @@ func main() {
 		return
 	}
 
-	log.Infof("[fimpgo] ';'%s' connected to the broker", *mqttHost)
+	log.Infof("[fimpgo] '%s' connected to the broker", *mqttHost)
 
 	mqtt.SetMessageHandler(onMsg)
 

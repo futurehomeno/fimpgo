@@ -106,7 +106,7 @@ func TestMqttTransport_PublishSync(t *testing.T) {
 		if err != nil {
 			log.Warnf("Wrong value %t err: %v", iotMsg.Value, err)
 		} else {
-			cnt.Add(val)
+			cnt.Add(int64(val))
 		}
 	})
 
@@ -114,13 +114,13 @@ func TestMqttTransport_PublishSync(t *testing.T) {
 		t.Fatal("Subscribe err:", err)
 	}
 
-	msg := NewIntMessage("evt.sensor.report", "temp_sensor", int64(35), nil, nil, nil)
+	msg := NewIntMessage("evt.sensor.report", "temp_sensor", int(35), nil, nil, nil)
 	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
 
-	expVal := int64(0)
+	expVal := int(0)
 	for range 10 {
-		msg.Value = int64(rand.Intn(100))
-		expVal += msg.Value.(int64)
+		msg.Value = int(rand.Intn(100))
+		expVal += msg.Value.(int)
 
 		err = mqtt.PublishSync(&adr, msg)
 		if err != nil {

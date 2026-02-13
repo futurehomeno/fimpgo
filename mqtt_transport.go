@@ -312,10 +312,11 @@ func (mh *MqttTransport) Start() error {
 
 	for i := 1; i <= mh.startFailRetryCount; i++ {
 		if token := mh.client.Connect(); token.WaitTimeout(timeout) && token.Error() == nil {
+			err = nil
 			break
 		} else {
 			err = token.Error()
-			log.Warnf("[fimpgo] MQTT connect failed %d/%d err: %v", i, mh.startFailRetryCount, token.Error())
+			log.Warnf("[fimpgo] MQTT connect failed %d/%d err: %v", i, mh.startFailRetryCount, err)
 		}
 		delay := time.Duration(i) * time.Duration(i)
 		time.Sleep(delay * time.Second)
@@ -498,6 +499,11 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 	case DefaultPayload:
 		fimpMsg, err = NewMessageFromBytes(msg.Payload())
 	case CompressedJsonPayload:
+		if mh.compressor == nil {
+			log.Warnf("[fimpgo] Compressor is not initialized for topic=%s", topic)
+			return
+		}
+
 		fimpMsg, err = mh.compressor.DecompressFimpMsg(msg.Payload())
 	default:
 		// This means unknown binary payload , for instance compressed message
@@ -515,24 +521,30 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 		mh.msgHandler(topic, addr, fimpMsg, msg.Payload())
 	}
 
+	var msgChs []MessageCh
+	var chNames []string
+
 	mh.channelRegMux.Lock()
-	defer mh.channelRegMux.Unlock()
-
 	for i := range mh.subChannels {
-		if !mh.isChannelInterested(i, topic, addr, fimpMsg) {
-			continue
+		if mh.isChannelInterested(i, topic, addr, fimpMsg) {
+			msgChs = append(msgChs, mh.subChannels[i])
+			chNames = append(chNames, i)
 		}
+	}
+	mh.channelRegMux.Unlock()
 
+	for i, c := range msgChs {
 		fmsg := Message{Topic: topic, Addr: addr, Payload: fimpMsg}
 		timer := time.NewTimer(time.Second * time.Duration(mh.receiveChTimeout))
 
 		select {
-		case mh.subChannels[i] <- &fmsg:
-			timer.Stop()
+		case c <- &fmsg:
 			// send to channel
 		case <-timer.C:
-			log.Warnf("[fimpgo] Channel %s not read for %d sec", i, mh.receiveChTimeout)
+			log.Warnf("[fimpgo] Channel %s not read for %d sec", chNames[i], mh.receiveChTimeout)
 		}
+
+		timer.Stop()
 	}
 }
 
@@ -686,13 +698,14 @@ func (mh *MqttTransport) PublishRawSync(topic string, bytem []byte) error {
 func AddGlobalPrefixToTopic(domain string, topic string) string {
 	// Check if topic is already prefixed with  "/" if yes then concat without adding "/"
 	// 47 is code of "/"
-	if topic[0] == 47 {
+	if len(topic) > 0 && topic[0] == '/' {
 		return domain + topic
 	}
 
 	if strings.TrimSpace(domain) == "" {
 		return topic
 	}
+
 	return domain + "/" + topic
 }
 
@@ -701,8 +714,8 @@ func DetachGlobalPrefixFromTopic(topic string) (string, string) {
 	spt := strings.Split(topic, "/")
 	var resultTopic, globalPrefix string
 	for i := range spt {
-		if strings.Contains(spt[i], "pt:") {
-			//resultTopic= strings.Replace(topic, spt[0]+"/", "", 1)
+		payloadTypeHdr := "pt:"
+		if len(spt[i]) >= len(payloadTypeHdr) && strings.Contains(spt[i], payloadTypeHdr) {
 			resultTopic = strings.Join(spt[i:], "/")
 			globalPrefix = strings.Join(spt[:i], "/")
 			break

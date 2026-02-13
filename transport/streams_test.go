@@ -26,7 +26,7 @@ func TestBufferedStream_serializeBuffer(t *testing.T) {
 	}
 
 	log.SetLevel(log.DebugLevel)
-	mqtt := fimpgo.NewMqttTransport("tcp://cube.local:1884", "fimpgotest", "", "", true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport("127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1, nil)
 	err := mqtt.Start()
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
@@ -52,5 +52,4 @@ func TestBufferedStream_serializeBuffer(t *testing.T) {
 		})
 	}
 	mqtt.Stop()
-}
-*/
+}*/

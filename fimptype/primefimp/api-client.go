@@ -30,7 +30,7 @@ type ApiClient struct {
 	notifySubChannels     map[string]chan Notify
 	subFilters            map[string]NotifyFilter
 	inMsgChan             fimpgo.MessageCh
-	stopFlag              bool
+	stopFlag              atomic.Bool
 	isNotifyRouterStarted atomic.Bool
 	notifChMux            sync.RWMutex
 	isVincAppsSyncEnabled bool
@@ -62,7 +62,7 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSite
 	}
 	if loadSiteIntoCache {
 		if err := api.ReloadSiteToCache(3); err != nil {
-			log.Error("[fimpgo] Error reloading cache: ", err)
+			log.Error("[fimpgo] Reload cache err: ", err)
 		}
 	}
 
@@ -96,9 +96,9 @@ func (mh *ApiClient) IsCacheEmpty() bool {
 // ValidateAndReloadSiteCache validates cache , if empty it makes one reload attempt. The method can be used for cache lazy loading.
 func (mh *ApiClient) ValidateAndReloadSiteCache() bool {
 	if mh.IsCacheEmpty() {
-		log.Debug("[fimpgo] Empty site cache.Reloading...")
+		log.Debug("[fimpgo] Empty site cache. Reload")
 		if err := mh.ReloadSiteToCache(1); err != nil {
-			log.Error("[fimpgo] Error reloading cache: ", err)
+			log.Error("[fimpgo] Reload cache err: ", err)
 		}
 		if mh.IsCacheEmpty() {
 			return false
@@ -113,13 +113,13 @@ func (mh *ApiClient) ReloadSiteToCache(retry int) error {
 	var site *Site
 	var err error
 	for i := 1; i < retry; i++ {
-		log.Debug("[fimpgo] Reloading site into the cache.Attempt ", i)
+		log.Debug("[fimpgo] Reload site into the cache. Attempt=", i)
 		site, err = mh.GetSite(false)
 		if err == nil {
 			log.Debug("[fimpgo] Site loaded successfully")
 			break
 		}
-		log.Error("[fimpgo] site sync error :", err.Error())
+		log.Error("[fimpgo] Site sync err: ", err.Error())
 		time.Sleep(time.Second * time.Duration(5*i))
 
 	}
@@ -130,7 +130,7 @@ func (mh *ApiClient) ReloadSiteToCache(retry int) error {
 	}
 	mh.isCacheEnabled = true
 	mh.siteCache = *site
-	log.Debug("[fimpgo] Site info successfully loaded to cache")
+	log.Debug("[fimpgo] Site info loaded to cache")
 	return nil
 }
 
@@ -180,7 +180,7 @@ func (mh *ApiClient) UnregisterChannel(channelId string) {
 func (mh *ApiClient) StartNotifyRouter() {
 	go func() {
 		mh.isNotifyRouterStarted.Store(true)
-		for !mh.stopFlag {
+		for !mh.stopFlag.Load() {
 			mh.notifyRouter()
 			log.Info("[fimpgo] Restarting notify router")
 		}
@@ -193,7 +193,7 @@ func (mh *ApiClient) StartNotifyRouter() {
 func (mh *ApiClient) Stop() {
 	mh.sClient.Stop()
 	if mh.isNotifyRouterStarted.Load() {
-		mh.stopFlag = true
+		mh.stopFlag.Store(true)
 		mh.inMsgChan <- &fimpgo.Message{}
 	}
 }
@@ -284,7 +284,7 @@ func (mh *ApiClient) notifyRouter() {
 	}
 
 	for msg := range mh.inMsgChan {
-		if mh.stopFlag {
+		if mh.stopFlag.Load() {
 			break
 		}
 
