@@ -33,7 +33,6 @@ type ApiClient struct {
 	isNotifyRouterStarted bool
 	notifChMux            sync.RWMutex
 	isVincAppsSyncEnabled bool
-	isConnPoolEnabled     bool
 	cloudService          string
 	responsePayloadType   string
 	globalPrefix          string

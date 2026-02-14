@@ -16,15 +16,10 @@ func match(route []string, topic []string) bool {
 	}
 
 	if len(topic) == 0 {
-		if route[0] == "#" {
-			return true
-		}
-		return false
+		return route[0] == "#"
 	}
 
-	if route[0] == "#" {
-		return true
-	}
+	return route[0] == "#"
 
 	if (route[0] == "+") || (route[0] == topic[0]) {
 		return match(route[1:], topic[1:])

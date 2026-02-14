@@ -14,8 +14,6 @@ type SyncClient struct {
 	isConnPoolEnabled     bool
 	transactionPoolSize   int // Max transaction pool size
 	inboundBufferSize     int // Inbound message channel buffer size
-	inboundMsgChannel     MessageCh
-	inboundChannelName    string
 	stopSignalCh          chan bool
 	isStartedUsingConnect bool
 	globalPrefix          string

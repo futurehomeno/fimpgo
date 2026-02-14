@@ -1,24 +1,9 @@
 package primefimp
 
-import (
-	"time"
-
-	"github.com/futurehomeno/fimpgo"
-)
-
 type (
-	connectionPoolConfig struct {
-		clientIdPrefix          string
-		initialSize             int
-		minSize                 int
-		maxSize                 int
-		connectionConfiguration fimpgo.MqttConnectionConfigs
-		lifetime                time.Duration
-	}
 	apiClientConfig struct {
-		cloudService   string
-		connectionPool *connectionPoolConfig
-		globalPrefix   string
+		cloudService string
+		globalPrefix string
 	}
 )
 

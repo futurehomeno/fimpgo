@@ -7,7 +7,6 @@ import (
 
 var (
 	errNoAvailableInterface = errors.New("no available interface")
-	errNoAvailableAddress   = errors.New("no available address")
 )
 
 // RoutedInterface returns a network interface that can route IP
