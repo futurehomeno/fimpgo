@@ -2,6 +2,7 @@ package fimpgo
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -10,6 +11,7 @@ import (
 
 // SyncClient allows sync interaction over async channel.
 type SyncClient struct {
+	mqttTransportLock   sync.Mutex
 	mqttTransport       *MqttTransport
 	mqttConnPool        *MqttConnectionPool
 	isConnPoolEnabled   bool
@@ -67,9 +69,12 @@ func (sc *SyncClient) init() {
 // Connect establishes internal connection to mqtt broker and initializes mqtt
 // Should be used if MqttTransport instance is not provided in constructor .
 func (sc *SyncClient) Connect(serverURI string, clientID string, username string, password string, cleanSession bool, subQos byte, pubQos byte, errHandler func(error)) error {
+	sc.mqttTransportLock.Lock()
+	defer sc.mqttTransportLock.Unlock()
+
 	if sc.mqttTransport == nil {
 		sc.mqttTransport = NewMqttTransport(serverURI, clientID, username, password, cleanSession, subQos, pubQos, errHandler)
-		err := sc.mqttTransport.Start()
+		err := sc.mqttTransport.Start(10 * time.Second)
 		if err != nil {
 			return err
 		}
@@ -82,6 +87,9 @@ func (sc *SyncClient) Connect(serverURI string, clientID string, username string
 
 // Stop has to be invoked to stop message listener
 func (sc *SyncClient) Stop() {
+	sc.mqttTransportLock.Lock()
+	defer sc.mqttTransportLock.Unlock()
+
 	if sc.mqttStarted {
 		sc.mqttTransport.Stop()
 	}
@@ -89,11 +97,19 @@ func (sc *SyncClient) Stop() {
 
 // AddSubscription has to be invoked before Send methods
 func (sc *SyncClient) AddSubscription(topic string) error {
+	if sc.mqttTransport == nil {
+		return fmt.Errorf("not connected")
+	}
+
 	return sc.mqttTransport.Subscribe(topic)
 }
 
 // RemoveSubscription
 func (sc *SyncClient) RemoveSubscription(topic string) error {
+	if sc.mqttTransport == nil {
+		return fmt.Errorf("not connected")
+	}
+
 	return sc.mqttTransport.Unsubscribe(topic)
 }
 
@@ -133,6 +149,10 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 		}
 	} else {
 		conn = sc.mqttTransport
+	}
+
+	if conn == nil {
+		return nil, fmt.Errorf("not connected")
 	}
 
 	conn.RegisterChannel(chanName, inboundCh)

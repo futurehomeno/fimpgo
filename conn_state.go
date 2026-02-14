@@ -4,21 +4,28 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type ConnStateT struct {
-	mu          sync.Mutex
-	started     chan struct{}
-	done        chan struct{}
-	onceStarted sync.Once
-	onceDone    sync.Once
+	mu            sync.Mutex
+	connected     chan struct{}
+	done          chan struct{}
+	onceConnected sync.Once
+	onceDone      sync.Once
 }
 
 func (c *ConnStateT) Init() {
+	if c.connected != nil {
+		log.Warnf("[fimpgo] Already initalized")
+		return
+	}
+
 	c.mu.Lock()
-	c.started = make(chan struct{})
+	c.connected = make(chan struct{})
 	c.done = make(chan struct{})
-	c.onceStarted = sync.Once{}
+	c.onceConnected = sync.Once{}
 	c.onceDone = sync.Once{}
 	c.mu.Unlock()
 }
@@ -27,8 +34,8 @@ func (c *ConnStateT) OnConnect() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.onceStarted.Do(func() {
-		close(c.started)
+	c.onceConnected.Do(func() {
+		close(c.connected)
 	})
 }
 
@@ -38,6 +45,7 @@ func (c *ConnStateT) OnDone() {
 
 	c.onceDone.Do(func() {
 		close(c.done)
+		c.connected = make(chan struct{})
 	})
 }
 
@@ -46,7 +54,7 @@ func (c *ConnStateT) IsConnected() bool {
 	defer c.mu.Unlock()
 
 	select {
-	case <-c.started:
+	case <-c.connected:
 		return true
 	default:
 		return false
@@ -54,14 +62,10 @@ func (c *ConnStateT) IsConnected() bool {
 }
 
 func (c *ConnStateT) WaitConnected(timeout time.Duration) error {
-	c.mu.Lock()
-	ch := c.started
-	c.mu.Unlock()
-
 	select {
 	case <-time.After(timeout):
 		return fmt.Errorf("timeout")
-	case <-ch:
+	case <-c.connected:
 		return nil
 	}
 }

@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-TAG := 1.15.1
+TAG := 1.16.0
 APP_NAME := fimpgo
 
 ARCH ?= armhf

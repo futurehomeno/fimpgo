@@ -3,6 +3,7 @@ package fimpgo
 import (
 	"sync"
 	"testing"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -10,7 +11,7 @@ import (
 func TestSyncClient_Connect(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start()
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -82,7 +83,7 @@ func TestSyncClient_Connect(t *testing.T) {
 func TestSyncClient_SendFimp(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start()
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -145,7 +146,7 @@ func TestSyncClient_SendFimp(t *testing.T) {
 func TestSyncClient_SendFimpWithTopicResponse(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start()
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}

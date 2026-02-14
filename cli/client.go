@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"time"
 
 	"github.com/futurehomeno/fimpgo"
 	log "github.com/sirupsen/logrus"
@@ -19,7 +20,7 @@ func onMsg(topic string, addr *fimpgo.Address, iotMsg *fimpgo.FimpMessage, rawMe
 func onMqttError(err error) {
 	log.Errorf("[fimpgo] Mqtt err: %s", err.Error())
 
-	if mqtt.Client().IsConnected() {
+	if mqtt.IsConnected() {
 		close(done)
 	}
 
@@ -32,7 +33,7 @@ func main() {
 	log.SetLevel(log.DebugLevel)
 	log.Infof("[fimpgo] Broker url %s", *mqttHost)
 	mqtt = fimpgo.NewMqttTransport("tcp://"+*mqttHost, "", "", "", true, 1, 1, onMqttError)
-	err := mqtt.Start()
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		log.Error("[fimpgo] Error connecting to broker ", err)
 		return

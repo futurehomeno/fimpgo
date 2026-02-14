@@ -32,7 +32,7 @@ func NewMqttTransport(serverURI, clientID, username, password string, cleanSessi
 	mh.subFilterFuncs = make(map[string]FilterFunc)
 	mh.mainQueue = make(chan MQTT.Message, defaultMainQueueSize)
 	mh.startFailRetryCount = 10
-	mh.receiveChTimeout = 10
+	mh.receiveChTimeout.Store(10)
 	mh.syncPublishTimeout = time.Second * 5
 	mh.compressor = NewMsgCompressor("", "")
 	mh.errorHandler = errHandler
@@ -50,7 +50,7 @@ func NewMqttTransportFromConnection(client MQTT.Client, subQos byte, pubQos byte
 	mh.subFilterFuncs = make(map[string]FilterFunc)
 	mh.mainQueue = make(chan MQTT.Message, defaultMainQueueSize)
 	mh.startFailRetryCount = 10
-	mh.receiveChTimeout = 10
+	mh.receiveChTimeout.Store(10)
 	mh.syncPublishTimeout = time.Second * 5
 	mh.compressor = NewMsgCompressor("", "")
 	return &mh
@@ -77,7 +77,7 @@ func NewMqttTransportFromConfigs(cfg MqttConnectionConfigs, errHandler func(erro
 	}
 
 	if cfg.ReceiveChTimeout > 0 {
-		mh.receiveChTimeout = cfg.ReceiveChTimeout
+		mh.receiveChTimeout.Store(cfg.ReceiveChTimeout)
 	}
 
 	if cfg.MainQueueSize > 0 {
@@ -85,6 +85,117 @@ func NewMqttTransportFromConfigs(cfg MqttConnectionConfigs, errHandler func(erro
 	}
 
 	return mh
+}
+
+func (mh *MqttTransport) Start(timeout time.Duration) error {
+	var err error
+	mh.connState.Init()
+
+	for i := 1; i <= mh.startFailRetryCount; i++ {
+		if token := mh.client.Connect(); token.WaitTimeout(timeout) && token.Error() == nil {
+			err = nil
+			break
+		} else {
+			err = token.Error()
+			log.Warnf("[fimpgo] MQTT connect failed %d/%d err: %v", i, mh.startFailRetryCount, err)
+		}
+		delay := time.Duration(i) * time.Duration(i)
+		time.Sleep(delay * time.Second)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	mh.incMsgsWg = sync.WaitGroup{}
+	mh.incMsgsWg.Add(1)
+
+	ret := mh.connState.WaitConnected(timeout)
+
+	if ret == nil {
+		go mh.handleIncomingMessages()
+	}
+
+	return ret
+}
+
+func (mh *MqttTransport) IsConnected() bool {
+	return mh.connState.IsConnected()
+}
+
+func (mh *MqttTransport) Stop() {
+	mh.connState.OnDone()
+
+	if !mh.connState.IsConnected() {
+		return
+	}
+
+	mh.incMsgsWg.Wait()
+	time.Sleep(100 * time.Millisecond)
+}
+
+// Subscribe - subscribing for topic
+func (mh *MqttTransport) Subscribe(topic string) error {
+	if strings.TrimSpace(topic) == "" {
+		return nil
+	}
+
+	topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix(), topic)
+
+	mh.subscribeLock.Lock()
+	defer mh.subscribeLock.Unlock()
+
+	//subscribe to the topic /go-mqtt/sample and request messages to be delivered
+	//at a maximum qos of zero, wait for the receipt to confirm the subscription
+	token := mh.client.Subscribe(topic, mh.subQos, nil)
+	isInTime := token.WaitTimeout(time.Second * 20)
+	if token.Error() != nil {
+		return token.Error()
+	} else if !isInTime {
+		return errors.New("subscribe timed out")
+	}
+
+	mh.subs[topic] = mh.subQos
+	return nil
+}
+
+// Unsubscribe , unsubscribing from topic
+func (mh *MqttTransport) Unsubscribe(topic string) error {
+	topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix(), topic)
+
+	mh.subscribeLock.Lock()
+	defer mh.subscribeLock.Unlock()
+
+	token := mh.client.Unsubscribe(topic)
+	isInTime := token.WaitTimeout(time.Second * 20)
+	if token.Error() != nil {
+		return token.Error()
+	} else if !isInTime {
+		return errors.New("unsubscribe timed out")
+	}
+	delete(mh.subs, topic)
+	return nil
+}
+
+func (mh *MqttTransport) UnsubscribeAll() error {
+	var ret string
+	var topics []string
+	mh.subscribeLock.Lock()
+	for i := range mh.subs {
+		topics = append(topics, i)
+	}
+	mh.subscribeLock.Unlock()
+	for _, t := range topics {
+		if err := mh.Unsubscribe(t); err != nil {
+			ret += fmt.Sprintf("Unsubscribe from topic %s err: %s\n", t, err.Error())
+		}
+	}
+
+	if ret != "" {
+		return errors.New(ret)
+	}
+
+	return nil
 }
 
 func (mh *MqttTransport) SetGlobalTopicPrefix(prefix string) {
@@ -166,117 +277,6 @@ func (mh *MqttTransport) RegisterChannelWithFilterFunc(channelId string, message
 	mh.channelRegLock.Unlock()
 }
 
-// Start starts adapter async.
-func (mh *MqttTransport) Start() error {
-	var err error
-	mh.connState.Init()
-	const timeout = 10 * time.Second
-
-	for i := 1; i <= mh.startFailRetryCount; i++ {
-		if token := mh.client.Connect(); token.WaitTimeout(timeout) && token.Error() == nil {
-			err = nil
-			break
-		} else {
-			err = token.Error()
-			log.Warnf("[fimpgo] MQTT connect failed %d/%d err: %v", i, mh.startFailRetryCount, err)
-		}
-		delay := time.Duration(i) * time.Duration(i)
-		time.Sleep(delay * time.Second)
-	}
-
-	if err != nil {
-		return err
-	}
-
-	mh.incMsgsWg = sync.WaitGroup{}
-	mh.incMsgsWg.Add(1)
-
-	ret := mh.connState.WaitConnected(timeout)
-
-	if ret == nil {
-		go mh.handleIncomingMessages()
-	}
-
-	return ret
-}
-
-// Stop stops adapter . Adapter can't be started again using Start . In order to start adapter it has to be re-initialized
-func (mh *MqttTransport) Stop() {
-	mh.client.Disconnect(250)
-	mh.connState.OnDone()
-
-	if !mh.connState.IsConnected() {
-		return
-	}
-
-	mh.incMsgsWg.Wait()
-	time.Sleep(100 * time.Millisecond)
-}
-
-// Subscribe - subscribing for topic
-func (mh *MqttTransport) Subscribe(topic string) error {
-	if strings.TrimSpace(topic) == "" {
-		return nil
-	}
-
-	topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix(), topic)
-
-	mh.subscribeLock.Lock()
-	defer mh.subscribeLock.Unlock()
-
-	//subscribe to the topic /go-mqtt/sample and request messages to be delivered
-	//at a maximum qos of zero, wait for the receipt to confirm the subscription
-	token := mh.client.Subscribe(topic, mh.subQos, nil)
-	isInTime := token.WaitTimeout(time.Second * 20)
-	if token.Error() != nil {
-		return token.Error()
-	} else if !isInTime {
-		return errors.New("subscribe timed out")
-	}
-
-	mh.subs[topic] = mh.subQos
-	return nil
-}
-
-// Unsubscribe , unsubscribing from topic
-func (mh *MqttTransport) Unsubscribe(topic string) error {
-	topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
-
-	mh.subscribeLock.Lock()
-	defer mh.subscribeLock.Unlock()
-
-	token := mh.client.Unsubscribe(topic)
-	isInTime := token.WaitTimeout(time.Second * 20)
-	if token.Error() != nil {
-		return token.Error()
-	} else if !isInTime {
-		return errors.New("unsubscribe timed out")
-	}
-	delete(mh.subs, topic)
-	return nil
-}
-
-func (mh *MqttTransport) UnsubscribeAll() error {
-	var ret string
-	var topics []string
-	mh.subscribeLock.Lock()
-	for i := range mh.subs {
-		topics = append(topics, i)
-	}
-	mh.subscribeLock.Unlock()
-	for _, t := range topics {
-		if err := mh.Unsubscribe(t); err != nil {
-			ret += fmt.Sprintf("Error unsubscribing from topic %s : %s\n", t, err.Error())
-		}
-	}
-
-	if ret != "" {
-		return errors.New(ret)
-	}
-
-	return nil
-}
-
 func onConnectionLost(client MQTT.Client, err error) {
 	options := client.OptionsReader()
 	log.Errorf("[fimpgo] Client=%s lost connection with the broker err: %v", options.ClientID(), err)
@@ -328,6 +328,7 @@ func (mh *MqttTransport) handleIncomingMessages() {
 	for {
 		select {
 		case <-mh.connState.DoneC():
+			mh.client.Disconnect(250)
 			return
 		case msg := <-mh.mainQueue:
 			mh.handleIncomingMessage(msg)
@@ -398,13 +399,13 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 
 	for i, c := range msgChs {
 		fmsg := Message{Topic: topic, Addr: addr, Payload: fimpMsg}
-		timer := time.NewTimer(time.Second * time.Duration(mh.receiveChTimeout))
+		timer := time.NewTimer(time.Second * time.Duration(mh.receiveChTimeout.Load()))
 
 		select {
 		case c <- &fmsg:
 			// send to channel
 		case <-timer.C:
-			log.Warnf("[fimpgo] Channel %s not read for %d sec", chNames[i], mh.receiveChTimeout)
+			log.Warnf("[fimpgo] Channel %s not read for %d sec", chNames[i], mh.receiveChTimeout.Load())
 		}
 
 		timer.Stop()
@@ -605,7 +606,7 @@ func NewMqttTransportTLS(serverURI, clientID, username, password string, cleanSe
 	mh.subFilterFuncs = make(map[string]FilterFunc)
 	mh.mainQueue = make(chan MQTT.Message, defaultMainQueueSize)
 	mh.startFailRetryCount = 10
-	mh.receiveChTimeout = 10
+	mh.receiveChTimeout.Store(10)
 	mh.syncPublishTimeout = time.Second * 5
 	mh.compressor = NewMsgCompressor("", "")
 	mh.errorHandler = errHandler
@@ -615,6 +616,7 @@ func NewMqttTransportTLS(serverURI, clientID, username, password string, cleanSe
 
 	if err != nil {
 		log.Errorf("[fimpgo] TLS config err: %v", err)
+		return nil
 	}
 
 	clientOptions.SetTLSConfig(configTLS)
@@ -623,19 +625,23 @@ func NewMqttTransportTLS(serverURI, clientID, username, password string, cleanSe
 	return mh
 }
 
-func (mh *MqttTransport) SetReceiveChTimeout(receiveChTimeout int) {
-	mh.receiveChTimeout = receiveChTimeout
+func (mh *MqttTransport) SetReceiveChTimeout(receiveChTimeout uint32) {
+	mh.receiveChTimeout.Store(receiveChTimeout)
 }
 
 func (mh *MqttTransport) SetCertDir(certDir string) {
 	mh.certDir = certDir
 }
 
-/*
-func (mh *MqttTransport) Options() *MQTT.ClientOptions {
-	return mh.mqttOptions
-}*/
-/*
-func (mh *MqttTransport) SetOptions(options *MQTT.ClientOptions) {
-	mh.client = MQTT.NewClient(options)
-}*/
+func defaultClientOptions(serverURI, clientID, username, password string, cleanSession bool) *MQTT.ClientOptions {
+	clientOptions := MQTT.NewClientOptions().AddBroker(serverURI)
+	clientOptions.SetClientID(clientID)
+	clientOptions.SetUsername(username)
+	clientOptions.SetPassword(password)
+	clientOptions.SetCleanSession(cleanSession)
+	clientOptions.SetAutoReconnect(true)
+	clientOptions.SetConnectRetry(true)
+	clientOptions.SetWriteTimeout(time.Second * 30)
+
+	return clientOptions
+}

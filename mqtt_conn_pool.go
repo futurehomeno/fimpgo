@@ -110,7 +110,7 @@ func (cp *MqttConnectionPool) createConnection(errHandler func(error)) (int, err
 	conf := cp.connTemplate
 	conf.ClientID = fmt.Sprintf("%s_%d", cp.clientIdPrefix, connId)
 	newConnection := NewMqttTransportFromConfigs(conf, errHandler)
-	err := newConnection.Start()
+	err := newConnection.Start(10 * time.Second)
 
 	if err == nil {
 		cp.connPool[connId] = &connection{

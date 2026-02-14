@@ -25,7 +25,7 @@ func TestPrimeFimp_ClientApi_Update(t *testing.T) {
 	uuid := uuid.New().String()
 	validClientID := strings.ReplaceAll(uuid, "-", "")[0:22]
 	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1, nil)
-	err := mqtt.Start()
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Error connecting to broker ", err)
 	}
@@ -54,7 +54,7 @@ func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
 	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1, nil)
-	err := mqtt.Start()
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Error connecting to broker ", err)
 	}
@@ -85,7 +85,7 @@ func TestPrimeFimp_SiteLazyLoading(t *testing.T) {
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
 	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1, nil)
-	err := mqtt.Start()
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Error connecting to broker ", err)
 	}
@@ -109,14 +109,16 @@ func TestPrimeFimp_LoadStates(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
-	mqtt := fimpgo.NewMqttTransport(awsIotEndpoint, validClientID, brokerUser, brokerPass, true, 1, 1, nil)
-	err := mqtt.ConfigureTLS("awsiot.private.key", "awsiot.crt", "./datatools/certs", true)
-	if err != nil {
-		t.Fatal("ConfigureTLS err: ", err)
+	mqtt := fimpgo.NewMqttTransportTLS(awsIotEndpoint, validClientID, brokerUser, brokerPass, true, 1, 1, nil,
+		"awsiot.private.key", "awsiot.crt", "./datatools/certs", true)
+
+	if mqtt == nil {
+		t.Fatal("ConfigureTLS err")
 	}
+
 	mqtt.SetGlobalTopicPrefix(testSiteGuid)
 
-	err = mqtt.Start()
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Error connecting to broker ", err)
 	}
@@ -219,7 +221,7 @@ func TestPrimeFimp_ClientApi_Notify_With_Filter(t *testing.T) {
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
 	mqtt := fimpgo.NewMqttTransport(brokerUrl, validClientID, brokerUser, brokerPass, true, 1, 1, nil)
-	err := mqtt.Start()
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Error connecting to broker ", err)
 	}

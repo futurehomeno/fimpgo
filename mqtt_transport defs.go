@@ -27,7 +27,7 @@ type MqttConnectionConfigs struct {
 	CertDir             string // full path to directory where all certificates are stored. Cert dir should contains all CA root certificates .
 	PrivateKeyFileName  string //
 	CertFileName        string //
-	ReceiveChTimeout    int
+	ReceiveChTimeout    uint32
 	IsAws               bool // Should be set to true if cloud broker is AwS IoT platform .
 	MainQueueSize       int
 
@@ -75,7 +75,7 @@ type MqttTransport struct {
 	startFailRetryCount   int
 	certDir               string
 	//mqttOptions          *MQTT.ClientOptions
-	receiveChTimeout   int
+	receiveChTimeout   atomic.Uint32
 	syncPublishTimeout time.Duration
 	channelRegLock     sync.Mutex // channel registration
 	subscribeLock      sync.Mutex // subscribe

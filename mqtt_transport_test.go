@@ -26,7 +26,7 @@ func onMsg(topic string, addr *Address, iotMsg *FimpMessage, rawMessage []byte) 
 func TestMqttTransport_Publish(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start()
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -55,7 +55,7 @@ func TestMqttTransport_Publish(t *testing.T) {
 func TestMqttTransport_PublishStopPublish(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start()
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -80,7 +80,7 @@ func TestMqttTransport_PublishStopPublish(t *testing.T) {
 	mqtt.Stop()
 
 	mqtt = NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1, nil)
-	err = mqtt.Start()
+	err = mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -91,7 +91,7 @@ func TestMqttTransport_PublishStopPublish(t *testing.T) {
 func TestMqttTransport_PublishSync(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start()
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -141,7 +141,7 @@ func TestMqttTransport_PublishSync(t *testing.T) {
 func TestMqttTransport_SubUnsub(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start()
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -181,22 +181,21 @@ func TestMqttTransport_SubUnsub(t *testing.T) {
 }
 
 // TODO: Fix, awsiot.private.key is not available in the repo
-func TestMqttTransport_PublishTls(t *testing.T) {
+func TestMqttTransport_PublishTLS(t *testing.T) {
 	t.Skip()
 	log.SetLevel(log.DebugLevel)
 	// for test replace XYZ with actual AWS IoT core address and ABC with actual clientid
-	mqtt := NewMqttTransport("ssl://a1ds8ixdqbiw53-ats.iot.eu-central-1.amazonaws.com:443", "00000000alexdevtest", "", "", false, 1, 1, nil)
+	mqtt := NewMqttTransportTLS("ssl://a1ds8ixdqbiw53-ats.iot.eu-central-1.amazonaws.com:443", "00000000alexdevtest", "", "", false, 1, 1, nil,
+		"awsiot.private.key", "awsiot.crt", "./certs", true)
+
+	if mqtt == nil {
+		t.Fatal("Configure TLS err")
+	}
 
 	// for test enter valid site-id
 	mqtt.SetGlobalTopicPrefix("331D092F-4685-4CC9-8337-2598E6F5D8D5")
-	// for test place certificate and key into certs folder
-	err := mqtt.ConfigureTLS("awsiot.private.key", "awsiot.crt", "./certs", true)
 
-	if err != nil {
-		t.Fatal("Configure TLS err", err)
-	}
-
-	err = mqtt.Start()
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -235,22 +234,21 @@ func TestMqttTransport_PublishTls_2(t *testing.T) {
 		CertDir:            "./certs",
 		PrivateKeyFileName: "awsiot.private.key",
 		CertFileName:       "awsiot.crt",
+		IsAws:              true,
 	}
 
 	log.SetLevel(log.DebugLevel)
 	// for test replace XYZ with actual AWS IoT core address and ABC with actual clientid
-	mqtt := NewMqttTransportFromConfigs(connConfig)
+	mqtt := NewMqttTransportFromConfigs(connConfig, nil)
+
+	if mqtt == nil {
+		t.Fatal("Configure TLS error")
+	}
 
 	// for test enter valid site-id
 	mqtt.SetGlobalTopicPrefix("331D092F-4685-4CC9-8337-2598E6F5D8D5")
-	// for test place certificate and key into certs folder
-	err := mqtt.ConfigureTLS("awsiot.private.key", "awsiot.crt", "./certs", true)
 
-	if err != nil {
-		t.Fatal("Configure TLS err:", err)
-	}
-
-	err = mqtt.Start()
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -279,7 +277,7 @@ func TestMqttTransport_PublishTls_2(t *testing.T) {
 func TestMqttTransport_TestChannels(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start()
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -343,7 +341,7 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 	log.SetLevel(log.TraceLevel)
 
 	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest-1", "", "", true, 1, 1, nil)
-	err := mqtt.Start()
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -353,7 +351,7 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 	}
 
 	mqtt2 := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest-2", "", "", true, 1, 1, nil)
-	err = mqtt2.Start()
+	err = mqtt2.Start(10 * time.Second)
 
 	if err != nil {
 		t.Fatal("Start MQTT 2 err:", err)
@@ -425,7 +423,7 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 func TestMqttTransport_TestChannelsWithFilters(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	mqtt := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start()
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 		return
