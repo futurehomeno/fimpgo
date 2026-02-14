@@ -71,6 +71,7 @@ type MqttTransport struct {
 	subFilters     map[string]FimpFilter
 	subFilterFuncs map[string]FilterFunc
 
+	stopOnce             sync.Once
 	doneSignal           chan struct{}
 	doneWg               sync.WaitGroup
 	mainQueue            chan MQTT.Message
@@ -322,6 +323,7 @@ func (mh *MqttTransport) Start() error {
 		return err
 	}
 
+	mh.stopOnce = sync.Once{}
 	mh.doneSignal = make(chan struct{})
 	mh.doneWg.Add(1)
 	go mh.handleIncomingMessages()
@@ -331,11 +333,12 @@ func (mh *MqttTransport) Start() error {
 
 // Stop stops adapter . Adapter can't be started again using Start . In order to start adapter it has to be re-initialized
 func (mh *MqttTransport) Stop() {
-	mh.client.Disconnect(250)
-
-	close(mh.doneSignal)
-	mh.doneWg.Wait()
-	mh.doneSignal = nil
+	mh.stopOnce.Do(func() {
+		mh.client.Disconnect(250)
+		close(mh.doneSignal)
+		mh.doneWg.Wait()
+		mh.doneSignal = nil
+	})
 }
 
 // Subscribe - subscribing for topic
