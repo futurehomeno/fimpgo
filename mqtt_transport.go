@@ -335,9 +335,11 @@ func (mh *MqttTransport) Start() error {
 func (mh *MqttTransport) Stop() {
 	mh.stopOnce.Do(func() {
 		mh.client.Disconnect(250)
-		close(mh.doneSignal)
-		mh.doneWg.Wait()
-		mh.doneSignal = nil
+		if mh.doneSignal != nil {
+			close(mh.doneSignal)
+			mh.doneWg.Wait()
+			mh.doneSignal = nil
+		}
 	})
 }
 

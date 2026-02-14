@@ -1,12 +1,12 @@
 SHELL := /bin/bash
 
-TAG := 1.15.0
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 APP_NAME := fimpgo
 
 ARCH ?= armhf
 
 BIN_DIR := ./build
-TARGET_BIN := $(BIN_DIR)/$(APP_NAME)_$(TAG)_$(ARCH)
+TARGET_BIN := $(BIN_DIR)/$(APP_NAME)_$(VERSION)_$(ARCH)
 MAIN_SRC := ./cli/client.go
 
 all: build-arm
