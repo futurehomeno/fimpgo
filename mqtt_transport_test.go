@@ -350,6 +350,8 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 		t.Fatal("Subscribe err:", err)
 	}
 
+	assert.True(t, mqtt.IsConnected())
+
 	mqtt2 := NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest-2", "", "", true, 1, 1, nil)
 	err = mqtt2.Start(10 * time.Second)
 
@@ -366,11 +368,12 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 	mqtt.RegisterChannel("chan1", chan1)
 	mqtt2.RegisterChannel("chan2", chan2)
 
-	var wg sync.WaitGroup
-	wg.Add(2)
+	ready1 := make(chan struct{})
+	ready2 := make(chan struct{})
+	rspReceived := make(chan struct{})
 
-	go func(msgChan MessageCh) {
-		wg.Done()
+	go func() {
+		ready1 <- struct{}{}
 		newMsg := <-chan1
 		if newMsg.Payload.Service == "tester" {
 			if err := mqtt.RespondToRequest(newMsg.Payload, NewFloatMessage("evt.test.response", "test_responder", 35.5, nil, nil, nil)); err != nil {
@@ -378,12 +381,10 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 			}
 			return
 		}
-	}(chan1)
+	}()
 
-	rspReceived := make(chan struct{})
-
-	go func(msgChan MessageCh) {
-		wg.Done()
+	go func() {
+		ready2 <- struct{}{}
 		newMsg := <-chan2
 		if newMsg.Payload.Service == "test_responder" && newMsg.Topic == "pt:j1c1/mt:rsp/rt:app/rn:response_tester/ad:1" {
 			close(rspReceived)
@@ -391,9 +392,10 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 		} else {
 			t.Error("Wrong response message received :", newMsg)
 		}
-	}(chan2)
+	}()
 
-	wg.Wait()
+	<-ready1
+	<-ready2
 
 	msg := NewFloatMessage("cmd.test.get_response", "tester", float64(35.5), nil, nil, nil)
 	msg.ResponseToTopic = "pt:j1c1/mt:rsp/rt:app/rn:response_tester/ad:1"

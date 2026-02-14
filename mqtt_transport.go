@@ -299,7 +299,7 @@ func onConnectionLost(client MQTT.Client, err error) {
 
 func onConnectionNotifEvt(client MQTT.Client, _type MQTT.ConnectionNotification) {
 	options := client.OptionsReader()
-	log.Errorf("[fimpgo] Client=%s notification %s", options.ClientID(), connectionNotifStr(_type.Type()))
+	log.Infof("[fimpgo] Client=%s notification %s", options.ClientID(), connectionNotifStr(_type.Type()))
 }
 
 func (mh *MqttTransport) onConnect(client MQTT.Client) {
