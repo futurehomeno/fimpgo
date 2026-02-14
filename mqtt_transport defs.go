@@ -31,8 +31,6 @@ type MqttConnectionConfigs struct {
 	ReceiveChTimeout    uint32
 	IsAws               bool // Should be set to true if cloud broker is AwS IoT platform .
 	MainQueueSize       int
-
-	connectionLostHandler MQTT.ConnectionLostHandler
 }
 
 type Message struct {
@@ -82,9 +80,11 @@ type MqttTransport struct {
 	connState ConnStateT
 	incMsgsWg sync.WaitGroup // WaitGroup for incoming message handler
 
-	mainQueue            chan MQTT.Message
-	mainQueueOverflowCnt atomic.Uint32
-	errorHandler         func(err error)
+	mainQueue                 chan MQTT.Message
+	mainQueueOverflowCnt      atomic.Uint32
+	errorHandler              func(err error)
+	connectionLostHandler     func(client MQTT.Client, err error)
+	connectionLostHandlerLock sync.Mutex
 
 	globalTopicPrefixLock sync.RWMutex
 	_globalTopicPrefix    string

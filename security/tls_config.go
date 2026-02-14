@@ -27,7 +27,6 @@ func caCertPool(certDir string) (*x509.CertPool, error) {
 		}
 	}
 
-	certs.AppendCertsFromPEM(pemData)
 	log.Infof("[fimpgo] CA certificates are loaded")
 	return certs, nil
 }

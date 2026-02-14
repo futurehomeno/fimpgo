@@ -19,7 +19,7 @@ type MessageHandler func(topic string, addr *Address, iotMsg *FimpMessage, rawPa
 
 func NewMqttTransport(serverURI, clientID, username, password string, cleanSession bool, subQos byte, pubQos byte, errHandler func(error)) *MqttTransport {
 	mh := MqttTransport{}
-	clientOptions := defaultClientOptions(serverURI, clientID, username, password, cleanSession)
+	clientOptions := defaultClientOptions(serverURI, clientID, username, password, cleanSession, mh.connectionLostHandler)
 	clientOptions.SetDefaultPublishHandler(mh.onMessage)
 	clientOptions.SetOnConnectHandler(mh.onConnect)
 
@@ -56,13 +56,7 @@ func NewMqttTransportFromConnection(client MQTT.Client, subQos byte, pubQos byte
 	return &mh
 }
 
-func NewMqttTransportFromConfigs(cfg MqttConnectionConfigs, errHandler func(error), options ...Option) *MqttTransport {
-	applyDefaults(&cfg)
-
-	for _, o := range options {
-		o.apply(&cfg)
-	}
-
+func NewMqttTransportFromConfigs(cfg MqttConnectionConfigs, errHandler func(error)) *MqttTransport {
 	mh := &MqttTransport{}
 
 	if cfg.PrivateKeyFileName != "" && cfg.CertFileName != "" {
@@ -213,6 +207,12 @@ func (mh *MqttTransport) UnsubscribeAll() error {
 	return nil
 }
 
+func (mh *MqttTransport) SetOnConnectionLostHandler(handler func(client MQTT.Client, err error)) {
+	mh.connectionLostHandlerLock.Lock()
+	mh.connectionLostHandler = handler
+	mh.connectionLostHandlerLock.Unlock()
+}
+
 func (mh *MqttTransport) SetGlobalTopicPrefix(prefix string) {
 	mh.globalTopicPrefixLock.Lock()
 	mh._globalTopicPrefix = strings.TrimSpace(prefix)
@@ -292,9 +292,15 @@ func (mh *MqttTransport) RegisterChannelWithFilterFunc(channelId string, message
 	mh.channelRegLock.Unlock()
 }
 
-func onConnectionLost(client MQTT.Client, err error) {
+func (mh *MqttTransport) onConnectionLost(client MQTT.Client, err error) {
 	options := client.OptionsReader()
 	log.Warnf("[fimpgo] Client=%s lost connection with the broker err: %v", options.ClientID(), err)
+
+	mh.connectionLostHandlerLock.Lock()
+	if mh.connectionLostHandler != nil {
+		mh.connectionLostHandler(client, err)
+	}
+	mh.connectionLostHandlerLock.Unlock()
 }
 
 func onConnectionNotifEvt(client MQTT.Client, _type MQTT.ConnectionNotification) {
@@ -615,7 +621,7 @@ func DetachGlobalPrefixFromTopic(topic string) (string, string) {
 func NewMqttTransportTLS(serverURI, clientID, username, password string, cleanSession bool, subQos byte, pubQos byte, errHandler func(error),
 	privKeyFileName, certFileName, certDir string, isAWS bool) *MqttTransport {
 	mh := &MqttTransport{}
-	clientOptions := defaultClientOptions(serverURI, clientID, username, password, cleanSession)
+	clientOptions := defaultClientOptions(serverURI, clientID, username, password, cleanSession, mh.connectionLostHandler)
 	clientOptions.SetDefaultPublishHandler(mh.onMessage)
 	clientOptions.SetOnConnectHandler(mh.onConnect)
 
@@ -654,7 +660,7 @@ func (mh *MqttTransport) SetCertDir(certDir string) {
 	mh.certDir = certDir
 }
 
-func defaultClientOptions(serverURI, clientID, username, password string, cleanSession bool) *MQTT.ClientOptions {
+func defaultClientOptions(serverURI, clientID, username, password string, cleanSession bool, connectionLostHandler func(client MQTT.Client, err error)) *MQTT.ClientOptions {
 	clientOptions := MQTT.NewClientOptions().AddBroker(serverURI)
 	clientOptions.SetClientID(clientID)
 	clientOptions.SetUsername(username)
@@ -663,7 +669,7 @@ func defaultClientOptions(serverURI, clientID, username, password string, cleanS
 	clientOptions.SetAutoReconnect(true)
 	clientOptions.SetConnectRetry(true)
 	clientOptions.SetWriteTimeout(15 * time.Second)
-	clientOptions.SetConnectionLostHandler(onConnectionLost)
+	clientOptions.SetConnectionLostHandler(connectionLostHandler)
 	clientOptions.SetConnectionNotificationHandler(onConnectionNotifEvt)
 
 	return clientOptions
