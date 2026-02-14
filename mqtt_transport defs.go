@@ -1,6 +1,7 @@
 package fimpgo
 
 import (
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -48,6 +49,25 @@ type FimpFilter struct {
 	Interface string
 }
 
+func connectionNotifStr(evt MQTT.ConnectionNotificationType) string {
+	switch evt {
+	case MQTT.ConnectionNotificationTypeConnected:
+		return "connected"
+	case MQTT.ConnectionNotificationTypeConnecting:
+		return "connecting"
+	case MQTT.ConnectionNotificationTypeFailed:
+		return "connection_failed"
+	case MQTT.ConnectionNotificationTypeLost:
+		return "connection_list"
+	case MQTT.ConnectionNotificationTypeBroker:
+		return "broker"
+	case MQTT.ConnectionNotificationTypeBrokerFailed:
+		return "broker_failed"
+	}
+
+	return fmt.Sprintf("unknown(%d)", evt)
+}
+
 type FilterFunc func(topic string, addr *Address, iotMsg *FimpMessage) bool
 
 type MqttTransport struct {
@@ -63,7 +83,6 @@ type MqttTransport struct {
 	connState ConnStateT
 	incMsgsWg sync.WaitGroup // WaitGroup for incoming message handler
 
-	//doneSignal           chan struct{}
 	mainQueue            chan MQTT.Message
 	mainQueueOverflowCnt atomic.Uint32
 	errorHandler         func(err error)
@@ -74,10 +93,9 @@ type MqttTransport struct {
 	defaultSource         string
 	startFailRetryCount   int
 	certDir               string
-	//mqttOptions          *MQTT.ClientOptions
-	receiveChTimeout   atomic.Uint32
-	syncPublishTimeout time.Duration
-	channelRegLock     sync.Mutex // channel registration
-	subscribeLock      sync.Mutex // subscribe
-	compressor         *MsgCompressor
+	receiveChTimeout      atomic.Uint32
+	syncPublishTimeout    time.Duration
+	channelRegLock        sync.Mutex // channel registration
+	subscribeLock         sync.Mutex // subscribe
+	compressor            *MsgCompressor
 }

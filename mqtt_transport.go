@@ -294,7 +294,12 @@ func (mh *MqttTransport) RegisterChannelWithFilterFunc(channelId string, message
 
 func onConnectionLost(client MQTT.Client, err error) {
 	options := client.OptionsReader()
-	log.Errorf("[fimpgo] Client=%s lost connection with the broker err: %v", options.ClientID(), err)
+	log.Warnf("[fimpgo] Client=%s lost connection with the broker err: %v", options.ClientID(), err)
+}
+
+func onConnectionNotifEvt(client MQTT.Client, _type MQTT.ConnectionNotification) {
+	options := client.OptionsReader()
+	log.Errorf("[fimpgo] Client=%s notification %s", options.ClientID(), connectionNotifStr(_type.Type()))
 }
 
 func (mh *MqttTransport) onConnect(client MQTT.Client) {
@@ -655,6 +660,8 @@ func defaultClientOptions(serverURI, clientID, username, password string, cleanS
 	clientOptions.SetAutoReconnect(true)
 	clientOptions.SetConnectRetry(true)
 	clientOptions.SetWriteTimeout(time.Second * 30)
+	clientOptions.SetConnectionLostHandler(onConnectionLost)
+	clientOptions.SetConnectionNotificationHandler(onConnectionNotifEvt)
 
 	return clientOptions
 }
