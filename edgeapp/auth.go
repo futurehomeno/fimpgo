@@ -157,7 +157,7 @@ func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
 	var err error
 	var response *fimpgo.FimpMessage
 	for range oac.cbRetry {
-		response, err = oac.syncClient.SendFimp("pt:j1/mt:cmd/rt:app/rn:clbridge/ad:1", reqMsg, int(oac.cbRetryDelay))
+		response, err = oac.syncClient.SendFimp("pt:j1/mt:cmd/rt:app/rn:clbridge/ad:1", reqMsg, int(oac.cbRetryDelay.Seconds()))
 		if err == nil {
 			break
 		}

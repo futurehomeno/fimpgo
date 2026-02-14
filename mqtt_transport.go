@@ -490,8 +490,10 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 		return err
 	}
 	topic := addr.Serialize()
-	if mh.globalTopicPrefix() != "" {
-		topic = AddGlobalPrefixToTopic(mh._globalTopicPrefix, topic)
+
+	globalPrefix := mh.globalTopicPrefix()
+	if globalPrefix != "" {
+		topic = AddGlobalPrefixToTopic(globalPrefix, topic)
 	}
 
 	log.Trace("[fimpgo] Publishing msg to topic:", topic)
@@ -553,8 +555,10 @@ func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error 
 	}
 
 	topic := addr.Serialize()
-	if mh.globalTopicPrefix() != "" {
-		topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix(), topic)
+
+	globalPrefix := mh.globalTopicPrefix()
+	if globalPrefix != "" {
+		topic = AddGlobalPrefixToTopic(globalPrefix, topic)
 	}
 
 	if err == nil {

@@ -1,7 +1,6 @@
 package discovery
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/futurehomeno/fimpgo"
@@ -44,7 +43,6 @@ func DiscoverResources(mqt *fimpgo.MqttTransport, timeout int) ([]Resource, erro
 				err := msg.Payload.GetObjectValue(&res)
 
 				if err == nil {
-					fmt.Printf("MSg: %+v\n", res)
 					results = append(results, res)
 				} else {
 					log.Error("[fimpgo] Parsing object err:", err)

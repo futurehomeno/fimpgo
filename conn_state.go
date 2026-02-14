@@ -67,10 +67,14 @@ func (c *ConnStateT) IsConnected() bool {
 }
 
 func (c *ConnStateT) WaitConnected(timeout time.Duration) error {
+	c.mu.Lock()
+	connected := c.connected
+	c.mu.Unlock()
+
 	select {
 	case <-time.After(timeout):
 		return fmt.Errorf("timeout")
-	case <-c.connected:
+	case <-connected:
 		return nil
 	}
 }
