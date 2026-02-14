@@ -229,6 +229,7 @@ func (oac *FhOAuth2Client) postMsg(req any, url string) (*OAuth2TokenResponse, e
 		return nil, fmt.Errorf("server status code=%d", resp.StatusCode)
 	}
 
+	defer func() { _ = resp.Body.Close() }()
 	bData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err

@@ -111,21 +111,26 @@ func (cp *MqttConnectionPool) createConnection(errHandler func(error)) (int, err
 		return 0, fmt.Errorf("too many connections=%d", len(cp.connPool))
 	}
 
-	connId := cp.connID()
+	connID := cp.connID()
 	conf := cp.connTemplate
-	conf.ClientID = fmt.Sprintf("%s_%d", cp.clientIdPrefix, connId)
+	conf.ClientID = fmt.Sprintf("%s_%d", cp.clientIdPrefix, connID)
 	newConnection := NewMqttTransportFromConfigs(conf, errHandler)
+
+	if newConnection == nil {
+		return 0, fmt.Errorf("create TLS connection not created")
+	}
+
 	err := newConnection.Start(10 * time.Second)
 
 	if err == nil {
-		cp.connPool[connId] = &connection{
+		cp.connPool[connID] = &connection{
 			mqConnection: newConnection,
 			isIdle:       false,
 			startedAt:    time.Now(),
 		}
 	}
 
-	return connId, err
+	return connID, err
 }
 
 // BorrowConnection returns first available connection from the pool or creates new connection

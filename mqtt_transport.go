@@ -299,7 +299,7 @@ func onConnectionLost(client MQTT.Client, err error) {
 
 func onConnectionNotifEvt(client MQTT.Client, _type MQTT.ConnectionNotification) {
 	options := client.OptionsReader()
-	log.Infof("[fimpgo] Client=%s notification %s", options.ClientID(), connectionNotifStr(_type.Type()))
+	log.Debugf("[fimpgo] Client=%s notification %s", options.ClientID(), connectionNotifStr(_type.Type()))
 }
 
 func (mh *MqttTransport) onConnect(client MQTT.Client) {
@@ -325,7 +325,6 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	select {
 	case mh.mainQueue <- msg:
 		mh.mainQueueOverflowCnt.Store(0)
-		return
 	default:
 		// stop MQTT and inform higher layer when unrecoverable situation occurs
 		if mh.mainQueueOverflowCnt.Add(1) > 20 {
@@ -362,11 +361,10 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 		}
 	}()
 
-	var topic string
+	topic := msg.Topic()
+
 	if mh.globalTopicPrefix() != "" {
 		_, topic = DetachGlobalPrefixFromTopic(msg.Topic())
-	} else {
-		topic = msg.Topic()
 	}
 
 	addr, err := NewAddressFromString(topic)
@@ -441,11 +439,13 @@ func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr
 	if ok {
 		return filterFunc(topic, addr, msg)
 	}
+
 	filter, ok := mh.subFilters[chanName]
 	if !ok {
 		// no filters has been set
 		return true
 	}
+
 	if msg != nil {
 		if utils.RouteIncludesTopic(filter.Topic, topic) &&
 			(msg.Service == filter.Service || filter.Service == "*") &&
@@ -534,23 +534,25 @@ func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error 
 
 	var bytm []byte
 	var err error
-	if addr.PayloadType == "" {
-		addr.PayloadType = DefaultPayload
-	}
+
 	switch addr.PayloadType {
 	case DefaultPayload:
 		bytm, err = fimpMsg.SerializeToJson()
 	case CompressedJsonPayload:
 		bytm, err = mh.compressor.CompressFimpMsg(fimpMsg)
-
+	default:
+		log.Warnf("Unsupported payload type=%s", addr.PayloadType)
+		addr.PayloadType = DefaultPayload
+		bytm, err = fimpMsg.SerializeToJson()
 	}
+
 	topic := addr.Serialize()
 	if mh.globalTopicPrefix() != "" {
-		topic = AddGlobalPrefixToTopic(mh._globalTopicPrefix, topic)
+		topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix(), topic)
 	}
 
 	if err == nil {
-		log.Trace("[fimpgo] Publishing msg to topic:", topic)
+		log.Trace("[fimpgo] Publishing msg to topic=", topic)
 		token := mh.client.Publish(topic, mh.pubQos, false, bytm)
 		if token.WaitTimeout(mh.syncPublishTimeout) && token.Error() == nil {
 			return nil
@@ -558,6 +560,7 @@ func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error 
 			return token.Error()
 		}
 	}
+
 	return err
 }
 
@@ -659,7 +662,7 @@ func defaultClientOptions(serverURI, clientID, username, password string, cleanS
 	clientOptions.SetCleanSession(cleanSession)
 	clientOptions.SetAutoReconnect(true)
 	clientOptions.SetConnectRetry(true)
-	clientOptions.SetWriteTimeout(time.Second * 30)
+	clientOptions.SetWriteTimeout(15 * time.Second)
 	clientOptions.SetConnectionLostHandler(onConnectionLost)
 	clientOptions.SetConnectionNotificationHandler(onConnectionNotifEvt)
 

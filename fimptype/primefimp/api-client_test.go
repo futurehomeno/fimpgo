@@ -12,7 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var brokerUrl = "tcp://cube.local:1883"
+var brokerUrl = "tcp://cube.local:11883"
 var brokerUser = ""
 var brokerPass = ""
 var testSiteGuid = ""

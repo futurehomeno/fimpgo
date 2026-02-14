@@ -44,6 +44,10 @@ func (c *ConnStateT) OnDone() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	if c.done == nil {
+		return // not initialized
+	}
+
 	c.onceDone.Do(func() {
 		close(c.done)
 		c.connected = make(chan struct{})

@@ -1,18 +1,18 @@
 package discovery
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/futurehomeno/fimpgo"
 	log "github.com/sirupsen/logrus"
 )
 
-// DiscoverResources discovers resources around , timeout is set in seconds
+// DiscoverResources discovers resources around, timeout is set in seconds
 func DiscoverResources(mqt *fimpgo.MqttTransport, timeout int) ([]Resource, error) {
-	msg := fimpgo.NewNullMessage("cmd.discovery.request", "system", nil, nil, nil)
-	adr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeDiscovery}
 	resCh := make(fimpgo.MessageCh)
 	channel := "resource-discovery-client"
+
 	if err := mqt.Subscribe("pt:j1/mt:evt/rt:discovery"); err != nil {
 		return nil, err
 	}
@@ -29,7 +29,10 @@ func DiscoverResources(mqt *fimpgo.MqttTransport, timeout int) ([]Resource, erro
 		mqt.UnregisterChannel("resource-discovery-client")
 	}()
 
+	msg := fimpgo.NewNullMessage("cmd.discovery.request", "system", nil, nil, nil)
+	addr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeDiscovery}
 	resultsCh := make(chan []Resource, 20)
+
 	// Response aggregator
 	go func() {
 		results := make([]Resource, 0)
@@ -41,6 +44,7 @@ func DiscoverResources(mqt *fimpgo.MqttTransport, timeout int) ([]Resource, erro
 				err := msg.Payload.GetObjectValue(&res)
 
 				if err == nil {
+					fmt.Printf("MSg: %+v\n", res)
 					results = append(results, res)
 				} else {
 					log.Error("[fimpgo] Parsing object err:", err)
@@ -55,7 +59,7 @@ func DiscoverResources(mqt *fimpgo.MqttTransport, timeout int) ([]Resource, erro
 	}()
 
 	//Sending request
-	if err := mqt.Publish(&adr, msg); err != nil {
+	if err := mqt.Publish(&addr, msg); err != nil {
 		return nil, err
 	}
 

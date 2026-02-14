@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -20,17 +19,14 @@ func caCertPool(certDir string) (*x509.CertPool, error) {
 	}
 	certs.AppendCertsFromPEM(pemData)
 
-	cafile = filepath.Join(certDir, "root-ca-2.pem")
-	if pemData, err = os.ReadFile(cafile); err != nil {
-		return nil, err
+	// Optional additional CAs
+	for _, ca := range []string{"root-ca-2.pem", "root-ca-3.pem"} {
+		cafile = filepath.Join(certDir, ca)
+		if pemData, err = os.ReadFile(cafile); err == nil {
+			certs.AppendCertsFromPEM(pemData)
+		}
 	}
 
-	certs.AppendCertsFromPEM(pemData)
-
-	cafile = filepath.Join(certDir, "root-ca-3.pem")
-	if pemData, err = os.ReadFile(cafile); err != nil {
-		return nil, err
-	}
 	certs.AppendCertsFromPEM(pemData)
 	log.Infof("[fimpgo] CA certificates are loaded")
 	return certs, nil
@@ -51,9 +47,13 @@ func certPool(certFile string) (*x509.CertPool, error) {
 // Cert dir should contains all CA root certificates .
 // IsAws flag controls AWS specific TLS protocol switch.
 func TLSConfig(privateKeyFileName, certFileName, certDir string, isAWS bool) (*tls.Config, error) {
+	hasCert := certFileName != ""
+	hasKey := privateKeyFileName != ""
+
 	privateKeyFileName = filepath.Join(certDir, privateKeyFileName)
 	certFileName = filepath.Join(certDir, certFileName)
 	config := &tls.Config{InsecureSkipVerify: false}
+
 	if isAWS {
 		config.NextProtos = []string{"x-amzn-mqtt-ca"}
 	}
@@ -64,21 +64,24 @@ func TLSConfig(privateKeyFileName, certFileName, certDir string, isAWS bool) (*t
 		return nil, err
 	}
 
-	if strings.TrimSpace(certFileName) != "" {
+	if hasCert {
 		config.ClientCAs, err = certPool(certFileName)
 		if err != nil {
 			return nil, err
 		}
 		config.ClientAuth = tls.RequireAndVerifyClientCert
 	}
-	if privateKeyFileName != "" {
-		if certFileName == "" {
+
+	if hasKey {
+		if !hasCert {
 			return nil, fmt.Errorf("key specified but cert is not")
 		}
+
 		cert, err := tls.LoadX509KeyPair(certFileName, privateKeyFileName)
 		if err != nil {
 			return nil, err
 		}
+
 		config.Certificates = []tls.Certificate{cert}
 	}
 

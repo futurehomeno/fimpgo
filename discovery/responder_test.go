@@ -9,7 +9,7 @@ import (
 )
 
 func SecondResponder() {
-	mqtt := fimpgo.NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest-2", "", "", true, 1, 1, nil)
+	mqtt := fimpgo.NewMqttTransport("tcp://127.0.0.1:11883", "fimpgotest-2", "", "", true, 1, 1, nil)
 	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		log.Error("Error connecting to broker ", err)
@@ -34,7 +34,7 @@ func TestServiceDiscoveryResponder_Start(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	go SecondResponder()
 
-	mqtt := fimpgo.NewMqttTransport("tcp://127.0.0.1:1883", "fimpgotest-1", "", "", true, 1, 1, nil)
+	mqtt := fimpgo.NewMqttTransport("tcp://127.0.0.1:11883", "fimpgotest-1", "", "", true, 1, 1, nil)
 	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
@@ -57,12 +57,12 @@ func TestServiceDiscoveryResponder_Start(t *testing.T) {
 	discoveredResource, _ := DiscoverResources(mqtt, 2)
 
 	if len(discoveredResource) != 2 {
-		t.Fatal("number of discovered resources doesn't match ")
+		t.Fatalf("Number of discovered resources doesn't match act=%d exp=%d", len(discoveredResource), 2)
 	}
 
 	discoveredResource, _ = DiscoverResources(mqtt, 2)
 
 	if len(discoveredResource) != 2 {
-		t.Fatal("number of discovered resources doesn't match ")
+		t.Fatalf("Number of discovered resources doesn't match act=%d exp=%d", len(discoveredResource), 2)
 	}
 }
