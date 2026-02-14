@@ -80,11 +80,11 @@ type MqttTransport struct {
 	connState ConnStateT
 	incMsgsWg sync.WaitGroup // WaitGroup for incoming message handler
 
-	mainQueue                 chan MQTT.Message
-	mainQueueOverflowCnt      atomic.Uint32
-	errorHandler              func(err error)
-	connectionLostHandler     func(client MQTT.Client, err error)
-	connectionLostHandlerLock sync.Mutex
+	mainQueue                       chan MQTT.Message
+	mainQueueOverflowCnt            atomic.Uint32
+	errorHandler                    func(err error)
+	connectionLostCustomHandler     func(client MQTT.Client, err error)
+	connectionLostCustomHandlerLock sync.Mutex
 
 	globalTopicPrefixLock sync.RWMutex
 	_globalTopicPrefix    string

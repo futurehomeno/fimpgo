@@ -19,7 +19,7 @@ type MessageHandler func(topic string, addr *Address, iotMsg *FimpMessage, rawPa
 
 func NewMqttTransport(serverURI, clientID, username, password string, cleanSession bool, subQos byte, pubQos byte, errHandler func(error)) *MqttTransport {
 	mh := MqttTransport{}
-	clientOptions := defaultClientOptions(serverURI, clientID, username, password, cleanSession, mh.connectionLostHandler)
+	clientOptions := defaultClientOptions(serverURI, clientID, username, password, cleanSession, mh.onConnectionLost)
 	clientOptions.SetDefaultPublishHandler(mh.onMessage)
 	clientOptions.SetOnConnectHandler(mh.onConnect)
 
@@ -208,9 +208,9 @@ func (mh *MqttTransport) UnsubscribeAll() error {
 }
 
 func (mh *MqttTransport) SetOnConnectionLostHandler(handler func(client MQTT.Client, err error)) {
-	mh.connectionLostHandlerLock.Lock()
-	mh.connectionLostHandler = handler
-	mh.connectionLostHandlerLock.Unlock()
+	mh.connectionLostCustomHandlerLock.Lock()
+	mh.connectionLostCustomHandler = handler
+	mh.connectionLostCustomHandlerLock.Unlock()
 }
 
 func (mh *MqttTransport) SetGlobalTopicPrefix(prefix string) {
@@ -296,11 +296,11 @@ func (mh *MqttTransport) onConnectionLost(client MQTT.Client, err error) {
 	options := client.OptionsReader()
 	log.Warnf("[fimpgo] Client=%s lost connection with the broker err: %v", options.ClientID(), err)
 
-	mh.connectionLostHandlerLock.Lock()
-	if mh.connectionLostHandler != nil {
-		mh.connectionLostHandler(client, err)
+	mh.connectionLostCustomHandlerLock.Lock()
+	if mh.connectionLostCustomHandler != nil {
+		mh.connectionLostCustomHandler(client, err)
 	}
-	mh.connectionLostHandlerLock.Unlock()
+	mh.connectionLostCustomHandlerLock.Unlock()
 }
 
 func onConnectionNotifEvt(client MQTT.Client, _type MQTT.ConnectionNotification) {
@@ -625,7 +625,7 @@ func DetachGlobalPrefixFromTopic(topic string) (string, string) {
 func NewMqttTransportTLS(serverURI, clientID, username, password string, cleanSession bool, subQos byte, pubQos byte, errHandler func(error),
 	privKeyFileName, certFileName, certDir string, isAWS bool) *MqttTransport {
 	mh := &MqttTransport{}
-	clientOptions := defaultClientOptions(serverURI, clientID, username, password, cleanSession, mh.connectionLostHandler)
+	clientOptions := defaultClientOptions(serverURI, clientID, username, password, cleanSession, mh.onConnectionLost)
 	clientOptions.SetDefaultPublishHandler(mh.onMessage)
 	clientOptions.SetOnConnectHandler(mh.onConnect)
 
