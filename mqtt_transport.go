@@ -531,7 +531,7 @@ func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr
 	defer func() {
 		if r := recover(); r != nil {
 			log.Errorf("[fimpgo] isChannelInterested crash %v", r)
-			log.Error(debug.Stack())
+			log.Error(string(debug.Stack()))
 		}
 	}()
 
