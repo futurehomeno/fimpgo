@@ -58,7 +58,7 @@ func connectionNotifStr(evt MQTT.ConnectionNotificationType) string {
 	case MQTT.ConnectionNotificationTypeFailed:
 		return "connection_failed"
 	case MQTT.ConnectionNotificationTypeLost:
-		return "connection_list"
+		return "connection_lost"
 	case MQTT.ConnectionNotificationTypeBroker:
 		return "broker"
 	case MQTT.ConnectionNotificationTypeBrokerFailed:

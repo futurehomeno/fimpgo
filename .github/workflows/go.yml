@@ -51,10 +51,9 @@ jobs:
         uses: golangci/golangci-lint-action@v7
         with:
           version: v2.7.2
-          working-directory: src
+          working-directory: ./
       - name: Run staticcheck
         run: |
-          cd src
           go install honnef.co/go/tools/cmd/staticcheck@latest
           staticcheck ./...
 

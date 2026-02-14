@@ -210,21 +210,24 @@ func (oac *FhOAuth2Client) postMsg(req any, url string) (*OAuth2TokenResponse, e
 		if err == nil && resp.StatusCode < 400 {
 			break
 		}
+
+		if resp != nil {
+			if err := resp.Body.Close(); err != nil {
+				log.Errorf("Close body err: %v", err)
+			}
+		}
+
 		log.Error("[edgeapp] Response from auth endpoint err: ", err)
 		time.Sleep(time.Second * oac.retryDelay)
 	}
+
 	if err != nil {
 		return nil, err
 	}
+
 	if resp.StatusCode >= 400 {
 		return nil, fmt.Errorf("server status code=%d", resp.StatusCode)
 	}
-
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Errorf("Close body err: %v", err)
-		}
-	}()
 
 	bData, err := io.ReadAll(resp.Body)
 	if err != nil {
