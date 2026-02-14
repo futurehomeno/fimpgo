@@ -30,7 +30,8 @@ jobs:
       run: |
         export "GH_TOKEN=${{ secrets.GH_OAUTH_TOKEN }}"
         git config --global url."https://$GH_TOKEN@github.com/".insteadOf "https://github.com/"
-        make build-arm VERSION=${{ github.ref_name }}
+        VERSION="${GITHUB_REF_NAME//\//-}"
+        make build-arm VERSION="$VERSION"
 
     - name: Upload .deb artifact
       uses: actions/upload-artifact@v4
