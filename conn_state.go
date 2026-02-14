@@ -17,17 +17,18 @@ type ConnStateT struct {
 }
 
 func (c *ConnStateT) Init() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if c.connected != nil {
 		log.Warnf("[fimpgo] Already initalized")
 		return
 	}
 
-	c.mu.Lock()
 	c.connected = make(chan struct{})
 	c.done = make(chan struct{})
 	c.onceConnected = sync.Once{}
 	c.onceDone = sync.Once{}
-	c.mu.Unlock()
 }
 
 func (c *ConnStateT) OnConnect() {

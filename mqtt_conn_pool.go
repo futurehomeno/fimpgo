@@ -75,8 +75,13 @@ func (cp *MqttConnectionPool) Stop() {
 }
 
 func (cp *MqttConnectionPool) IsConnected(poolID int) bool {
+	ret := false
 	cp.mux.RLock()
-	ret := cp.connPool[poolID].mqConnection.client.IsConnected()
+	conn, ok := cp.connPool[poolID]
+
+	if ok {
+		ret = conn.mqConnection.IsConnected()
+	}
 	cp.mux.RUnlock()
 
 	return ret
@@ -145,8 +150,8 @@ func (cp *MqttConnectionPool) BorrowConnection(errHandler func(error)) (int, *Mq
 
 // ReturnConnection returns connection to pool by setting inUse status to false
 func (cp *MqttConnectionPool) ReturnConnection(connId int) {
-	cp.mux.RLock()
-	defer cp.mux.RUnlock()
+	cp.mux.Lock()
+	defer cp.mux.Unlock()
 
 	con, ok := cp.connPool[connId]
 	if !ok {

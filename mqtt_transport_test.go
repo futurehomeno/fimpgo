@@ -239,7 +239,7 @@ func TestMqttTransport_PublishTls_2(t *testing.T) {
 
 	log.SetLevel(log.DebugLevel)
 	// for test replace XYZ with actual AWS IoT core address and ABC with actual clientid
-	mqtt := NewMqttTransportFromConfigs(connConfig, nil)
+	mqtt := NewMqttTransportFromConfigs(connConfig)
 
 	if mqtt == nil {
 		t.Fatal("Configure TLS error")

@@ -33,7 +33,6 @@ type MqttConnectionConfigs struct {
 	MainQueueSize       int
 
 	connectionLostHandler MQTT.ConnectionLostHandler
-	errorHandler          func(err error)
 }
 
 type Message struct {

@@ -66,10 +66,10 @@ func NewMqttTransportFromConfigs(cfg MqttConnectionConfigs, errHandler func(erro
 	mh := &MqttTransport{}
 
 	if cfg.PrivateKeyFileName != "" && cfg.CertFileName != "" {
-		mh = NewMqttTransportTLS(cfg.ServerURI, cfg.ClientID, cfg.Username, cfg.Password, cfg.CleanSession, cfg.SubQos, cfg.PubQos, cfg.errorHandler,
+		mh = NewMqttTransportTLS(cfg.ServerURI, cfg.ClientID, cfg.Username, cfg.Password, cfg.CleanSession, cfg.SubQos, cfg.PubQos, errHandler,
 			cfg.PrivateKeyFileName, cfg.CertFileName, cfg.CertDir, cfg.IsAws)
 	} else {
-		mh = NewMqttTransport(cfg.ServerURI, cfg.ClientID, cfg.Username, cfg.Password, cfg.CleanSession, cfg.SubQos, cfg.PubQos, cfg.errorHandler)
+		mh = NewMqttTransport(cfg.ServerURI, cfg.ClientID, cfg.Username, cfg.Password, cfg.CleanSession, cfg.SubQos, cfg.PubQos, errHandler)
 	}
 
 	if mh == nil {
@@ -327,10 +327,8 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 		mh.mainQueueOverflowCnt.Store(0)
 		return
 	default:
-		mh.mainQueueOverflowCnt.Add(1)
-
 		// stop MQTT and inform higher layer when unrecoverable situation occurs
-		if mh.mainQueueOverflowCnt.Load() > 20 {
+		if mh.mainQueueOverflowCnt.Add(1) > 20 {
 			mh.Stop()
 
 			if mh.errorHandler != nil {
@@ -365,7 +363,7 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 	}()
 
 	var topic string
-	if mh._globalTopicPrefix != "" {
+	if mh.globalTopicPrefix() != "" {
 		_, topic = DetachGlobalPrefixFromTopic(msg.Topic())
 	} else {
 		topic = msg.Topic()
@@ -486,7 +484,7 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 		return err
 	}
 	topic := addr.Serialize()
-	if mh._globalTopicPrefix != "" {
+	if mh.globalTopicPrefix() != "" {
 		topic = AddGlobalPrefixToTopic(mh._globalTopicPrefix, topic)
 	}
 
@@ -513,8 +511,10 @@ func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) erro
 		}
 	}
 
-	if mh._globalTopicPrefix != "" {
-		topic = AddGlobalPrefixToTopic(mh._globalTopicPrefix, topic)
+	globalTopicPrefix := mh.globalTopicPrefix()
+
+	if globalTopicPrefix != "" {
+		topic = AddGlobalPrefixToTopic(globalTopicPrefix, topic)
 	}
 
 	log.Trace("[fimpgo] Publishing msg to topic:", topic)
@@ -545,7 +545,7 @@ func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error 
 
 	}
 	topic := addr.Serialize()
-	if mh._globalTopicPrefix != "" {
+	if mh.globalTopicPrefix() != "" {
 		topic = AddGlobalPrefixToTopic(mh._globalTopicPrefix, topic)
 	}
 

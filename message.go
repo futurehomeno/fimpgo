@@ -534,8 +534,8 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 		val := make(map[string]float64)
 		err = jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 			tempFLoat, e := jsonparser.ParseFloat(value)
-			if err != nil {
-				log.Warnf("[fimpgo] Parse VTypeFloatMap err: %v", err)
+			if e != nil {
+				log.Warnf("[fimpgo] Parse VTypeFloatMap err: %v", e)
 			} else {
 				val[string(key)] = tempFLoat
 			}
