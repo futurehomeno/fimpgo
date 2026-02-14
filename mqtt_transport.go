@@ -134,11 +134,6 @@ func (mh *MqttTransport) IsConnected() bool {
 
 func (mh *MqttTransport) Stop() {
 	mh.connState.OnDone()
-
-	if !mh.connState.IsConnected() {
-		return
-	}
-
 	mh.incMsgsWg.Wait()
 	time.Sleep(100 * time.Millisecond)
 }
