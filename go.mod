@@ -1,5 +1,7 @@
 module github.com/futurehomeno/fimpgo
 
+go 1.26
+
 require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/eclipse/paho.mqtt.golang v1.5.1
@@ -23,4 +25,3 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-go 1.25

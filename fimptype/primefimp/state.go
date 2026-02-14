@@ -276,7 +276,11 @@ func (sav *StateAttributeValue) parse() error {
 	case fimpgo.VTypeBool:
 		sav.Val, err = jsonparser.GetBoolean(b, fimpgo.Val)
 	case fimpgo.VTypeInt:
-		sav.Val, err = jsonparser.GetInt(b, fimpgo.Val)
+		var temp int64
+		temp, err = jsonparser.GetInt(b, fimpgo.Val)
+		if err == nil {
+			sav.Val = int(temp)
+		}
 	case fimpgo.VTypeFloat:
 		sav.Val, err = jsonparser.GetFloat(b, fimpgo.Val)
 	case fimpgo.VTypeBoolArray:

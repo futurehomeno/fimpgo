@@ -61,8 +61,9 @@ func (c *MsgCompressor) DecompressBinMsg(binMsg []byte) ([]byte, error) {
 	}
 
 	response, err := io.ReadAll(decompressor)
-	if err := decompressor.Close(); err != nil {
-		return nil, err
+
+	if e := decompressor.Close(); e != nil {
+		return nil, e
 	}
 
 	decompressorBuffer.Reset()

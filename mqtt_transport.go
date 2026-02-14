@@ -66,10 +66,14 @@ func NewMqttTransportFromConfigs(cfg MqttConnectionConfigs, errHandler func(erro
 	mh := &MqttTransport{}
 
 	if cfg.PrivateKeyFileName != "" && cfg.CertFileName != "" {
-		if mh = NewMqttTransportTLS(cfg.ServerURI, cfg.ClientID, cfg.Username, cfg.Password, cfg.CleanSession, cfg.SubQos, cfg.PubQos, cfg.errorHandler,
-			cfg.PrivateKeyFileName, cfg.CertFileName, cfg.CertDir, cfg.IsAws); mh == nil {
-			return nil
-		}
+		mh = NewMqttTransportTLS(cfg.ServerURI, cfg.ClientID, cfg.Username, cfg.Password, cfg.CleanSession, cfg.SubQos, cfg.PubQos, cfg.errorHandler,
+			cfg.PrivateKeyFileName, cfg.CertFileName, cfg.CertDir, cfg.IsAws)
+	} else {
+		mh = NewMqttTransport(cfg.ServerURI, cfg.ClientID, cfg.Username, cfg.Password, cfg.CleanSession, cfg.SubQos, cfg.PubQos, cfg.errorHandler)
+	}
+
+	if mh == nil {
+		return nil
 	}
 
 	if cfg.StartFailRetryCount > 0 {
@@ -88,20 +92,31 @@ func NewMqttTransportFromConfigs(cfg MqttConnectionConfigs, errHandler func(erro
 }
 
 func (mh *MqttTransport) Start(timeout time.Duration) error {
-	var err error
 	mh.connState.Init()
 
-	for i := 1; i <= mh.startFailRetryCount; i++ {
-		if token := mh.client.Connect(); token.WaitTimeout(timeout) && token.Error() == nil {
-			err = nil
-			break
-		} else {
-			err = token.Error()
-			log.Warnf("[fimpgo] MQTT connect failed %d/%d err: %v", i, mh.startFailRetryCount, err)
+	// try to connect with retries
+	err := func() (ret error) {
+		for i := 1; i <= mh.startFailRetryCount; i++ {
+			token := mh.client.Connect()
+
+			if !token.WaitTimeout(timeout) {
+				ret = errors.New("timeout")
+				continue
+			}
+
+			ret = token.Error()
+
+			if ret == nil {
+				return nil
+			}
+
+			log.Warnf("[fimpgo] MQTT connect failed %d/%d err: %v", i, mh.startFailRetryCount, ret)
+			delay := time.Duration(i) * time.Duration(i)
+			time.Sleep(delay * time.Second)
 		}
-		delay := time.Duration(i) * time.Duration(i)
-		time.Sleep(delay * time.Second)
-	}
+
+		return ret
+	}()
 
 	if err != nil {
 		return err
@@ -398,12 +413,10 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 	mh.channelRegLock.Unlock()
 
 	for i, c := range msgChs {
-		fmsg := Message{Topic: topic, Addr: addr, Payload: fimpMsg}
 		timer := time.NewTimer(time.Second * time.Duration(mh.receiveChTimeout.Load()))
 
 		select {
-		case c <- &fmsg:
-			// send to channel
+		case c <- &Message{Topic: topic, Addr: addr, Payload: fimpMsg}:
 		case <-timer.C:
 			log.Warnf("[fimpgo] Channel %s not read for %d sec", chNames[i], mh.receiveChTimeout.Load())
 		}
