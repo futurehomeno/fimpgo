@@ -6,6 +6,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/x509"
+	"encoding/hex"
 	"encoding/pem"
 	"errors"
 	"math/big"
@@ -66,19 +67,38 @@ func (kp *EcdsaKey) ExportX509EncodedKeys() (string, string) {
 	return pemEncodedStr, pemEncodedPubStr
 }
 
-func (kp *EcdsaKey) ExportJsonEncodedKeys() (JsonEcKey, JsonEcKey) {
+func (kp *EcdsaKey) ExportJsonEncodedKeys() (privKey JsonEcKey, pubKey JsonEcKey, err error) {
+	// ----- PRIVATE KEY -----
+	privBytes, err := kp.privateKey.Bytes()
+	if err != nil {
+		return privKey, pubKey, err
+	}
+
 	privateKey := JsonEcKey{
 		T: "private",
-		X: kp.privateKey.X.Text(16),
-		Y: kp.privateKey.Y.Text(16),
-		D: kp.privateKey.D.Text(16),
+		D: hex.EncodeToString(privBytes),
 	}
-	pubKey := JsonEcKey{
+
+	// ----- PUBLIC KEY -----
+	pubBytes, err := kp.publicKey.Bytes() // []byte, no error
+	if len(pubBytes) == 0 || pubBytes[0] != 0x04 {
+		return privKey, pubKey, errors.New("unexpected public key encoding")
+	}
+
+	coordLen := (len(pubBytes) - 1) / 2
+	xBytes := pubBytes[1 : 1+coordLen]
+	yBytes := pubBytes[1+coordLen:]
+
+	privateKey.X = hex.EncodeToString(xBytes)
+	privateKey.Y = hex.EncodeToString(yBytes)
+
+	pubKey = JsonEcKey{
 		T: "public",
-		X: kp.publicKey.X.Text(16),
-		Y: kp.publicKey.Y.Text(16),
+		X: hex.EncodeToString(xBytes),
+		Y: hex.EncodeToString(yBytes),
 	}
-	return privateKey, pubKey
+
+	return privateKey, pubKey, nil
 }
 
 func (kp *EcdsaKey) ImportX509PublicKey(pemEncodedPub string) error {

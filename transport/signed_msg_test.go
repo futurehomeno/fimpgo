@@ -6,6 +6,7 @@ import (
 
 	"github.com/futurehomeno/fimpgo"
 	"github.com/futurehomeno/fimpgo/security"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSignMessageES256(t *testing.T) {
@@ -53,8 +54,10 @@ func TestSignMessageES256_TestKey(t *testing.T) {
 		t.Error("SerializedKey generation error", err)
 		t.FailNow()
 	}
-	private, pub := keys.ExportJsonEncodedKeys()
-	_, err := json.Marshal(private)
+	private, pub, err := keys.ExportJsonEncodedKeys()
+	assert.NoError(t, err)
+
+	_, err = json.Marshal(private)
 	if err != nil {
 		t.Error("Serialize error", err)
 		t.FailNow()
