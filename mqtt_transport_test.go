@@ -190,7 +190,7 @@ func TestMqttTransport_PublishTls(t *testing.T) {
 	// for test enter valid site-id
 	mqtt.SetGlobalTopicPrefix("331D092F-4685-4CC9-8337-2598E6F5D8D5")
 	// for test place certificate and key into certs folder
-	err := mqtt.ConfigureTls("awsiot.private.key", "awsiot.crt", "./certs", true)
+	err := mqtt.ConfigureTLS("awsiot.private.key", "awsiot.crt", "./certs", true)
 
 	if err != nil {
 		t.Fatal("Configure TLS err", err)
@@ -244,7 +244,7 @@ func TestMqttTransport_PublishTls_2(t *testing.T) {
 	// for test enter valid site-id
 	mqtt.SetGlobalTopicPrefix("331D092F-4685-4CC9-8337-2598E6F5D8D5")
 	// for test place certificate and key into certs folder
-	err := mqtt.ConfigureTls("awsiot.private.key", "awsiot.crt", "./certs", true)
+	err := mqtt.ConfigureTLS("awsiot.private.key", "awsiot.crt", "./certs", true)
 
 	if err != nil {
 		t.Fatal("Configure TLS err:", err)

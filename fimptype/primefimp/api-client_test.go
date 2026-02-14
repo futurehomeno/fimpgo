@@ -110,9 +110,9 @@ func TestPrimeFimp_LoadStates(t *testing.T) {
 
 	validClientID := strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
 	mqtt := fimpgo.NewMqttTransport(awsIotEndpoint, validClientID, brokerUser, brokerPass, true, 1, 1, nil)
-	err := mqtt.ConfigureTls("awsiot.private.key", "awsiot.crt", "./datatools/certs", true)
+	err := mqtt.ConfigureTLS("awsiot.private.key", "awsiot.crt", "./datatools/certs", true)
 	if err != nil {
-		t.Fatal("ConfigureTls err: ", err)
+		t.Fatal("ConfigureTLS err: ", err)
 	}
 	mqtt.SetGlobalTopicPrefix(testSiteGuid)
 
@@ -167,7 +167,7 @@ func TestPrimeFimp_LoadStatesWithConnPool(t *testing.T) {
 	go func() {
 		defer waitgroup.Done()
 		for range 3 {
-			connId, conn, err := connPool.BorrowConnection()
+			connId, conn, err := connPool.BorrowConnection(nil)
 			if err != nil {
 				t.Error("Connection pool error , Err:", err.Error())
 				t.Fail()
@@ -188,7 +188,7 @@ func TestPrimeFimp_LoadStatesWithConnPool(t *testing.T) {
 	go func() {
 		defer waitgroup.Done()
 		for range 3 {
-			connId, conn, err := connPool.BorrowConnection()
+			connId, conn, err := connPool.BorrowConnection(nil)
 			if err != nil {
 				t.Error("Connection pool err:", err.Error())
 				t.Fail()

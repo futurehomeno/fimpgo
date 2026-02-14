@@ -29,7 +29,7 @@ type MqttConnectionPool struct {
 	maxSize        int           // max size
 	maxIdleAge     time.Duration // Defines how long idle connection can stay in the pool before it gets destroyed
 	poolCheckTick  *time.Ticker
-	isActive       bool
+	isStarted      atomic.Bool
 }
 
 func NewMqttConnectionPool(initSize, size, maxSize int, maxAge time.Duration, connTemplate MqttConnectionConfigs, clientIdPrefix string) *MqttConnectionPool {
@@ -51,15 +51,35 @@ func NewMqttConnectionPool(initSize, size, maxSize int, maxAge time.Duration, co
 }
 
 func (cp *MqttConnectionPool) Start() {
-	if !cp.isActive {
-		cp.isActive = true
+	cp.mux.Lock()
+	if !cp.isStarted.Load() {
+		cp.isStarted.Store(true)
 		cp.poolCheckTick = time.NewTicker(10 * time.Second)
 		go cp.cleanupProcess()
 	}
+	cp.mux.Unlock()
 }
 
 func (cp *MqttConnectionPool) Stop() {
-	cp.isActive = false
+	cp.mux.Lock()
+	for i := range cp.connPool {
+		conn := cp.connectionByID(i)
+		if conn != nil {
+			conn.Stop()
+			delete(cp.connPool, i) // it is safe to delete map element in the loop
+		}
+	}
+	cp.mux.Unlock()
+
+	cp.isStarted.Store(false)
+}
+
+func (cp *MqttConnectionPool) IsConnected(poolID int) bool {
+	cp.mux.RLock()
+	ret := cp.connPool[poolID].mqConnection.client.IsConnected()
+	cp.mux.RUnlock()
+
+	return ret
 }
 
 func (cp *MqttConnectionPool) TotalConnections() int {
@@ -81,15 +101,15 @@ func (cp *MqttConnectionPool) IdleConnections() int {
 	return size
 }
 
-func (cp *MqttConnectionPool) createConnection() (int, error) {
+func (cp *MqttConnectionPool) createConnection(errHandler func(error)) (int, error) {
 	if len(cp.connPool) >= cp.maxSize {
 		return 0, fmt.Errorf("too many connections=%d", len(cp.connPool))
 	}
 
-	connId := cp.genConnId()
+	connId := cp.connID()
 	conf := cp.connTemplate
 	conf.ClientID = fmt.Sprintf("%s_%d", cp.clientIdPrefix, connId)
-	newConnection := NewMqttTransportFromConfigs(conf)
+	newConnection := NewMqttTransportFromConfigs(conf, errHandler)
 	err := newConnection.Start()
 
 	if err == nil {
@@ -104,13 +124,13 @@ func (cp *MqttConnectionPool) createConnection() (int, error) {
 }
 
 // BorrowConnection returns first available connection from the pool or creates new connection
-func (cp *MqttConnectionPool) BorrowConnection() (int, *MqttTransport, error) {
+func (cp *MqttConnectionPool) BorrowConnection(errHandler func(error)) (int, *MqttTransport, error) {
 	cp.mux.Lock()
 	defer cp.mux.Unlock()
 
 	for i := range cp.connPool {
 		if cp.connPool[i].isIdle {
-			if cp.connPool[i].mqConnection.Client().IsConnected() {
+			if cp.connPool[i].mqConnection.client.IsConnected() {
 				cp.connPool[i].isIdle = false
 				return i, cp.connPool[i].mqConnection, nil
 			} else {
@@ -119,8 +139,8 @@ func (cp *MqttConnectionPool) BorrowConnection() (int, *MqttTransport, error) {
 		}
 	}
 
-	connId, err := cp.createConnection()
-	return connId, cp.getConnectionById(connId), err
+	connId, err := cp.createConnection(errHandler)
+	return connId, cp.connectionByID(connId), err
 }
 
 // ReturnConnection returns connection to pool by setting inUse status to false
@@ -143,7 +163,7 @@ func (cp *MqttConnectionPool) ReturnConnection(connId int) {
 }
 
 // getConnectionById returns connection from pool or creates new connection
-func (cp *MqttConnectionPool) getConnectionById(connId int) *MqttTransport {
+func (cp *MqttConnectionPool) connectionByID(connId int) *MqttTransport {
 	conn, ok := cp.connPool[connId]
 	if ok {
 		return conn.mqConnection
@@ -151,7 +171,7 @@ func (cp *MqttConnectionPool) getConnectionById(connId int) *MqttTransport {
 	return nil
 }
 
-func (cp *MqttConnectionPool) genConnId() int {
+func (cp *MqttConnectionPool) connID() int {
 	return int(atomic.AddUint64(&cp.nextID, 1))
 }
 
@@ -159,7 +179,7 @@ func (cp *MqttConnectionPool) cleanupProcess() {
 	for {
 		<-cp.poolCheckTick.C
 
-		if !cp.isActive {
+		if !cp.isStarted.Load() {
 			break
 		}
 
@@ -171,7 +191,7 @@ func (cp *MqttConnectionPool) cleanupProcess() {
 				}
 
 				if (time.Since(cp.connPool[i].idleSince) > cp.maxIdleAge) && (len(cp.connPool) > cp.size) {
-					conn := cp.getConnectionById(i)
+					conn := cp.connectionByID(i)
 					if conn != nil {
 						conn.Stop()
 						delete(cp.connPool, i) // it is safe to delete map element in the loop

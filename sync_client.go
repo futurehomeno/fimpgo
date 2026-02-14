@@ -127,7 +127,7 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	}()
 
 	if sc.isConnPoolEnabled {
-		conId, conn, err = sc.mqttConnPool.BorrowConnection()
+		conId, conn, err = sc.mqttConnPool.BorrowConnection(nil)
 		if err != nil {
 			return nil, err
 		}

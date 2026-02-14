@@ -21,15 +21,15 @@ func TestMqttConnectionPool_GetConnection(t *testing.T) {
 
 	pool := NewMqttConnectionPool(0, 1, 10, 5*time.Second, template, "pool_test_")
 	pool.Start()
-	idt, _, err := pool.BorrowConnection()
+	idt, _, err := pool.BorrowConnection(nil)
 	require.NoError(t, err)
 	pool.ReturnConnection(idt)
 
-	id1, conn1, err := pool.BorrowConnection()
+	id1, conn1, err := pool.BorrowConnection(nil)
 	require.NoError(t, err)
-	id2, conn2, err := pool.BorrowConnection()
+	id2, conn2, err := pool.BorrowConnection(nil)
 	require.NoError(t, err)
-	id3, responderConn, err := pool.BorrowConnection()
+	id3, responderConn, err := pool.BorrowConnection(nil)
 	require.NoError(t, err)
 
 	msg1 := NewStringMessage("cmd.test.get_response", "tester", "test-1", nil, nil, nil)
@@ -74,7 +74,7 @@ func TestMqttConnectionPool_GetConnection(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	pool.ReturnConnection(id1)
 
-	_, con1_1, err := pool.BorrowConnection()
+	_, con1_1, err := pool.BorrowConnection(nil)
 	require.NoError(t, err)
 
 	if err := con1_1.PublishToTopic("pt:j1/mt:cmd/rt:app/rn:conn_pool_tester/ad:1", msg1_1); err != nil {

@@ -479,7 +479,7 @@ func (sav StateAttributeValue) GetIntMapValue() (map[string]int, error) {
 		return val, nil
 	}
 
-	val64, ok := sav.Val.(map[string]int)
+	val64, ok := sav.Val.(map[string]int64)
 	if ok {
 		ret := map[string]int{}
 
