@@ -35,7 +35,7 @@ func TestTimerWithActions(t *testing.T) {
 	require.True(t, ok, "Device 37 not found in timer action map=%v", timer.Action.Device)
 
 	if device37["power"].(string) != "on" {
-		t.Errorf("Wrong power value for device 37. Expecting: on, Got: %s", device37["power"].(string))
+		t.Errorf("Wrong power value for device 37 exp=on act=%s", device37["power"].(string))
 	}
 }
 
@@ -48,7 +48,7 @@ func TestTimerWithMode(t *testing.T) {
 	require.NoError(t, err)
 
 	if timer.Mode != "vacation" {
-		t.Errorf("Wrong action type. Expection: mode, Got: %s", timer.Mode)
+		t.Errorf("Wrong action type exp=mode act=%s", timer.Mode)
 	}
 }
 
@@ -61,7 +61,7 @@ func TestTimerWithShortcut(t *testing.T) {
 	require.NoError(t, err)
 
 	if timer.Shortcut != 1 {
-		t.Errorf("Wrong action type. Expection: shortcut, Got: %d", timer.Shortcut)
+		t.Errorf("Wrong action type exp=shortcut act=%s%d", timer.Shortcut)
 	}
 }
 

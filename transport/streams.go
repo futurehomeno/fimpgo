@@ -31,9 +31,8 @@ type BufferedStream struct {
 	flushToSinkChannel  bool
 	sinkChannel         chan []byte
 	compressor          *fimpgo.MsgCompressor
-	//ticker              *time.Ticker
-	fileSinkDir string
-	close       chan struct{}
+	fileSinkDir         string
+	close               chan struct{}
 }
 
 func (su *BufferedStream) SinkChannel() chan []byte {
@@ -41,14 +40,19 @@ func (su *BufferedStream) SinkChannel() chan []byte {
 }
 
 func NewBufferedStream(bufferSizeLimit int, bufferInterval time.Duration, compressBeforeFlush bool) *BufferedStream {
-	su := &BufferedStream{bufferMaxSize: bufferSizeLimit, bufferInterval: bufferInterval, compressBeforeFlush: compressBeforeFlush}
-	if su.compressBeforeFlush {
-		su.compressor = fimpgo.NewMsgCompressor("", "")
+	if bufferInterval == 0 || bufferSizeLimit == 0 {
+		log.Warn("[fimpgo] Invalid arguments")
+		return nil
 	}
 
-	if su.bufferInterval == 0 {
-		log.Warn("[fimpgo] Buffer interval=0")
-		return nil
+	su := &BufferedStream{bufferMaxSize: bufferSizeLimit,
+		bufferInterval:      bufferInterval,
+		compressBeforeFlush: compressBeforeFlush,
+		close:               make(chan struct{}),
+	}
+
+	if su.compressBeforeFlush {
+		su.compressor = fimpgo.NewMsgCompressor("", "")
 	}
 
 	go func() {
