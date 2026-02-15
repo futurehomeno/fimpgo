@@ -296,6 +296,8 @@ func (mh *MqttTransport) onConnectionLost(client MQTT.Client, err error) {
 	options := client.OptionsReader()
 	log.Warnf("[fimpgo] Client=%s lost connection with the broker err: %v", options.ClientID(), err)
 
+	mh.connState.OnDone()
+
 	mh.connectionLostCustomHandlerLock.Lock()
 	if mh.connectionLostCustomHandler != nil {
 		mh.connectionLostCustomHandler(client, err)
