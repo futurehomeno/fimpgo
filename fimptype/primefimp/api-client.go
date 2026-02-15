@@ -178,9 +178,9 @@ func (mh *ApiClient) UnregisterChannel(channelId string) {
 }
 
 func (mh *ApiClient) StartNotifyRouter() {
-	started := mh.isNotifyRouterStarted.CompareAndSwap(false, true)
+	alreadyStarted := !mh.isNotifyRouterStarted.CompareAndSwap(false, true)
 
-	if started {
+	if alreadyStarted {
 		return
 	}
 
