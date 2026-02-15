@@ -62,11 +62,14 @@ func (cp *MqttConnectionPool) Start() {
 
 func (cp *MqttConnectionPool) Stop() {
 	cp.mux.Lock()
+	if cp.poolCheckTick != nil {
+		cp.poolCheckTick.Stop()
+	}
 	for i := range cp.connPool {
 		conn := cp.connectionByID(i)
 		if conn != nil {
 			conn.Stop()
-			delete(cp.connPool, i) // it is safe to delete map element in the loop
+			delete(cp.connPool, i)
 		}
 	}
 	cp.mux.Unlock()
