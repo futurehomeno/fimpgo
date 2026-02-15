@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/futurehomeno/fimpgo"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -61,14 +64,13 @@ func TestTimerWithShortcut(t *testing.T) {
 	require.NoError(t, err)
 
 	if timer.Shortcut != 1 {
-		t.Errorf("Wrong action type exp=shortcut act=%s%d", timer.Shortcut)
+		t.Errorf("Wrong action type exp=shortcut act=%d", timer.Shortcut)
 	}
 }
 
-/*
 func TestPrimeFimpSendFimpWithTopicResponse(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, "fimpgotest", brokerUser, brokerPass, true, 1, 1)
+	t.Skip()
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, "fimpgotest", brokerUser, brokerPass, true, 1, 1, nil)
 	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
@@ -110,9 +112,9 @@ func TestPrimeFimpSendFimpWithTopicResponse(t *testing.T) {
 }
 
 func TestPrimeFimpClientApiGetDevices(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	t.Skip()
 
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, clientId(), brokerUser, brokerPass, true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, "some_name", brokerUser, brokerPass, true, 1, 1, nil)
 	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
@@ -133,9 +135,9 @@ func TestPrimeFimpClientApiGetDevices(t *testing.T) {
 }
 
 func TestPrimeFimpClientApiGetShortcuts(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	t.Skip()
 
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, clientId(), brokerUser, brokerPass, true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, "some_name", brokerUser, brokerPass, true, 1, 1, nil)
 	mqtt.SetMessageHandler(func(topic string, addr *fimpgo.Address, iotMsg *fimpgo.FimpMessage, rawPayload []byte) {
 
 	})
@@ -158,9 +160,9 @@ func TestPrimeFimpClientApiGetShortcuts(t *testing.T) {
 }
 
 func TestPrimeFimpClientApiGetVincServices(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	t.Skip()
 
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, clientId(), brokerUser, brokerPass, true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, "some_name", brokerUser, brokerPass, true, 1, 1, nil)
 	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
@@ -180,9 +182,9 @@ func TestPrimeFimpClientApiGetVincServices(t *testing.T) {
 }
 
 func TestPrimeFimpClientApiGetSite(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	t.Skip()
 
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, clientId(), brokerUser, brokerPass, true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, "some_name", brokerUser, brokerPass, true, 1, 1, nil)
 	err := mqtt.Start(10 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
@@ -201,4 +203,3 @@ func TestPrimeFimpClientApiGetSite(t *testing.T) {
 	log.Infof("SIte contains %d devices", len(site.Devices))
 	client.Stop()
 }
-*/

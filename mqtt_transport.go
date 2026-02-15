@@ -116,13 +116,17 @@ func (mh *MqttTransport) Start(timeout time.Duration) error {
 		return err
 	}
 
-	mh.incMsgsWg = sync.WaitGroup{}
-	mh.incMsgsWg.Add(1)
-
 	ret := mh.connState.WaitConnected(timeout)
 
 	if ret == nil {
-		go mh.handleIncomingMessages()
+		mh.incMsgsWg = sync.WaitGroup{}
+		mh.incMsgsWg.Add(1)
+
+		var started sync.WaitGroup
+		started.Add(1)
+
+		go mh.handleIncomingMessages(&started)
+		started.Wait()
 	}
 
 	return ret
@@ -133,8 +137,10 @@ func (mh *MqttTransport) IsConnected() bool {
 }
 
 func (mh *MqttTransport) Stop() {
+	log.Debugf("[fimpgo] Stop connection")
 	mh.connState.OnDone()
 	mh.incMsgsWg.Wait()
+	log.Debugf("[fimpgo] Connection stopped")
 }
 
 // Subscribe - subscribing for topic
@@ -328,19 +334,21 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	default:
 		// stop MQTT and inform higher layer when unrecoverable situation occurs
 		if mh.mainQueueOverflowCnt.Add(1) > 20 {
-			mh.Stop()
-
 			if mh.errorHandler != nil {
 				mh.errorHandler(errors.New("main msg queue stuck"))
 			}
+
+			mh.Stop()
 		} else {
 			log.Error("[fimpgo] Main msg queue overflow")
 		}
 	}
 }
 
-func (mh *MqttTransport) handleIncomingMessages() {
+func (mh *MqttTransport) handleIncomingMessages(started *sync.WaitGroup) {
 	defer mh.incMsgsWg.Done()
+
+	started.Done()
 
 	for {
 		select {

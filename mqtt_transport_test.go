@@ -24,7 +24,7 @@ func onMsg(topic string, addr *Address, iotMsg *FimpMessage, rawMessage []byte) 
 }
 
 func TestMqttTransport_Options(t *testing.T) {
-	clientTest := "fimpgotest"
+	clientTest := "test_options"
 	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", clientTest, "", "", true, 1, 1, nil)
 
 	optionsReader := mqtt.client.OptionsReader()
@@ -38,8 +38,8 @@ func TestMqttTransport_Options(t *testing.T) {
 }
 
 func TestMqttTransport_Publish(t *testing.T) {
-	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start(10 * time.Second)
+	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "test_publish", "", "", true, 1, 1, nil)
+	err := mqtt.Start(5 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -66,8 +66,9 @@ func TestMqttTransport_Publish(t *testing.T) {
 }
 
 func TestMqttTransport_PublishStopPublish(t *testing.T) {
-	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start(10 * time.Second)
+	clientID := "test_publish_stop"
+	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", clientID, "", "", true, 1, 1, nil)
+	err := mqtt.Start(5 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -91,8 +92,8 @@ func TestMqttTransport_PublishStopPublish(t *testing.T) {
 
 	mqtt.Stop()
 
-	mqtt = NewMqttTransport("tcp://127.0.0.1:11883", "fimpgotest", "", "", true, 1, 1, nil)
-	err = mqtt.Start(10 * time.Second)
+	mqtt = NewMqttTransport("tcp://127.0.0.1:11883", clientID, "", "", true, 1, 1, nil)
+	err = mqtt.Start(5 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -101,8 +102,8 @@ func TestMqttTransport_PublishStopPublish(t *testing.T) {
 }
 
 func TestMqttTransport_PublishSync(t *testing.T) {
-	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start(10 * time.Second)
+	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "test_publishsync", "", "", true, 1, 1, nil)
+	err := mqtt.Start(5 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -150,8 +151,8 @@ func TestMqttTransport_PublishSync(t *testing.T) {
 }
 
 func TestMqttTransport_SubUnsub(t *testing.T) {
-	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start(10 * time.Second)
+	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "test_subUnsub", "", "", true, 1, 1, nil)
+	err := mqtt.Start(5 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -204,7 +205,7 @@ func TestMqttTransport_PublishTLS(t *testing.T) {
 	// for test enter valid site-id
 	mqtt.SetGlobalTopicPrefix("331D092F-4685-4CC9-8337-2598E6F5D8D5")
 
-	err := mqtt.Start(10 * time.Second)
+	err := mqtt.Start(5 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -225,7 +226,7 @@ func TestMqttTransport_PublishTLS(t *testing.T) {
 	result := <-msgChan
 
 	if result != 1 {
-		t.Error("Wrong message")
+		t.Errorf("Unexpected message value=%d", result)
 	}
 
 	mqtt.Stop()
@@ -256,7 +257,7 @@ func TestMqttTransport_PublishTls_2(t *testing.T) {
 	// for test enter valid site-id
 	mqtt.SetGlobalTopicPrefix("331D092F-4685-4CC9-8337-2598E6F5D8D5")
 
-	err := mqtt.Start(10 * time.Second)
+	err := mqtt.Start(5 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -276,15 +277,15 @@ func TestMqttTransport_PublishTls_2(t *testing.T) {
 
 	result := <-msgChan
 	if result != 1 {
-		t.Error("Wrong message")
+		t.Errorf("Unexpected message value=%d", result)
 	}
 
 	mqtt.Stop()
 }
 
 func TestMqttTransport_TestChannels(t *testing.T) {
-	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start(10 * time.Second)
+	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "test_channels", "", "", true, 1, 1, nil)
+	err := mqtt.Start(5 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -347,8 +348,8 @@ func TestMqttTransport_TestChannels(t *testing.T) {
 func TestMqttTransport_TestResponder(t *testing.T) {
 	log.SetLevel(log.TraceLevel)
 
-	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "fimpgotest-1", "", "", true, 1, 1, nil)
-	err := mqtt.Start(10 * time.Second)
+	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "test_responder-1", "", "", true, 1, 1, nil)
+	err := mqtt.Start(5 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}
@@ -359,7 +360,7 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 
 	assert.True(t, mqtt.IsConnected())
 
-	mqtt2 := NewMqttTransport("tcp://127.0.0.1:11883", "fimpgotest-2", "", "", true, 1, 1, nil)
+	mqtt2 := NewMqttTransport("tcp://127.0.0.1:11883", "test_responder-2", "", "", true, 1, 1, nil)
 	err = mqtt2.Start(10 * time.Second)
 
 	if err != nil {
@@ -369,6 +370,8 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 	if err := mqtt2.Subscribe("pt:j1c1/mt:rsp/rt:app/rn:response_tester/ad:1"); err != nil {
 		t.Fatal("Subscribe response_tester err:", err)
 	}
+
+	assert.True(t, mqtt2.IsConnected())
 
 	chan1 := make(MessageCh)
 	chan2 := make(MessageCh)
@@ -382,6 +385,7 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 	go func() {
 		ready1 <- struct{}{}
 		newMsg := <-chan1
+		t.Logf("msg1: %v", newMsg)
 		if newMsg.Payload.Service == "tester" {
 			if err := mqtt.RespondToRequest(newMsg.Payload, NewFloatMessage("evt.test.response", "test_responder", 35.5, nil, nil, nil)); err != nil {
 				t.Error("Error responding to request:", err)
@@ -393,11 +397,12 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 	go func() {
 		ready2 <- struct{}{}
 		newMsg := <-chan2
+		t.Logf("msg2: %v", newMsg)
 		if newMsg.Payload.Service == "test_responder" && newMsg.Topic == "pt:j1c1/mt:rsp/rt:app/rn:response_tester/ad:1" {
 			close(rspReceived)
 			return
 		} else {
-			t.Error("Wrong response message received :", newMsg)
+			t.Error("Wrong response message received: ", newMsg)
 		}
 	}()
 
@@ -406,15 +411,15 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 
 	msg := NewFloatMessage("cmd.test.get_response", "tester", float64(35.5), nil, nil, nil)
 	msg.ResponseToTopic = "pt:j1c1/mt:rsp/rt:app/rn:response_tester/ad:1"
-	adr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "test", ResourceAddress: "1"}
-	err = mqtt.Publish(&adr, msg)
+	addr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "test", ResourceAddress: "1"}
+	err = mqtt.Publish(&addr, msg)
 	if err != nil {
 		t.Fatal("Publish err:", err)
 	}
 
 	select {
 	case <-rspReceived:
-
+		t.Logf("Received")
 	case <-time.After(3 * time.Second):
 		t.Error("Response not received within timeout")
 		t.Fail()
@@ -430,8 +435,8 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 }
 
 func TestMqttTransport_TestChannelsWithFilters(t *testing.T) {
-	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start(10 * time.Second)
+	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "test_ch_with_filters", "", "", true, 1, 1, nil)
+	err := mqtt.Start(5 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 		return
