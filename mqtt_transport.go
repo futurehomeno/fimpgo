@@ -135,7 +135,6 @@ func (mh *MqttTransport) IsConnected() bool {
 func (mh *MqttTransport) Stop() {
 	mh.connState.OnDone()
 	mh.incMsgsWg.Wait()
-	time.Sleep(100 * time.Millisecond)
 }
 
 // Subscribe - subscribing for topic
