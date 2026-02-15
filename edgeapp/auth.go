@@ -136,6 +136,7 @@ func (oac *FhOAuth2Client) ConfigureFimpSyncClient() error {
 	} else {
 		log.Error("[edgeapp] Mqtt client already configured")
 	}
+
 	return nil
 }
 
@@ -143,7 +144,7 @@ func (oac *FhOAuth2Client) ConfigureFimpSyncClient() error {
 func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
 	if oac.mqt == nil || oac.syncClient == nil {
 		if err := oac.ConfigureFimpSyncClient(); err != nil {
-			return fmt.Errorf("[edgeapp] Configure FIMP sync client err: %v", err)
+			return fmt.Errorf("[edgeapp] Configure FIMP sync client err: %w", err)
 		}
 	}
 
