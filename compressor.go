@@ -51,7 +51,6 @@ func (c *MsgCompressor) CompressBinMsg(msg []byte) ([]byte, error) {
 }
 
 func (c *MsgCompressor) DecompressBinMsg(binMsg []byte) ([]byte, error) {
-	var err error
 	var decompressorBuffer bytes.Buffer
 	decompressorBuffer.Write(binMsg)
 
@@ -61,13 +60,18 @@ func (c *MsgCompressor) DecompressBinMsg(binMsg []byte) ([]byte, error) {
 	}
 
 	response, err := io.ReadAll(decompressor)
+	closeErr := decompressor.Close()
+	decompressorBuffer.Reset()
 
-	if e := decompressor.Close(); e != nil {
-		return nil, e
+	if err != nil {
+		return nil, err
 	}
 
-	decompressorBuffer.Reset()
-	return response, err
+	if closeErr != nil {
+		return nil, closeErr
+	}
+
+	return response, nil
 }
 
 func (c *MsgCompressor) CompressFimpMsg(msg *FimpMessage) ([]byte, error) {

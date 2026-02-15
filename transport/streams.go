@@ -31,8 +31,9 @@ type BufferedStream struct {
 	flushToSinkChannel  bool
 	sinkChannel         chan []byte
 	compressor          *fimpgo.MsgCompressor
-	ticker              *time.Ticker
-	fileSinkDir         string
+	//ticker              *time.Ticker
+	fileSinkDir string
+	close       chan struct{}
 }
 
 func (su *BufferedStream) SinkChannel() chan []byte {
@@ -44,19 +45,29 @@ func NewBufferedStream(bufferSizeLimit int, bufferInterval time.Duration, compre
 	if su.compressBeforeFlush {
 		su.compressor = fimpgo.NewMsgCompressor("", "")
 	}
-	if su.bufferInterval != 0 {
-		su.ticker = time.NewTicker(time.Second * su.bufferInterval)
-		go func() {
-			for range su.ticker.C {
-				if su.Size() > 0 {
-					su.FlushBuffer()
-				}
-			}
 
-			su.ticker.Stop()
-			su.ticker = nil
-		}()
+	if su.bufferInterval == 0 {
+		log.Warn("[fimpgo] Buffer interval=0")
+		return nil
 	}
+
+	go func() {
+		ticker := time.NewTicker(time.Second * su.bufferInterval)
+
+		defer func() {
+			ticker.Stop()
+			ticker = nil
+		}()
+
+		for {
+			select {
+			case <-su.close:
+				return
+			case <-ticker.C:
+				su.FlushBuffer()
+			}
+		}
+	}()
 
 	return su
 }
@@ -89,14 +100,18 @@ func (su *BufferedStream) Size() int {
 }
 
 func (su *BufferedStream) FlushBuffer() {
-	//var payload []byte
 	su.lock.Lock()
+	defer su.lock.Unlock()
+
+	if su.Size() == 0 {
+		return
+	}
+
 	if err := su.serializeBuffer(); err != nil {
 		log.Warnf("[fimpgo] Serialize buffer err: %v", err)
 	}
 
 	su.buffer = su.buffer[:0] // setting size to 0 without allocation
-	su.lock.Unlock()
 }
 
 func (su *BufferedStream) ConfigureFileSink(filePrefix, path string) {
@@ -149,4 +164,11 @@ func (su *BufferedStream) serializeBuffer() error {
 	}
 
 	return err
+}
+
+func (su *BufferedStream) Close() {
+	select {
+	case su.close <- struct{}{}:
+	default:
+	}
 }
