@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"sync"
 	"time"
-
-	log "github.com/sirupsen/logrus"
 )
 
 type ConnStateT struct {
@@ -20,11 +18,7 @@ func (c *ConnStateT) Init() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if c.connected != nil {
-		log.Warnf("[fimpgo] Already initalized")
-		return
-	}
-
+	// Always reset for proper restart support
 	c.connected = make(chan struct{})
 	c.done = make(chan struct{})
 	c.onceConnected = sync.Once{}

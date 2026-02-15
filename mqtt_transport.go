@@ -334,6 +334,10 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	default:
 		// stop MQTT and inform higher layer when unrecoverable situation occurs
 		if mh.mainQueueOverflowCnt.Add(1) > 20 {
+			if !mh.IsConnected() {
+				return
+			}
+
 			if mh.errorHandler != nil {
 				mh.errorHandler(errors.New("main msg queue stuck"))
 			}

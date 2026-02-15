@@ -194,7 +194,9 @@ func (mh *ApiClient) Stop() {
 	mh.sClient.Stop()
 	if mh.isNotifyRouterStarted.Load() {
 		mh.stopFlag.Store(true)
-		mh.inMsgChan <- &fimpgo.Message{}
+		if mh.inMsgChan != nil {
+			mh.inMsgChan <- &fimpgo.Message{}
+		}
 	}
 }
 

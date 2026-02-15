@@ -39,6 +39,7 @@ func (su *BufferedStream) SinkChannel() chan []byte {
 	return su.sinkChannel
 }
 
+// returns nil on error
 func NewBufferedStream(bufferSizeLimit int, bufferInterval time.Duration, compressBeforeFlush bool) *BufferedStream {
 	if bufferInterval == 0 || bufferSizeLimit == 0 {
 		log.Warn("[fimpgo] Invalid arguments")
@@ -48,7 +49,7 @@ func NewBufferedStream(bufferSizeLimit int, bufferInterval time.Duration, compre
 	su := &BufferedStream{bufferMaxSize: bufferSizeLimit,
 		bufferInterval:      bufferInterval,
 		compressBeforeFlush: compressBeforeFlush,
-		close:               make(chan struct{}),
+		close:               make(chan struct{}, 1),
 	}
 
 	if su.compressBeforeFlush {
@@ -103,6 +104,7 @@ func (su *BufferedStream) Size() int {
 	return len(su.buffer)
 }
 
+// buffer is cleared even on serialization failure
 func (su *BufferedStream) FlushBuffer() {
 	su.lock.Lock()
 	defer su.lock.Unlock()
