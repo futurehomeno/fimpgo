@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"math"
 	"reflect"
 	"strconv"
 	"time"
@@ -154,13 +155,18 @@ func (msg *FimpMessage) SetValue(value any, valType string) {
 func (msg *FimpMessage) GetIntValue() (int, error) {
 	switch val := msg.Value.(type) {
 	case int64:
+		if val > int64(math.MaxInt) || val < int64(math.MinInt) {
+			return 0, fmt.Errorf("int64 value %d overflows int", val)
+		}
 		return int(val), nil
 	case int:
 		return val, nil
 	case uint:
+		if val > uint(math.MaxInt) {
+			return 0, fmt.Errorf("uint value %d overflows int", val)
+		}
 		return int(val), nil
 	}
-
 	return 0, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "int", msg.Value)
 }
 

@@ -178,13 +178,17 @@ func (mh *ApiClient) UnregisterChannel(channelId string) {
 }
 
 func (mh *ApiClient) StartNotifyRouter() {
+	started := mh.isNotifyRouterStarted.CompareAndSwap(false, true)
+
+	if started {
+		return
+	}
+
 	go func() {
-		mh.isNotifyRouterStarted.Store(true)
 		for !mh.stopFlag.Load() {
 			mh.notifyRouter()
 			log.Info("[fimpgo] Restarting notify router")
 		}
-
 		log.Info("[fimpgo] Notify router stopped")
 	}()
 }

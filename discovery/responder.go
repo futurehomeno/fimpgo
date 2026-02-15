@@ -64,7 +64,7 @@ func NewServiceDiscoveryResponder(mqt *fimpgo.MqttTransport) *ServiceDiscoveryRe
 // Start responder service listener
 func (sr *ServiceDiscoveryResponder) Start() {
 	if err := sr.mqt.Subscribe(sr.discoveryRequestTopic); err != nil {
-		logrus.Error("[fimpgo]D iscovery responder subscribe err:", err)
+		logrus.Error("[fimpgo] Discovery responder subscribe err:", err)
 		return
 	}
 

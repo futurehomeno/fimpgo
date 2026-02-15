@@ -80,7 +80,7 @@ func (kp *EcdsaKey) ExportJsonEncodedKeys() (privKey JsonEcKey, pubKey JsonEcKey
 	}
 
 	// ----- PUBLIC KEY -----
-	pubBytes, err := kp.publicKey.Bytes() // []byte, no error
+	pubBytes, err := kp.publicKey.Bytes()
 	if err != nil {
 		return privKey, pubKey, err
 	}

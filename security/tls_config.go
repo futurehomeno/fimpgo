@@ -46,11 +46,6 @@ func certPool(certFile string) (*x509.CertPool, error) {
 // Cert dir should contains all CA root certificates .
 // IsAws flag controls AWS specific TLS protocol switch.
 func TLSConfig(privateKeyFileName, certFileName, certDir string, isAWS bool) (*tls.Config, error) {
-	hasCert := certFileName != ""
-	hasKey := privateKeyFileName != ""
-
-	privateKeyFileName = filepath.Join(certDir, privateKeyFileName)
-	certFileName = filepath.Join(certDir, certFileName)
 	config := &tls.Config{InsecureSkipVerify: false}
 
 	if isAWS {
@@ -63,7 +58,12 @@ func TLSConfig(privateKeyFileName, certFileName, certDir string, isAWS bool) (*t
 		return nil, err
 	}
 
+	hasCert := certFileName != ""
+	hasKey := privateKeyFileName != ""
+
 	if hasCert {
+		certFileName = filepath.Join(certDir, certFileName)
+
 		config.ClientCAs, err = certPool(certFileName)
 		if err != nil {
 			return nil, err
@@ -75,6 +75,8 @@ func TLSConfig(privateKeyFileName, certFileName, certDir string, isAWS bool) (*t
 		if !hasCert {
 			return nil, fmt.Errorf("key specified but cert is not")
 		}
+
+		privateKeyFileName = filepath.Join(certDir, privateKeyFileName)
 
 		cert, err := tls.LoadX509KeyPair(certFileName, privateKeyFileName)
 		if err != nil {
