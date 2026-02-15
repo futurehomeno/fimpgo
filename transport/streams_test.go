@@ -1,6 +1,14 @@
 package transport
 
 /*
+import (
+	"testing"
+	"time"
+
+	"github.com/futurehomeno/fimpgo"
+	log "github.com/sirupsen/logrus"
+)
+
 func TestBufferedStream_serializeBuffer(t *testing.T) {
 	type fields struct {
 		bufferMaxSize       int
@@ -17,7 +25,7 @@ func TestBufferedStream_serializeBuffer(t *testing.T) {
 	}{
 		{name: "test1", fields: fields{
 			bufferMaxSize:       20,
-			bufferInterval:      600,
+			bufferInterval:      600 * time.Millisecond,
 			flushToFile:         true,
 			compressBeforeFlush: true,
 			filePrefix:          "test",
@@ -26,8 +34,10 @@ func TestBufferedStream_serializeBuffer(t *testing.T) {
 	}
 
 	log.SetLevel(log.DebugLevel)
-	mqtt := fimpgo.NewMqttTransport("127.0.0.1:1883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start(10 * time.Second)
+
+	mqtt := fimpgo.NewMqttTransport("127.0.0.1:11883", "fimpgotest", "", "", true, 1, 1, nil)
+
+	err := mqtt.Start(5 * time.Second)
 	if err != nil {
 		t.Fatal("Start MQTT err:", err)
 	}

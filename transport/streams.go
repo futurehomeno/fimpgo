@@ -57,7 +57,7 @@ func NewBufferedStream(bufferSizeLimit int, bufferInterval time.Duration, compre
 	}
 
 	go func() {
-		ticker := time.NewTicker(time.Second * su.bufferInterval)
+		ticker := time.NewTicker(su.bufferInterval)
 
 		defer func() {
 			ticker.Stop()

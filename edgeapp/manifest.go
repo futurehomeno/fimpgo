@@ -34,7 +34,7 @@ func (b *AppConfig) Hide() {
 }
 
 func (b *AppConfig) Show() {
-	b.Hidden = true
+	b.Hidden = false
 }
 
 type MultilingualLabel map[string]string
@@ -81,7 +81,7 @@ func (b *UIButton) Hide() {
 }
 
 func (b *UIButton) Show() {
-	b.Hidden = true
+	b.Hidden = false
 }
 
 type ButtonActionResponse struct {
@@ -107,7 +107,7 @@ func (b *AppUBLock) Hide() {
 }
 
 func (b *AppUBLock) Show() {
-	b.Hidden = true
+	b.Hidden = false
 }
 
 func NewManifest() *Manifest {

@@ -18,7 +18,7 @@ clean:
 	mkdir -p $(BIN_DIR)
 
 build: clean
-	go build -ldflags="-s -w" -o $(APP_NAME)
+	go build -ldflags="-s -w" -o $(APP_NAME) $(MAIN_SRC)
 
 build-arm: ARCH=armhf
 build-arm: clean

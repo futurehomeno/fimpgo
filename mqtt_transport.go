@@ -91,6 +91,12 @@ func (mh *MqttTransport) Start(timeout time.Duration) error {
 	// try to connect with retries
 	err := func() (ret error) {
 		for i := 1; i <= mh.startFailRetryCount; i++ {
+			if i > 1 {
+				delay := time.Duration(i) * time.Duration(i)
+				time.Sleep(delay * time.Second)
+				log.Warnf("[fimpgo] MQTT connect failed %d/%d err: %v", i, mh.startFailRetryCount, ret)
+			}
+
 			token := mh.client.Connect()
 
 			if !token.WaitTimeout(timeout) {
@@ -98,15 +104,9 @@ func (mh *MqttTransport) Start(timeout time.Duration) error {
 				continue
 			}
 
-			ret = token.Error()
-
-			if ret == nil {
+			if ret = token.Error(); ret == nil {
 				return nil
 			}
-
-			log.Warnf("[fimpgo] MQTT connect failed %d/%d err: %v", i, mh.startFailRetryCount, ret)
-			delay := time.Duration(i) * time.Duration(i)
-			time.Sleep(delay * time.Second)
 		}
 
 		return ret
