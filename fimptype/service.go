@@ -108,13 +108,13 @@ func (s *Service) PropertyFloat(name string) (float64, bool) {
 }
 
 // PropertyIntegers is a helper that extracts property settings out of the service specification.
-func (s *Service) PropertyIntegers(name string) []int64 {
+func (s *Service) PropertyIntegers(name string) []int {
 	value, ok := s.Props[name]
 	if !ok {
 		return nil
 	}
 
-	v, ok := value.([]int64)
+	v, ok := value.([]int)
 	if ok {
 		return v
 	}
@@ -127,13 +127,13 @@ func (s *Service) PropertyIntegers(name string) []int64 {
 }
 
 // PropertyInteger is a helper that extracts property settings out of the service specification.
-func (s *Service) PropertyInteger(name string) (int64, bool) {
+func (s *Service) PropertyInteger(name string) (int, bool) {
 	value, ok := s.Props[name]
 	if !ok {
 		return 0, false
 	}
 
-	v, ok := value.(int64)
+	v, ok := value.(int)
 	if ok {
 		return v, true
 	}
