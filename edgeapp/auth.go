@@ -50,7 +50,7 @@ type FhOAuth2Client struct {
 	refreshTokenApiUrl string
 	authCodeApiUrl     string
 	refreshRetry       int
-	retryDelay         time.Duration // delay in seconds
+	retryDelay         time.Duration
 	cbRetry            int
 	cbRetryDelay       time.Duration
 }
@@ -85,9 +85,9 @@ func NewFhOAuth2Client(partnerName string, appName string, env string) *FhOAuth2
 		client.refreshTokenApiUrl = "https://partners.futurehome.io/api/control/edge/proxy/refresh"
 		client.authCodeApiUrl = "https://partners.futurehome.io/api/control/edge/proxy/auth-code"
 	}
-	client.retryDelay = 60
+	client.retryDelay = 60 * time.Second
 	client.refreshRetry = 5
-	client.cbRetryDelay = 30
+	client.cbRetryDelay = 30 * time.Second
 	client.cbRetry = 7
 	client.appName = appName
 	return client

@@ -93,17 +93,14 @@ func (su *BufferedStream) EnqueueMessage(topic string, msg *fimpgo.FimpMessage) 
 	msg.Topic = topic
 
 	su.lock.Lock()
+	su.buffer = append(su.buffer, *msg)
+	shouldFlush := len(su.buffer) >= su.bufferMaxSize
 	bufLen := len(su.buffer)
 	su.lock.Unlock()
 
-	if bufLen >= su.bufferMaxSize {
+	if shouldFlush {
 		su.FlushBuffer()
 	}
-
-	su.lock.Lock()
-	su.buffer = append(su.buffer, *msg)
-	bufLen = len(su.buffer)
-	su.lock.Unlock()
 
 	log.Tracef("Msg queued len(buffer)=%d maxSize=%d", bufLen, su.bufferMaxSize)
 }
@@ -120,7 +117,7 @@ func (su *BufferedStream) FlushBuffer() {
 	su.lock.Lock()
 	defer su.lock.Unlock()
 
-	if su.Size() == 0 {
+	if len(su.buffer) == 0 {
 		return
 	}
 
