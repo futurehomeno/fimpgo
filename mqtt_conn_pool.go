@@ -66,6 +66,9 @@ func (cp *MqttConnectionPool) Stop() {
 	cp.isStarted.Store(false)
 
 	cp.mux.Lock()
+	if cp.stopChan != nil {
+		close(cp.stopChan)
+	}
 	if cp.poolCheckTick != nil {
 		cp.poolCheckTick.Stop()
 	}
