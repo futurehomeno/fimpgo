@@ -91,8 +91,7 @@ func (mh *MqttTransport) Start(timeout time.Duration) error {
 	err := func() (ret error) {
 		for i := 1; i <= mh.startFailRetryCount; i++ {
 			if i > 1 {
-				delay := time.Duration(i) * time.Duration(i)
-				time.Sleep(delay)
+				time.Sleep(time.Duration(i*i) * time.Second)
 				log.Warnf("[fimpgo] MQTT connect failed %d/%d err: %v", i, mh.startFailRetryCount, ret)
 			}
 

@@ -27,25 +27,26 @@ type Configs struct {
 }
 
 // NewConfigs stores main application configurations
-func NewConfigs(workDir string) *Configs {
+func NewConfigs(workDir string) (*Configs, error) {
 	conf := &Configs{WorkDir: workDir}
 	if err := conf.initFiles(); err != nil {
-		log.Errorf("[edgeapp] New config err: %s", err)
-		return nil
+		return nil, err
 	}
-	return conf
+
+	return conf, nil
 }
 
 func (cf *Configs) initFiles() error {
 	cf.path = filepath.Join(cf.WorkDir, "data", "config.json")
 	if !utils.FileExists(cf.path) {
-		log.Warn("[edgeapp] Config file not found. Load default")
+		log.Warnf("[edgeapp] Config file not found in %s", cf.path)
 		defaultConfigFile := filepath.Join(cf.WorkDir, "defaults", "config.json")
 		err := utils.CopyFile(defaultConfigFile, cf.path)
 		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 

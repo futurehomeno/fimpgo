@@ -12,6 +12,8 @@ const (
 	AppCurrentStateNotConfigured = "NOT_CONFIGURED"
 	AppCurrentStateRunning       = "RUNNING"
 	AppCurrentStateERROR         = "ERROR"
+
+	discoverChanName = "discovery-responder"
 )
 
 type Resource struct {
@@ -34,7 +36,7 @@ type Resource struct {
 }
 
 type ServiceDiscoveryResponder struct {
-	mqt                   *fimpgo.MqttTransport
+	mqtt                  *fimpgo.MqttTransport
 	resource              Resource
 	discoveryRequestTopic string
 	responderTopic        string
@@ -42,8 +44,8 @@ type ServiceDiscoveryResponder struct {
 	stopSignal            chan bool
 }
 
-func NewServiceDiscoveryResponder(mqt *fimpgo.MqttTransport) *ServiceDiscoveryResponder {
-	inst := &ServiceDiscoveryResponder{mqt: mqt, discoveryRequestTopic: "pt:j1/mt:cmd/rt:discovery", responderTopic: "pt:j1/mt:evt/rt:discovery"}
+func NewServiceDiscoveryResponder(mqtt *fimpgo.MqttTransport) *ServiceDiscoveryResponder {
+	inst := &ServiceDiscoveryResponder{mqtt: mqtt, discoveryRequestTopic: "pt:j1/mt:cmd/rt:discovery", responderTopic: "pt:j1/mt:evt/rt:discovery"}
 	inst.stopSignal = make(chan bool, 1)
 	inst.requestsCh = make(fimpgo.MessageCh)
 	return inst
@@ -51,22 +53,29 @@ func NewServiceDiscoveryResponder(mqt *fimpgo.MqttTransport) *ServiceDiscoveryRe
 
 // Start responder service listener
 func (sr *ServiceDiscoveryResponder) Start() {
-	if err := sr.mqt.Subscribe(sr.discoveryRequestTopic); err != nil {
+	if err := sr.mqtt.Subscribe(sr.discoveryRequestTopic); err != nil {
 		logrus.Error("[fimpgo] Discovery responder subscribe err:", err)
 		return
 	}
 
-	sr.mqt.RegisterChannelWithFilter("discovery-responder", sr.requestsCh, struct {
+	sr.mqtt.RegisterChannelWithFilter(discoverChanName, sr.requestsCh, struct {
 		Topic     string
 		Service   string
 		Interface string
 	}{Topic: sr.discoveryRequestTopic, Service: "*", Interface: "*"})
+
 	go sr.responder()
 }
 
 // Stop responder service listener
 func (sr *ServiceDiscoveryResponder) Stop() {
 	sr.stopSignal <- true
+
+	if err := sr.mqtt.Unsubscribe(sr.discoveryRequestTopic); err != nil {
+		logrus.Errorf("[fimpgo] Discovery responder unsubscribe err: %v", err)
+	}
+
+	sr.mqtt.UnregisterChannel(discoverChanName)
 }
 
 // RegisterResource should be invoked to register resource
@@ -80,8 +89,8 @@ func (sr *ServiceDiscoveryResponder) responder() {
 		case <-sr.requestsCh:
 			msg := fimpgo.NewMessage("evt.discovery.report", "system", fimpgo.VTypeObject, sr.resource, nil, nil, nil)
 			adr := fimpgo.Address{MsgType: fimpgo.MsgTypeEvt, ResourceType: fimpgo.ResourceTypeDiscovery}
-			if err := sr.mqt.Publish(&adr, msg); err != nil {
-				logrus.Error("[fimpgo] Discovery responder publish err:", err)
+			if err := sr.mqtt.Publish(&adr, msg); err != nil {
+				logrus.Error("[fimpgo] Discovery responder publish err: ", err)
 			}
 		case <-sr.stopSignal:
 			return
