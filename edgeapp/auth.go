@@ -127,7 +127,11 @@ func (oac *FhOAuth2Client) SetParameters(mqttServerUri, authCodeApiUrl, refreshT
 func (oac *FhOAuth2Client) ConfigureFimpSyncClient() error {
 	if oac.mqt == nil {
 		oac.mqt = fimpgo.NewMqttTransport(oac.mqttServerURI, oac.mqttClientID, "", "", true, 1, 1, nil)
+<<<<<<< HEAD
 		err := oac.mqt.Start(10 * time.Second)
+=======
+		err := oac.mqt.Start()
+>>>>>>> dev/update_modules
 		if err != nil {
 			log.Error("[edgeapp] Error connecting to broker ", err)
 			return err
@@ -151,6 +155,8 @@ func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
 
 	responseTopic := fmt.Sprintf("pt:j1/mt:rsp/rt:app/rn:%s/ad:1", oac.appName)
 	if err := oac.syncClient.AddSubscription(responseTopic); err != nil {
+		oac.syncClient.Stop()
+		oac.mqt.Stop()
 		return err
 	}
 

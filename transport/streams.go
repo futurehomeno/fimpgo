@@ -102,7 +102,7 @@ func (su *BufferedStream) EnqueueMessage(topic string, msg *fimpgo.FimpMessage) 
 		su.FlushBuffer()
 	}
 
-	log.Tracef("Msg queued len(buffer)=%d maxSize=%d", bufLen, su.bufferMaxSize)
+	log.Tracef("[fimpgo] Msg queued len(buffer)=%d maxSize=%d", bufLen, su.bufferMaxSize)
 }
 
 func (su *BufferedStream) Size() int {

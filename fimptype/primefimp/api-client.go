@@ -281,8 +281,8 @@ func (mh *ApiClient) UpdateSite(notif *Notify) error {
 func (mh *ApiClient) notifyRouter() {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Errorf("[fimpgo] isChannelInterested crash %v", r)
-			log.Info(string(debug.Stack()))
+			log.Errorf("[fimpgo] notifyRouter crash %v", r)
+			log.Error(string(debug.Stack()))
 		}
 	}()
 
@@ -315,15 +315,8 @@ func (mh *ApiClient) notifyRouter() {
 			mh.notifChMux.RLock()
 			for cid, nfCh := range mh.notifySubChannels { // check all subfilters
 				nfFilter, ok := mh.subFilters[cid]
-				var send bool
 				if ok {
-					if nfFilter.Cmd == notif.Cmd && nfFilter.Component == notif.Component {
-						send = true
-					}
-				} else {
-					send = true
-				}
-				if send {
+				if nfFilter.Cmd == notif.Cmd && nfFilter.Component == notif.Component {
 					select {
 					case nfCh <- *notif: // send notification to corresponding subchannel if there is match
 					default:

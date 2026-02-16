@@ -150,9 +150,8 @@ func TestNewMessageFromBytes_CorruptedPayload1(t *testing.T) {
 func TestNewMessageFromBytes_BoolValue(t *testing.T) {
 	msgString := `{"serv":"out_bin_switch","type":"cmd.binary.set","val_t":"bool","val":true,"props":{"p1":"pv1"},"tags":null}`
 	fimp, err := NewMessageFromBytes([]byte(msgString))
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
+
 	val, err := fimp.GetBoolValue()
 	if val != true || err != nil {
 		t.Error("Wrong value")
@@ -294,10 +293,10 @@ func TestFimpMessage_GetFloatMapValue(t *testing.T) {
 		t.Error(err)
 	}
 	if val["param2"] != 2.5 {
-		t.Error("Wrong param2")
+		t.Error("Wrong map result param2")
 	}
 	if val["param3"] != 5 {
-		t.Error("Wrong param3")
+		t.Error("Wrong map result param3")
 	}
 }
 
