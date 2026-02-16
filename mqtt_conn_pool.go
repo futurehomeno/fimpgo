@@ -23,7 +23,7 @@ type MqttConnectionPool struct {
 	stopChan       chan struct{}
 	connTemplate   MqttConnectionConfigs
 	connPool       map[int]*connection
-	nextID         uint64
+	nextID         uint
 	clientIdPrefix string
 	initSize       int           // init size
 	size           int           // normal size

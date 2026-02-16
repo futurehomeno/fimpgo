@@ -357,7 +357,7 @@ func NewStringMessage(type_ string, service string, value string, props Props, t
 }
 
 func NewIntMessage(type_ string, service string, value int, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
-	return NewMessage(type_, service, VTypeInt, int64(value), props, tags, requestMessage)
+	return NewMessage(type_, service, VTypeInt, value, props, tags, requestMessage)
 }
 
 func NewFloatMessage(type_ string, service string, value float64, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
@@ -388,7 +388,7 @@ func NewStrMapMessage(type_ string, service string, value map[string]string, pro
 	return NewMessage(type_, service, VTypeStrMap, value, props, tags, requestMessage)
 }
 
-func NewIntMapMessage(type_ string, service string, value map[string]int64, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
+func NewIntMapMessage(type_ string, service string, value map[string]int, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeIntMap, value, props, tags, requestMessage)
 }
 
@@ -483,14 +483,14 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 		fimpmsg.Value = val
 
 	case VTypeIntArray:
-		val := make([]int64, 0)
+		val := make([]int, 0)
 		_, err = jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, e := jsonparser.ParseInt(value)
 			if e != nil {
 				log.Warnf("[fimpgo] Parse VTypeIntArray err: %v", e)
 				return
 			}
-			val = append(val, item)
+			val = append(val, int(item))
 		}, "val")
 
 		fimpmsg.Value = val
@@ -523,13 +523,13 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 		fimpmsg.Value = val
 
 	case VTypeIntMap:
-		val := make(map[string]int64)
+		val := make(map[string]int)
 		err = jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 			tempInt, e := jsonparser.ParseInt(value)
 			if e != nil {
 				log.Warnf("[fimpgo] Parse VTypeIntMap err: %v", e)
 			} else {
-				val[string(key)] = tempInt
+				val[string(key)] = int(tempInt)
 			}
 			return e
 		}, "val")
