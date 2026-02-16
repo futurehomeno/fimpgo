@@ -426,29 +426,23 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 		mh.msgHandler(topic, addr, fimpMsg, msg.Payload())
 	}
 
-	var msgChs []MessageCh
-	var chNames []string
-
 	mh.channelRegLock.Lock()
-	for i := range mh.subChannels {
-		if mh.isChannelInterested(i, topic, addr, fimpMsg) {
-			msgChs = append(msgChs, mh.subChannels[i])
-			chNames = append(chNames, i)
+	for name, c := range mh.subChannels {
+		if !mh.isChannelInterested(name, topic, addr, fimpMsg) {
+			continue
 		}
-	}
-	mh.channelRegLock.Unlock()
 
-	for i, c := range msgChs {
 		timer := time.NewTimer(time.Second * time.Duration(mh.receiveChTimeout.Load()))
 
 		select {
 		case c <- &Message{Topic: topic, Addr: addr, Payload: fimpMsg}:
 		case <-timer.C:
-			log.Warnf("[fimpgo] Channel %s not read for %d sec", chNames[i], mh.receiveChTimeout.Load())
+			log.Warnf("[fimpgo] Channel %s not read for %d sec", name, mh.receiveChTimeout.Load())
 		}
 
 		timer.Stop()
 	}
+	mh.channelRegLock.Unlock()
 }
 
 // isChannelInterested validates if channel is interested in message. Filtering is executed against either static filters or filter function
