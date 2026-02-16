@@ -62,9 +62,12 @@ func (cp *MqttConnectionPool) Start() {
 
 func (cp *MqttConnectionPool) Stop() {
 	cp.mux.Lock()
+	cp.isStarted.Store(false)
+
 	if cp.poolCheckTick != nil {
 		cp.poolCheckTick.Stop()
 	}
+
 	for i := range cp.connPool {
 		conn := cp.connectionByID(i)
 		if conn != nil {
@@ -73,8 +76,6 @@ func (cp *MqttConnectionPool) Stop() {
 		}
 	}
 	cp.mux.Unlock()
-
-	cp.isStarted.Store(false)
 }
 
 func (cp *MqttConnectionPool) IsConnected(poolID int) bool {

@@ -63,11 +63,14 @@ func (c *ConnStateT) IsConnected() bool {
 func (c *ConnStateT) WaitConnected(timeout time.Duration) error {
 	c.mu.Lock()
 	connected := c.connected
+	done := c.done
 	c.mu.Unlock()
 
 	select {
 	case <-time.After(timeout):
 		return fmt.Errorf("timeout")
+	case <-done:
+		return fmt.Errorf("connection_lost")
 	case <-connected:
 		return nil
 	}
@@ -77,4 +80,12 @@ func (c *ConnStateT) DoneC() <-chan struct{} {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.done
+}
+
+func (c *ConnStateT) Lock() {
+	c.mu.Lock()
+}
+
+func (c *ConnStateT) Unlock() {
+	c.mu.Unlock()
 }

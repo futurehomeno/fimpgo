@@ -208,9 +208,9 @@ func (mh *MqttTransport) UnsubscribeAll() error {
 }
 
 func (mh *MqttTransport) SetOnConnectionLostHandler(handler func(client MQTT.Client, err error)) {
-	mh.connectionLostCustomHandlerLock.Lock()
+	mh.connState.Lock()
 	mh.connectionLostCustomHandler = handler
-	mh.connectionLostCustomHandlerLock.Unlock()
+	mh.connState.Unlock()
 }
 
 func (mh *MqttTransport) SetGlobalTopicPrefix(prefix string) {
@@ -296,13 +296,15 @@ func (mh *MqttTransport) onConnectionLost(client MQTT.Client, err error) {
 	options := client.OptionsReader()
 	log.Warnf("[fimpgo] Client=%s lost connection with the broker err: %v", options.ClientID(), err)
 
-	mh.connState.OnDone()
+	// Reset connected state without stopping the transport
+	mh.connState.Lock()
+	mh.connState.connected = make(chan struct{})
+	mh.connState.onceConnected = sync.Once{}
 
-	mh.connectionLostCustomHandlerLock.Lock()
 	if mh.connectionLostCustomHandler != nil {
 		mh.connectionLostCustomHandler(client, err)
 	}
-	mh.connectionLostCustomHandlerLock.Unlock()
+	mh.connState.Unlock()
 }
 
 func onConnectionNotifEvt(client MQTT.Client, _type MQTT.ConnectionNotification) {

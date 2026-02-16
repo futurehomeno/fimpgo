@@ -19,11 +19,6 @@ func onMsg(topic string, addr *fimpgo.Address, iotMsg *fimpgo.FimpMessage, rawMe
 
 func onMqttError(err error) {
 	log.Errorf("[fimpgo] Mqtt err: %s", err.Error())
-
-	if mqtt.IsConnected() {
-		close(done)
-	}
-
 	mqtt.Stop()
 }
 
