@@ -230,6 +230,8 @@ func (cp *MqttConnectionPool) cleanupProcess() {
 		cp.mux.Unlock()
 	}
 
-	cp.poolCheckTick.Stop()
-	cp.poolCheckTick = nil
+	if cp.poolCheckTick != nil {
+		cp.poolCheckTick.Stop()
+		cp.poolCheckTick = nil
+	}
 }
