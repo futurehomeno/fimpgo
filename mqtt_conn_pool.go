@@ -199,10 +199,19 @@ func (cp *MqttConnectionPool) connID() int {
 
 func (cp *MqttConnectionPool) cleanupProcess() {
 	for {
-		select {
-		case <-cp.stopChan:
+		cp.mux.Lock()
+		stopCh := cp.stopChan
+		ticker := cp.poolCheckTick
+		cp.mux.Unlock()
+
+		if ticker == nil || stopCh == nil {
 			return
-		case <-cp.poolCheckTick.C:
+		}
+
+		select {
+		case <-stopCh:
+			return
+		case <-ticker.C:
 			// cleanup logic
 		}
 
