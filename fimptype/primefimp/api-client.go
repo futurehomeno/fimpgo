@@ -1,7 +1,6 @@
 package primefimp
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"runtime/debug"
@@ -12,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/futurehomeno/fimpgo"
+	"github.com/futurehomeno/fimpgo/utils"
 )
 
 const VincEventTopic = "pt:j1/mt:evt/rt:app/rn:vinculum/ad:1"
@@ -388,7 +388,7 @@ func (mh *ApiClient) GetDevices(fromCache bool) ([]Device, error) {
 		}
 	}
 
-	return nil, errors.New("cache is empty")
+	return nil, utils.ErrEmptyCache
 }
 
 // GetRooms Gets the rooms
@@ -409,7 +409,7 @@ func (mh *ApiClient) GetRooms(fromCache bool) ([]Room, error) {
 		}
 
 	}
-	return nil, errors.New("cache is empty")
+	return nil, utils.ErrEmptyCache
 }
 
 // GetAreas Gets the areas
@@ -429,7 +429,7 @@ func (mh *ApiClient) GetAreas(fromCache bool) ([]Area, error) {
 			return mh.siteCache.Areas, nil
 		}
 	}
-	return nil, errors.New("cache is empty")
+	return nil, utils.ErrEmptyCache
 }
 
 // GetThings Gets the things
@@ -449,7 +449,7 @@ func (mh *ApiClient) GetThings(fromCache bool) ([]Thing, error) {
 			return mh.siteCache.Things, nil
 		}
 	}
-	return nil, errors.New("cache is empty")
+	return nil, utils.ErrEmptyCache
 }
 
 // GetShortcuts Gets the shortcuts
@@ -469,7 +469,7 @@ func (mh *ApiClient) GetShortcuts(fromCache bool) ([]Shortcut, error) {
 			return mh.siteCache.Shortcuts, nil
 		}
 	}
-	return nil, errors.New("cache is empty")
+	return nil, utils.ErrEmptyCache
 }
 
 // GetShortcuts Gets the modes
@@ -489,7 +489,7 @@ func (mh *ApiClient) GetModes(fromCache bool) ([]Mode, error) {
 			return mh.siteCache.Modes, nil
 		}
 	}
-	return nil, errors.New("cache is empty")
+	return nil, utils.ErrEmptyCache
 }
 
 func (mh *ApiClient) GetCurrentMode(fromCache bool) (*House, error) {
@@ -509,7 +509,7 @@ func (mh *ApiClient) GetCurrentMode(fromCache bool) (*House, error) {
 			return mh.siteCache.House, nil
 		}
 	}
-	return nil, errors.New("cache is empty")
+	return nil, utils.ErrEmptyCache
 }
 
 // GetShortcuts Gets the modes
@@ -529,7 +529,7 @@ func (mh *ApiClient) GetTimers(fromCache bool) ([]Timer, error) {
 			return mh.siteCache.Timers, nil
 		}
 	}
-	return nil, errors.New("cache is empty")
+	return nil, utils.ErrEmptyCache
 }
 
 // GetVincServices Gets vinculum services
@@ -549,7 +549,7 @@ func (mh *ApiClient) GetVincServices(fromCache bool) (VincServices, error) {
 			return mh.siteCache.Services, nil
 		}
 	}
-	return VincServices{}, errors.New("cache is empty")
+	return VincServices{}, utils.ErrEmptyCache
 }
 
 // GetSite Gets the whole site information
@@ -582,7 +582,7 @@ func (mh *ApiClient) GetSite(fromCache bool) (*Site, error) {
 			return &mh.siteCache, nil
 		}
 	}
-	return nil, errors.New("cache is empty")
+	return nil, utils.ErrEmptyCache
 }
 
 func (mh *ApiClient) GetState() (State, error) {

@@ -100,7 +100,7 @@ func (mh *MqttTransport) Start(timeout time.Duration) error {
 			token := mh.client.Connect()
 
 			if !token.WaitTimeout(timeout) {
-				ret = errors.New("timeout")
+				ret = utils.ErrTimeout
 				continue
 			}
 
@@ -157,11 +157,12 @@ func (mh *MqttTransport) Subscribe(topic string) error {
 	//subscribe to the topic /go-mqtt/sample and request messages to be delivered
 	//at a maximum qos of zero, wait for the receipt to confirm the subscription
 	token := mh.client.Subscribe(topic, mh.subQos, nil)
-	isInTime := token.WaitTimeout(time.Second * 20)
-	if token.Error() != nil {
+	timeout := !token.WaitTimeout(time.Second * 20)
+
+	if timeout {
+		return utils.ErrTimeout
+	} else if token.Error() != nil {
 		return token.Error()
-	} else if !isInTime {
-		return errors.New("subscribe timed out")
 	}
 
 	mh.subs[topic] = mh.subQos
@@ -176,12 +177,14 @@ func (mh *MqttTransport) Unsubscribe(topic string) error {
 	defer mh.subscribeLock.Unlock()
 
 	token := mh.client.Unsubscribe(topic)
-	isInTime := token.WaitTimeout(time.Second * 20)
-	if token.Error() != nil {
+	timeout := !token.WaitTimeout(time.Second * 20)
+
+	if timeout {
+		return utils.ErrTimeout
+	} else if token.Error() != nil {
 		return token.Error()
-	} else if !isInTime {
-		return errors.New("unsubscribe timed out")
 	}
+
 	delete(mh.subs, topic)
 	return nil
 }
@@ -566,6 +569,10 @@ func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error 
 		bytm, err = fimpMsg.SerializeToJson()
 	}
 
+	if err != nil {
+		return err
+	}
+
 	topic := addr.Serialize()
 
 	globalPrefix := mh.globalTopicPrefix()
@@ -573,17 +580,18 @@ func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error 
 		topic = AddGlobalPrefixToTopic(globalPrefix, topic)
 	}
 
-	if err == nil {
-		log.Trace("[fimpgo] Publishing msg to topic=", topic)
-		token := mh.client.Publish(topic, mh.pubQos, false, bytm)
-		if token.WaitTimeout(mh.syncPublishTimeout) && token.Error() == nil {
-			return nil
-		} else {
-			return token.Error()
-		}
+	log.Trace("[fimpgo] Publishing msg to topic=", topic)
+	token := mh.client.Publish(topic, mh.pubQos, false, bytm)
+
+	timeout := !token.WaitTimeout(mh.syncPublishTimeout)
+
+	if timeout {
+		return utils.ErrTimeout
+	} else if token.Error() != nil {
+		return token.Error()
 	}
 
-	return err
+	return nil
 }
 
 func (mh *MqttTransport) PublishRaw(topic string, bytem []byte) {
@@ -594,11 +602,16 @@ func (mh *MqttTransport) PublishRaw(topic string, bytem []byte) {
 func (mh *MqttTransport) PublishRawSync(topic string, bytem []byte) error {
 	log.Trace("[fimpgo] Publishing msg to topic:", topic)
 	token := mh.client.Publish(topic, mh.pubQos, false, bytem)
-	if token.WaitTimeout(mh.syncPublishTimeout) && token.Error() == nil {
-		return nil
-	} else {
+	timeout := !token.WaitTimeout(mh.syncPublishTimeout)
+
+	if timeout {
+		return utils.ErrTimeout
+	} else if token.Error() != nil {
 		return token.Error()
 	}
+
+	delete(mh.subs, topic)
+	return nil
 
 }
 

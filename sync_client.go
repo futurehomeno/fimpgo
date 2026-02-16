@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/futurehomeno/fimpgo/utils"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
@@ -178,7 +179,7 @@ func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessa
 	case fimpResponse := <-responseChannel:
 		return fimpResponse, nil
 	case <-time.After(time.Second * time.Duration(timeout)):
-		return nil, errTimeout
+		return nil, utils.ErrTimeout
 	}
 }
 

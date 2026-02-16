@@ -21,28 +21,14 @@ type Resource struct {
 	Description            string            `json:"description"`
 	Author                 string            `json:"author"`
 	Version                string            `json:"version"`
-	PackageName            string            `json:"package_name"` // in some cases package may have different name from service/resource name
-	State                  string            `json:"state"`        // Current application state
-	AppInfo                AppInfo           `json:"app_info"`     // Either App or Adapter , it's defined by ResourceType
-	AdapterInfo            AdapterInfo       `json:"adapter_info"`
+	PackageName            string            `json:"package_name"`    // in some cases package may have different name from service/resource name
+	State                  string            `json:"state"`           // Current application state
 	ConfigRequired         bool              `json:"config_required"` // if true , the adapter should be configured before it can be used
 	Configs                map[string]string `json:"configs"`         // configurations params
 	Props                  map[string]string `json:"props"`
 	DocUrl                 string            `json:"doc_url"`                  // Url for
 	IsInstanceConfigurable bool              `json:"is_instance_configurable"` // if true , the instance of adapter/app has to be configured before it can be used . false - adapter/app can be used without instance configuration
 	InstanceId             string            `json:"instance_id"`              // Some system configurations can allow to run multiple instances of the same app or adapter , for instance multiple hubs under the same site and with radio module every hub
-}
-
-// Will be removed in future
-type AppInfo struct {
-}
-
-// Will be removed in future
-type AdapterInfo struct {
-	FwVersion             string            `json:"fw_version"` // should be in Semantic Versioning format .
-	Technology            string            `json:"technology"`
-	HwDependency          map[string]string `json:"hw_dependency"`           //  {"serialPort":"/dev/ttyUSB0"} ,
-	NetworkManagementType string            `json:"network_management_type"` // "inclusion_exclusion", "inclusion_dev_remove" , "full_sync"
 }
 
 type ServiceDiscoveryResponder struct {
@@ -56,7 +42,7 @@ type ServiceDiscoveryResponder struct {
 
 func NewServiceDiscoveryResponder(mqt *fimpgo.MqttTransport) *ServiceDiscoveryResponder {
 	inst := &ServiceDiscoveryResponder{mqt: mqt, discoveryRequestTopic: "pt:j1/mt:cmd/rt:discovery", responderTopic: "pt:j1/mt:evt/rt:discovery"}
-	inst.stopSignal = make(chan bool)
+	inst.stopSignal = make(chan bool, 1)
 	inst.requestsCh = make(fimpgo.MessageCh)
 	return inst
 }

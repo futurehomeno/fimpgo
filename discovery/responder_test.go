@@ -22,7 +22,6 @@ func SecondResponder() {
 		IsInstanceConfigurable: false,
 		InstanceId:             "1",
 		Version:                "1",
-		AppInfo:                AppInfo{},
 	}
 
 	responder := NewServiceDiscoveryResponder(mqtt)
@@ -47,7 +46,6 @@ func TestServiceDiscoveryResponder_Start(t *testing.T) {
 		IsInstanceConfigurable: false,
 		InstanceId:             "1",
 		Version:                "1",
-		AppInfo:                AppInfo{},
 	}
 
 	responder := NewServiceDiscoveryResponder(mqtt)

@@ -1,9 +1,10 @@
 package fimpgo
 
 import (
-	"fmt"
 	"sync"
 	"time"
+
+	"github.com/futurehomeno/fimpgo/utils"
 )
 
 type ConnStateT struct {
@@ -68,9 +69,9 @@ func (c *ConnStateT) WaitConnected(timeout time.Duration) error {
 
 	select {
 	case <-time.After(timeout):
-		return fmt.Errorf("timeout")
+		return utils.ErrTimeout
 	case <-done:
-		return fmt.Errorf("connection_lost")
+		return utils.ErrConnectionLost
 	case <-connected:
 		return nil
 	}

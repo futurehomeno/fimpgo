@@ -3,8 +3,6 @@ package fimpgo
 import (
 	"fmt"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -107,7 +105,7 @@ func NewAddressFromString(address string) (*Address, error) {
 
 			}
 		} else {
-			return nil, errors.New("invalid address format")
+			return nil, fmt.Errorf("invalid address format key=%s", keyVal)
 		}
 	}
 
