@@ -196,41 +196,48 @@ func (oac *FhOAuth2Client) postMsg(req any, url string) (*OAuth2TokenResponse, e
 			return nil, errors.New("empty hub token.operation aborted")
 		}
 	}
+
 	reqB, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
 	}
+
 	client := &http.Client{Timeout: time.Second * 60}
-	r, _ := http.NewRequest("POST", url, bytes.NewBuffer(reqB))
-	r.Header.Add("Content-Type", "application/json")
-	r.Header.Add("Authorization", "Bearer "+oac.hubToken)
 
 	var resp *http.Response
+
 	for range oac.refreshRetry {
-		resp, err = client.Do(r)
-		if err == nil && resp.StatusCode < 400 {
-			break
+		// Create fresh request with new body buffer for each attempt
+		r, err := http.NewRequest("POST", url, bytes.NewBuffer(reqB))
+		if err != nil {
+			return nil, err
 		}
+
+		r.Header.Add("Content-Type", "application/json")
+		r.Header.Add("Authorization", "Bearer "+oac.hubToken)
+
+		resp, err = client.Do(r)
 
 		if resp != nil {
 			if err := resp.Body.Close(); err != nil {
-				log.Errorf("Close body err: %v", err)
+				log.Errorf("[edgeapp] Close body err: %v", err)
 			}
+		}
+
+		if err != nil {
+			log.Error("[edgeapp] Response from auth endpoint err: ", err)
+			time.Sleep(time.Second * oac.retryDelay)
+			continue
 		}
 
 		log.Error("[edgeapp] Response from auth endpoint err: ", err)
 		time.Sleep(time.Second * oac.retryDelay)
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
 	if resp.StatusCode >= 400 {
 		return nil, fmt.Errorf("server status code=%d", resp.StatusCode)
 	}
 
-	defer func() { _ = resp.Body.Close() }()
 	bData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err

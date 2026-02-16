@@ -68,15 +68,19 @@ func (cp *MqttConnectionPool) Stop() {
 	cp.mux.Lock()
 	if cp.stopChan != nil {
 		close(cp.stopChan)
+		cp.stopChan = nil
 	}
+
 	if cp.poolCheckTick != nil {
 		cp.poolCheckTick.Stop()
+		cp.poolCheckTick = nil
 	}
 
 	for i := range cp.connPool {
 		conn := cp.connectionByID(i)
 		if conn != nil {
 			conn.Stop()
+			conn = nil
 			delete(cp.connPool, i)
 		}
 	}
