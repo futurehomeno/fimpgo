@@ -300,11 +300,13 @@ func (mh *MqttTransport) onConnectionLost(client MQTT.Client, err error) {
 	mh.connState.Lock()
 	mh.connState.connected = make(chan struct{})
 	mh.connState.onceConnected = sync.Once{}
-
-	if mh.connectionLostCustomHandler != nil {
-		mh.connectionLostCustomHandler(client, err)
-	}
+	handler := mh.connectionLostCustomHandler
 	mh.connState.Unlock()
+
+	// Call handler outside the lock to prevent deadlock
+	if handler != nil {
+		handler(client, err)
+	}
 }
 
 func onConnectionNotifEvt(client MQTT.Client, _type MQTT.ConnectionNotification) {
