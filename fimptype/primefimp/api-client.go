@@ -235,11 +235,15 @@ func (mh *ApiClient) UpdateSite(notif *Notify) error {
 			return fmt.Errorf("unknown Component=%s add", notif.Component)
 		}
 	case CmdDelete:
-		notifID, ok := notif.Id.(float64)
+		temp, ok := notif.Id.(float64)
+		notifID := int(temp)
 		if !ok {
-			return fmt.Errorf("notify ID type assertion error")
+			notifID, ok = notif.Id.(int)
+			if !ok {
+				return fmt.Errorf("notify ID type assertion error")
+			}
 		}
-		err := mh.siteCache.RemoveWithID(notif.Component, int(notifID))
+		err := mh.siteCache.RemoveWithID(notif.Component, notifID)
 		if err != nil {
 			return fmt.Errorf("remove with ID err: %v", err)
 		}

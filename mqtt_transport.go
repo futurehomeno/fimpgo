@@ -1,7 +1,6 @@
 package fimpgo
 
 import (
-	"fmt"
 	"runtime/debug"
 	"strings"
 	"sync"
@@ -190,30 +189,27 @@ func (mh *MqttTransport) Unsubscribe(topic string) error {
 }
 
 func (mh *MqttTransport) UnsubscribeAll() error {
-	var ret string
 	var topics []string
+
 	mh.subscribeLock.Lock()
 	for i := range mh.subs {
 		topics = append(topics, i)
 	}
 	mh.subscribeLock.Unlock()
+
 	for _, t := range topics {
 		token := mh.client.Unsubscribe(t)
 		timeout := !token.WaitTimeout(time.Second * 20)
 
 		if timeout {
-			ret += fmt.Sprintf("unsubscribe from topic %s timeout\n", t)
 			return utils.ErrTimeout
 		} else if token.Error() != nil {
-			ret += fmt.Sprintf("unsubscribe from topic %s err: %s\n", t, token.Error())
 			return token.Error()
 		}
 
+		mh.subscribeLock.Lock()
 		delete(mh.subs, t)
-	}
-
-	if ret != "" {
-		return errors.New(ret)
+		mh.subscribeLock.Unlock()
 	}
 
 	return nil
@@ -643,7 +639,8 @@ func DetachGlobalPrefixFromTopic(topic string) (string, string) {
 	var resultTopic, globalPrefix string
 	for i := range spt {
 		payloadTypeHdr := "pt:"
-		if len(spt[i]) >= len(payloadTypeHdr) && strings.Contains(spt[i], payloadTypeHdr) {
+
+		if strings.Contains(spt[i], payloadTypeHdr) {
 			resultTopic = strings.Join(spt[i:], "/")
 			globalPrefix = strings.Join(spt[:i], "/")
 			break

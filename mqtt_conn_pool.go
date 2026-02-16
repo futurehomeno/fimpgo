@@ -20,6 +20,7 @@ type connection struct {
 
 type MqttConnectionPool struct {
 	mux            sync.RWMutex
+	stopChan       chan struct{}
 	connTemplate   MqttConnectionConfigs
 	connPool       map[int]*connection
 	nextID         uint64
@@ -54,6 +55,7 @@ func (cp *MqttConnectionPool) Start() {
 	cp.mux.Lock()
 	if !cp.isStarted.Load() {
 		cp.isStarted.Store(true)
+		cp.stopChan = make(chan struct{})
 		cp.poolCheckTick = time.NewTicker(10 * time.Second)
 		go cp.cleanupProcess()
 	}
@@ -191,7 +193,12 @@ func (cp *MqttConnectionPool) connID() int {
 
 func (cp *MqttConnectionPool) cleanupProcess() {
 	for {
-		<-cp.poolCheckTick.C
+		select {
+		case <-cp.stopChan:
+			return
+		case <-cp.poolCheckTick.C:
+			// cleanup logic
+		}
 
 		if !cp.isStarted.Load() {
 			break

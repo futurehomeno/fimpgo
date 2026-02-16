@@ -105,7 +105,7 @@ func NewAddressFromString(address string) (*Address, error) {
 
 			}
 		} else {
-			return nil, fmt.Errorf("invalid address format key=%s", keyVal)
+			return nil, fmt.Errorf("invalid address format key=%v", keyVal)
 		}
 	}
 
