@@ -198,9 +198,18 @@ func (mh *MqttTransport) UnsubscribeAll() error {
 	}
 	mh.subscribeLock.Unlock()
 	for _, t := range topics {
-		if err := mh.Unsubscribe(t); err != nil {
-			ret += fmt.Sprintf("Unsubscribe from topic %s err: %s\n", t, err.Error())
+		token := mh.client.Unsubscribe(t)
+		timeout := !token.WaitTimeout(time.Second * 20)
+
+		if timeout {
+			ret += fmt.Sprintf("unsubscribe from topic %s timeout\n", t)
+			return utils.ErrTimeout
+		} else if token.Error() != nil {
+			ret += fmt.Sprintf("unsubscribe from topic %s err: %s\n", t, token.Error())
+			return token.Error()
 		}
+
+		delete(mh.subs, t)
 	}
 
 	if ret != "" {
@@ -610,9 +619,7 @@ func (mh *MqttTransport) PublishRawSync(topic string, bytem []byte) error {
 		return token.Error()
 	}
 
-	delete(mh.subs, topic)
 	return nil
-
 }
 
 // AddGlobalPrefixToTopic , adds prefix to topic .
