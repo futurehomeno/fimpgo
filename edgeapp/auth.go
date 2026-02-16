@@ -2,6 +2,7 @@ package edgeapp
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -207,7 +208,7 @@ func (oac *FhOAuth2Client) postMsg(req any, url string) (*OAuth2TokenResponse, e
 	var lastErr error
 
 	for range oac.refreshRetry {
-		r, err := http.NewRequest("POST", url, bytes.NewBuffer(reqB))
+		r, err := http.NewRequestWithContext(context.Background(), "POST", url, bytes.NewBuffer(reqB))
 		if err != nil {
 			return nil, err
 		}
@@ -217,7 +218,7 @@ func (oac *FhOAuth2Client) postMsg(req any, url string) (*OAuth2TokenResponse, e
 		resp, lastErr = client.Do(r)
 		if lastErr != nil {
 			log.Error("[edgeapp] Request err: ", lastErr)
-			time.Sleep(time.Second * oac.retryDelay)
+			time.Sleep(oac.retryDelay)
 			continue
 		}
 
@@ -228,7 +229,7 @@ func (oac *FhOAuth2Client) postMsg(req any, url string) (*OAuth2TokenResponse, e
 		// Non-success status code - close body and retry
 		_ = resp.Body.Close()
 		log.Errorf("[edgeapp] Server returned status %d", resp.StatusCode)
-		time.Sleep(time.Second * oac.retryDelay)
+		time.Sleep(oac.retryDelay)
 		resp = nil // Clear for next iteration
 	}
 
@@ -238,7 +239,12 @@ func (oac *FhOAuth2Client) postMsg(req any, url string) (*OAuth2TokenResponse, e
 		}
 		return nil, errors.New("all retry attempts failed")
 	}
-	defer resp.Body.Close()
+
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Errorf("[edgeapp] Body close err: %v", err)
+		}
+	}()
 
 	if resp.StatusCode >= 400 {
 		return nil, fmt.Errorf("server status code=%d", resp.StatusCode)

@@ -62,7 +62,7 @@ func TestNewMsgCompressor2(t *testing.T) {
 		}
 
 		fimpMsg, err := NewMessageFromBytes(fimpMsgBin)
-		//fimpMsg , err := decomp.DecompressFimpMsg(compMsg)
+		// fimpMsg , err := decomp.DecompressFimpMsg(compMsg)
 		if err != nil {
 			t.Fatal("Compressor error 2:", err)
 		}

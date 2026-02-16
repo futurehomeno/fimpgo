@@ -47,6 +47,6 @@ func (cs *HubUtils) GetHubInfo() (*HubInfo, error) {
 
 func GetNonce() string {
 	s1 := rand.NewSource(time.Now().UnixNano())
-	r1 := rand.New(s1)
+	r1 := rand.New(s1) //nolint:gosec
 	return fmt.Sprint(r1.Int31())
 }

@@ -21,7 +21,7 @@ func TestKeyStore_GetEcdsaKey(t *testing.T) {
 	if err != nil {
 		t.Fatal("Signing err:", err)
 	}
-	//store.AddSerializedKey(user,devId,public,KeyTypePublic,AlgEcdsa256)
+	// store.AddSerializedKey(user,devId,public,KeyTypePublic,AlgEcdsa256)
 	if err := store.UpsertSerializedKey(user, devId, public, KeyTypePublic, AlgEcdsa256); err != nil {
 		t.Fatal("Upserting err:", err)
 	}

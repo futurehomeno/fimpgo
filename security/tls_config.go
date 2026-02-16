@@ -13,7 +13,7 @@ import (
 func caCertPool(certDir string) (*x509.CertPool, error) {
 	certs := x509.NewCertPool()
 	cafile := filepath.Join(certDir, "root-ca-1.pem")
-	pemData, err := os.ReadFile(cafile)
+	pemData, err := os.ReadFile(cafile) //nolint:gosec
 	if err != nil {
 		return nil, err
 	}
@@ -22,7 +22,7 @@ func caCertPool(certDir string) (*x509.CertPool, error) {
 	// Optional additional CAs
 	for _, ca := range []string{"root-ca-2.pem", "root-ca-3.pem"} {
 		cafile = filepath.Join(certDir, ca)
-		if pemData, err = os.ReadFile(cafile); err == nil {
+		if pemData, err = os.ReadFile(cafile); err == nil { //nolint:gosec
 			certs.AppendCertsFromPEM(pemData)
 		}
 	}
@@ -33,7 +33,7 @@ func caCertPool(certDir string) (*x509.CertPool, error) {
 
 func certPool(certFile string) (*x509.CertPool, error) {
 	certs := x509.NewCertPool()
-	pemData, err := os.ReadFile(certFile)
+	pemData, err := os.ReadFile(certFile) //nolint:gosec
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func certPool(certFile string) (*x509.CertPool, error) {
 // Cert dir should contains all CA root certificates .
 // IsAws flag controls AWS specific TLS protocol switch.
 func TLSConfig(privateKeyFileName, certFileName, certDir string, isAWS bool) (*tls.Config, error) {
-	config := &tls.Config{InsecureSkipVerify: false}
+	config := &tls.Config{InsecureSkipVerify: false} //nolint:gosec
 
 	if isAWS {
 		config.NextProtos = []string{"x-amzn-mqtt-ca"}

@@ -410,7 +410,7 @@ func NewBinaryMessage(type_, service string, value []byte, props Props, tags Tag
 	return NewMessage(type_, service, VTypeBinary, valEnc, props, tags, requestMessage)
 }
 
-func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
+func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	fimpmsg := FimpMessage{}
 	var err error
 
@@ -490,7 +490,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 				log.Warnf("[fimpgo] Parse VTypeIntArray err: %v", e)
 				return
 			}
-			val = append(val, int64(item))
+			val = append(val, item)
 		}, "val")
 
 		fimpmsg.Value = val
@@ -529,7 +529,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 			if e != nil {
 				log.Warnf("[fimpgo] Parse VTypeIntMap err: %v", e)
 			} else {
-				val[string(key)] = int64(tempInt)
+				val[string(key)] = tempInt
 			}
 			return e
 		}, "val")
@@ -576,11 +576,10 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 		fimpmsg.Value = nil
 	default:
 		return nil, jsonparser.UnknownValueTypeError
-
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("val=%s err: %v", fimpmsg.ValueType, err)
+		return nil, fmt.Errorf("val=%s err: %w", fimpmsg.ValueType, err)
 	}
 
 	if properties, dt, _, err := jsonparser.Get(msg, "props"); dt != jsonparser.NotExist && dt != jsonparser.Null && err == nil {

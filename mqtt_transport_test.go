@@ -135,8 +135,8 @@ func TestMqttTransport_PublishSync(t *testing.T) {
 
 	expVal := int(0)
 	for range 10 {
-		msg.Value = int(rand.Intn(100))
-		expVal += msg.Value.(int)
+		msg.Value = rand.Intn(100) //nolint:gosec
+		expVal += msg.Value.(int)  //nolint:forcetypeassert
 
 		err = mqtt.PublishSync(&adr, msg)
 		if err != nil {
@@ -305,7 +305,7 @@ func TestMqttTransport_TestChannels(t *testing.T) {
 
 	go func(msgChan MessageCh) {
 		wg.Done()
-		newMsg := <-chan1
+		newMsg := <-msgChan
 		if newMsg.Payload.Service == "temp_sensor" {
 			correctMsg <- 1
 		}
@@ -313,7 +313,7 @@ func TestMqttTransport_TestChannels(t *testing.T) {
 
 	go func(msgChan MessageCh) {
 		wg.Done()
-		newMsg := <-chan2
+		newMsg := <-msgChan
 		if newMsg.Payload.Service == "temp_sensor" {
 			correctMsg <- 2
 		}
@@ -545,7 +545,6 @@ func TestMqttTransport_TestChannelsWithFilters(t *testing.T) {
 	mqtt.UnregisterChannel("chan4")
 	mqtt.UnregisterChannel("chan5")
 	mqtt.Stop()
-
 }
 
 func TestAddGlobalPrefixToTopic(t *testing.T) {

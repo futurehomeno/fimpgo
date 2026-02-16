@@ -37,8 +37,8 @@ func TestTimerWithActions(t *testing.T) {
 	device37, ok := timer.Action.Device[37]
 	require.True(t, ok, "Device 37 not found in timer action map=%v", timer.Action.Device)
 
-	if device37["power"].(string) != "on" {
-		t.Errorf("Wrong power value for device 37 exp=on act=%s", device37["power"].(string))
+	if device37["power"].(string) != "on" { //nolint:forcetypeassert
+		t.Errorf("Wrong power value for device 37 exp=on act=%s", device37["power"].(string)) //nolint:forcetypeassert
 	}
 }
 

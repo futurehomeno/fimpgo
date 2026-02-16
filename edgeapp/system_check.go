@@ -1,6 +1,7 @@
 package edgeapp
 
 import (
+	"context"
 	"net"
 	"strings"
 	"time"
@@ -29,18 +30,16 @@ func (sc *SystemCheck) IsNetworkAvailable() bool {
 			strings.Contains(netIntfs[i].Flags.String(), "loopback") {
 			// skipping zipgateway and local interfaces
 			continue
-		} else {
-			if strings.Contains(netIntfs[i].Flags.String(), "up") && strings.Contains(netIntfs[i].Flags.String(), "broadcast") {
-				addrs, err := netIntfs[i].Addrs()
-				if err != nil {
-					log.Trace("Address returned error :", err.Error())
-					continue
-				}
-				for i2 := range addrs {
-					log.Trace("Checking address :", addrs[i2].String())
-					if len(addrs[i2].String()) >= 4 {
-						return true
-					}
+		} else if strings.Contains(netIntfs[i].Flags.String(), "up") && strings.Contains(netIntfs[i].Flags.String(), "broadcast") {
+			addrs, err := netIntfs[i].Addrs()
+			if err != nil {
+				log.Trace("Address returned error :", err.Error())
+				continue
+			}
+			for i2 := range addrs {
+				log.Trace("Checking address :", addrs[i2].String())
+				if len(addrs[i2].String()) >= 4 {
+					return true
 				}
 			}
 		}
@@ -52,7 +51,7 @@ func (sc *SystemCheck) IsInternetAvailable() bool {
 	if !sc.IsNetworkAvailable() {
 		return false
 	}
-	ips, err := net.LookupIP("google.com")
+	ips, err := net.DefaultResolver.LookupIPAddr(context.Background(), "google.com")
 	if err != nil {
 		return false
 	}

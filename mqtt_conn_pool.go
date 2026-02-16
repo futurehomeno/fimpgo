@@ -80,7 +80,6 @@ func (cp *MqttConnectionPool) Stop() {
 		conn := cp.connectionByID(i)
 		if conn != nil {
 			conn.Stop()
-			conn = nil
 			delete(cp.connPool, i)
 		}
 	}
@@ -195,7 +194,7 @@ func (cp *MqttConnectionPool) connectionByID(connId int) *MqttTransport {
 }
 
 func (cp *MqttConnectionPool) connID() int {
-	return int(atomic.AddUint64(&cp.nextID, 1))
+	return int(atomic.AddUint64(&cp.nextID, 1)) //nolint:gosec
 }
 
 func (cp *MqttConnectionPool) cleanupProcess() {

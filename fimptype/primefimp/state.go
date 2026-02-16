@@ -52,7 +52,6 @@ func (stateDevices StateDevices) FilterDevicesByService(service string) StateDev
 			result = append(result, sd)
 			continue
 		}
-
 	}
 	return result
 }
@@ -428,7 +427,6 @@ func (sav StateAttributeValue) GetStrMapValue() (map[string]string, error) {
 		result[k] = fmt.Sprint(v)
 	}
 	return result, nil
-
 }
 
 func (sav StateAttributeValue) GetIntArrayValue() ([]int, error) {

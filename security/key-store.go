@@ -64,7 +64,6 @@ func (cs *KeyStore) UpdateSerializedKey(userId, deviceId, key, keyType, algo str
 			cs.keyStore[i].SerializedKey = key
 			cs.keyStore[i].AddedAt = time.Now().Format(time.RFC3339)
 			return true, cs.SaveToDisk()
-
 		}
 	}
 	return false, nil
@@ -155,7 +154,7 @@ func (cs *KeyStore) LoadFromDisk() error {
 }
 
 // An app should call the method to authenticate message
-//func (cs *KeyStore) IsMessageAuthenticated(msg *fimpgo.FimpMessage) (bool) {
+// func (cs *KeyStore) IsMessageAuthenticated(msg *fimpgo.FimpMessage) (bool) {
 //	//1. Extract username and signature from user message
 //	//2. Query public key from local key store
 //	//3. Validate signature using public key

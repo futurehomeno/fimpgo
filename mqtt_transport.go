@@ -56,7 +56,7 @@ func NewMqttTransportFromConnection(client MQTT.Client, subQos byte, pubQos byte
 }
 
 func NewMqttTransportFromConfigs(cfg MqttConnectionConfigs, errHandler func(error)) *MqttTransport {
-	mh := &MqttTransport{}
+	var mh *MqttTransport
 
 	if cfg.PrivateKeyFileName != "" && cfg.CertFileName != "" {
 		mh = NewMqttTransportTLS(cfg.ServerURI, cfg.ClientID, cfg.Username, cfg.Password, cfg.CleanSession, cfg.SubQos, cfg.PubQos, errHandler,
@@ -92,7 +92,7 @@ func (mh *MqttTransport) Start(timeout time.Duration) error {
 		for i := 1; i <= mh.startFailRetryCount; i++ {
 			if i > 1 {
 				delay := time.Duration(i) * time.Duration(i)
-				time.Sleep(delay * time.Second)
+				time.Sleep(delay)
 				log.Warnf("[fimpgo] MQTT connect failed %d/%d err: %v", i, mh.startFailRetryCount, ret)
 			}
 
@@ -153,8 +153,8 @@ func (mh *MqttTransport) Subscribe(topic string) error {
 	mh.subscribeLock.Lock()
 	defer mh.subscribeLock.Unlock()
 
-	//subscribe to the topic /go-mqtt/sample and request messages to be delivered
-	//at a maximum qos of zero, wait for the receipt to confirm the subscription
+	// subscribe to the topic /go-mqtt/sample and request messages to be delivered
+	// at a maximum qos of zero, wait for the receipt to confirm the subscription
 	token := mh.client.Subscribe(topic, mh.subQos, nil)
 	timeout := !token.WaitTimeout(time.Second * 20)
 

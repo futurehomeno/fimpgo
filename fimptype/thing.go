@@ -2,9 +2,11 @@ package fimptype
 
 // ThingInclusionReport is the object send as value in thing inclusion reports.
 type ThingInclusionReport struct {
-	Address  string    `json:"address"`  // An arbitrary unique identifier of the thing within the adapter. Must consist only from alphanumeric characters. For example in Z-Wave it is equal to Node ID, while in Zigbee to UDID.
-	Groups   []string  `json:"groups"`   // Groups are used to link multiple services into one logical group. Each group is effectively a separate device within a single thing, equal to channels in Z-Wave or endpoints in Zigbee.
+	// An arbitrary unique identifier of the thing within the adapter. Must consist only from alphanumeric characters. For example in Z-Wave it is equal to Node ID, while in Zigbee to UDID.
+	Address string `json:"address"`
+	// Groups are used to link multiple services into one logical group. Each group is effectively a separate device within a single thing, equal to channels in Z-Wave or endpoints in Zigbee. //nolint:lll
 	Services []Service `json:"services"` // An array of service definition objects for all services provided by the thing.
+	// Groups   []string  `json:"groups"`
 
 	ProductName    string `json:"product_name"`    // Optional initial human-readable name of the device as shown to the user. If empty falls back to product hash.
 	ProductHash    string `json:"product_hash"`    // Product hash is a unique identifier of the product consisting of joined adapter, manufacturer and product identifiers.

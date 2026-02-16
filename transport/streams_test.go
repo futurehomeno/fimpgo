@@ -1,4 +1,4 @@
-package transport
+package transport_test
 
 /*
 import (

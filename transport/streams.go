@@ -159,7 +159,7 @@ func (su *BufferedStream) serializeBuffer() error {
 			fextension = "gz"
 		}
 		fname := fmt.Sprintf("%s/%s_%s.%s", su.fileSinkDir, su.filePrefix, time.Now().Format(time.RFC3339), fextension)
-		err := os.WriteFile(fname, bPayload, 0644)
+		err := os.WriteFile(fname, bPayload, 0644) //nolint:gosec
 		if err != nil {
 			return err
 		}

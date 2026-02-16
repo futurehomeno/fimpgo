@@ -121,7 +121,6 @@ func (mh *ApiClient) ReloadSiteToCache(retry int) error {
 		}
 		log.Error("[fimpgo] Site sync err: ", err.Error())
 		time.Sleep(time.Second * time.Duration(5*i))
-
 	}
 	if err != nil {
 		mh.isCacheEnabled = false
@@ -136,7 +135,7 @@ func (mh *ApiClient) ReloadSiteToCache(retry int) error {
 
 // LoadVincResponseFromFile Loads site from file . File should be in exactly the same format as vinculum response
 func (mh *ApiClient) LoadVincResponseFromFile(fileName string) error {
-	bSite, err := os.ReadFile(fileName)
+	bSite, err := os.ReadFile(fileName) //nolint:gosec
 	if err != nil {
 		return err
 	}
@@ -245,7 +244,7 @@ func (mh *ApiClient) UpdateSite(notif *Notify) error {
 		}
 		err := mh.siteCache.RemoveWithID(notif.Component, notifID)
 		if err != nil {
-			return fmt.Errorf("remove with ID err: %v", err)
+			return fmt.Errorf("remove with ID err: %w", err)
 		}
 	case CmdEdit:
 		switch notif.Component {
@@ -411,7 +410,6 @@ func (mh *ApiClient) GetRooms(fromCache bool) ([]Room, error) {
 		if mh.ValidateAndReloadSiteCache() {
 			return mh.siteCache.Rooms, nil
 		}
-
 	}
 	return nil, utils.ErrEmptyCache
 }
@@ -581,11 +579,10 @@ func (mh *ApiClient) GetSite(fromCache bool) (*Site, error) {
 		} else {
 			return SiteFromResponse(response), err
 		}
-	} else {
-		if mh.ValidateAndReloadSiteCache() {
-			return &mh.siteCache, nil
-		}
+	} else if mh.ValidateAndReloadSiteCache() {
+		return &mh.siteCache, nil
 	}
+
 	return nil, utils.ErrEmptyCache
 }
 

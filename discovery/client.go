@@ -56,7 +56,7 @@ func DiscoverResources(mqt *fimpgo.MqttTransport, timeout int) ([]Resource, erro
 		resultsCh <- results
 	}()
 
-	//Sending request
+	// Sending request
 	if err := mqt.Publish(&addr, msg); err != nil {
 		return nil, err
 	}

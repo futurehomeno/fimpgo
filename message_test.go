@@ -59,7 +59,6 @@ func TestNewBoolMessage(t *testing.T) {
 }
 
 func TestNewFloatMessage(t *testing.T) {
-
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", 35.5, nil, nil, nil)
 	val, err := msg.GetFloatValue()
 

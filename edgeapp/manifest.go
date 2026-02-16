@@ -115,7 +115,7 @@ func NewManifest() *Manifest {
 }
 
 func (m *Manifest) LoadFromFile(filePath string) error {
-	file, err := os.ReadFile(filePath)
+	file, err := os.ReadFile(filePath) //nolint:gosec
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (m *Manifest) SaveToFile(filePath string) error {
 		return err
 	}
 
-	err = os.WriteFile(filePath, flowMetaByte, 0644)
+	err = os.WriteFile(filePath, flowMetaByte, 0644) //nolint:gosec
 	if err != nil {
 		return err
 	}

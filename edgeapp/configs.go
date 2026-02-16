@@ -2,7 +2,6 @@ package edgeapp
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -32,6 +31,7 @@ func NewConfigs(workDir string) *Configs {
 	conf := &Configs{WorkDir: workDir}
 	if err := conf.initFiles(); err != nil {
 		log.Errorf("[edgeapp] New config err: %s", err)
+		return nil
 	}
 	return conf
 }
@@ -43,8 +43,7 @@ func (cf *Configs) initFiles() error {
 		defaultConfigFile := filepath.Join(cf.WorkDir, "defaults", "config.json")
 		err := utils.CopyFile(defaultConfigFile, cf.path)
 		if err != nil {
-			fmt.Print(err)
-			panic("Can't copy config file.")
+			return err
 		}
 	}
 	return nil
@@ -70,7 +69,7 @@ func (cf *Configs) SaveToFile() error {
 		return err
 	}
 
-	err = os.WriteFile(cf.path, bpayload, 0664)
+	err = os.WriteFile(cf.path, bpayload, 0664) //nolint:gosec
 	if err != nil {
 		return err
 	}

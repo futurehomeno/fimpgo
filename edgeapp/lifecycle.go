@@ -36,7 +36,7 @@ const (
 	ConnStateDisconnected = "DISCONNECTED"
 	ConnStateNA           = "NA"
 
-	//EventStarting            = "STARTING"
+	// EventStarting            = "STARTING"
 	EventConfiguring = "CONFIGURING" // All configurations loaded and brokers configured
 	EventConfigError = "CONF_ERROR"  // All configurations loaded and brokers configured
 	EventConfigured  = "CONFIGURED"  // All configurations loaded and brokers configured
@@ -168,7 +168,6 @@ func (al *Lifecycle) SetAppState(currentState State, params map[string]string) {
 		default:
 			log.Warnf("[edgeapp] State listener %s busy event dropped", i)
 		}
-
 	}
 	al.busMux.Unlock()
 }
@@ -190,7 +189,6 @@ func (al *Lifecycle) Publish(event SystemEvent, src string, params map[string]st
 		default:
 			log.Warnf("[edgeapp] Event listener %s busy event dropped", i)
 		}
-
 	}
 	defer al.busMux.Unlock()
 }
