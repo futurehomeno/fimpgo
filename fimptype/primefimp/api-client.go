@@ -316,11 +316,12 @@ func (mh *ApiClient) notifyRouter() {
 			for cid, nfCh := range mh.notifySubChannels { // check all subfilters
 				nfFilter, ok := mh.subFilters[cid]
 				if ok {
-				if nfFilter.Cmd == notif.Cmd && nfFilter.Component == notif.Component {
-					select {
-					case nfCh <- *notif: // send notification to corresponding subchannel if there is match
-					default:
-						log.Warnf("[fimpgo] Send channel %s is blocked ", cid)
+					if nfFilter.Cmd == notif.Cmd && nfFilter.Component == notif.Component {
+						select {
+						case nfCh <- *notif: // send notification to corresponding subchannel if there is match
+						default:
+							log.Warnf("[fimpgo] Send channel %s is blocked ", cid)
+						}
 					}
 				}
 			}
