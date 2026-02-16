@@ -91,17 +91,28 @@ func (su *BufferedStream) EnqueueMessage(topic string, msg *fimpgo.FimpMessage) 
 	topic = strings.ReplaceAll(topic, "pt:j1/mt:evt", "")
 	topic = strings.ReplaceAll(topic, "pt:j1/mt:cmd", "")
 	msg.Topic = topic
-	if len(su.buffer) >= su.bufferMaxSize {
+
+	su.lock.Lock()
+	bufLen := len(su.buffer)
+	su.lock.Unlock()
+
+	if bufLen >= su.bufferMaxSize {
 		su.FlushBuffer()
 	}
+
 	su.lock.Lock()
 	su.buffer = append(su.buffer, *msg)
+	bufLen = len(su.buffer)
 	su.lock.Unlock()
-	log.Tracef("Msg queued len(buffer)=%d maxSize=%d", len(su.buffer), su.bufferMaxSize)
+
+	log.Tracef("Msg queued len(buffer)=%d maxSize=%d", bufLen, su.bufferMaxSize)
 }
 
 func (su *BufferedStream) Size() int {
-	return len(su.buffer)
+	su.lock.Lock()
+	ret := len(su.buffer)
+	su.lock.Unlock()
+	return ret
 }
 
 // buffer is cleared even on serialization failure
