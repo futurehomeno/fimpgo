@@ -43,7 +43,7 @@ type Message struct {
 
 type FimpFilter struct {
 	Topic     string
-	Service   fimptype.ServiceTypeT
+	Service   fimptype.ServiceNameT
 	Interface string
 }
 
@@ -89,7 +89,7 @@ type MqttTransport struct {
 	globalTopicPrefixLock sync.RWMutex
 	_globalTopicPrefix    string
 	defaultSourceLock     sync.RWMutex
-	defaultSource         fimptype.ServiceTypeT
+	defaultSource         fimptype.ServiceNameT
 	startFailRetryCount   int
 	certDir               string
 	receiveChTimeout      atomic.Uint32

@@ -17,7 +17,7 @@ func SecondResponder() {
 
 	resource := Resource{
 		ResourceName:           "test-app-2",
-		ResourceType:           ResourceTypeApp,
+		ResourceType:           fimpgo.ResourceTypeApp,
 		Author:                 "aleks",
 		IsInstanceConfigurable: false,
 		InstanceId:             "1",
@@ -41,7 +41,7 @@ func TestServiceDiscoveryResponder_Start(t *testing.T) {
 
 	resource := Resource{
 		ResourceName:           "test-app-1",
-		ResourceType:           ResourceTypeApp,
+		ResourceType:           fimpgo.ResourceTypeApp,
 		Author:                 "aleks",
 		IsInstanceConfigurable: false,
 		InstanceId:             "1",

@@ -7,6 +7,7 @@ import (
 	"math"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/buger/jsonparser"
@@ -128,11 +129,12 @@ const (
 	StorageStrategyAggregate StorageStrategy = "aggregate"
 	StorageStrategySkip      StorageStrategy = "skip"
 	StorageStrategySplit     StorageStrategy = "split"
+	StorageStrategyNone      StorageStrategy = "none"
 )
 
 type FimpMessage struct {
 	Type            string                `json:"type"`
-	Service         fimptype.ServiceTypeT `json:"serv"`
+	Service         fimptype.ServiceNameT `json:"serv"`
 	ValueType       string                `json:"val_t"`
 	Value           any                   `json:"val"`
 	ValueObj        []byte                `json:"-"`
@@ -142,7 +144,7 @@ type FimpMessage struct {
 	Version         string                `json:"ver"`
 	CorrelationID   string                `json:"corid"`
 	ResponseToTopic string                `json:"resp_to,omitempty"`
-	Source          fimptype.ServiceTypeT `json:"src,omitempty"`
+	Source          fimptype.ServiceNameT `json:"src,omitempty"`
 	CreationTime    string                `json:"ctime"`
 	UID             string                `json:"uid"`
 	Topic           string                `json:"topic,omitempty"` // The field should be used to store original topic. It can be useful for converting message from MQTT to other transports.
@@ -330,7 +332,33 @@ func (msg *FimpMessage) WithTag(tag string) *FimpMessage {
 	return msg
 }
 
-func NewMessage(type_ string, service fimptype.ServiceTypeT, valueType string, value any, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
+func (msg *FimpMessage) Str() string {
+	var ret string
+
+	if msg.Service != "" {
+		if msg.Storage != nil && msg.Storage.Strategy != StorageStrategyNone {
+			switch msg.Value.(type) {
+			case float32, float64:
+				ret = strings.TrimSpace(fmt.Sprintf("%s %s %s %.2f %s %s", msg.Source, msg.Service, msg.Type, msg.Value, msg.Storage.Strategy[:3], msg.Storage.SubValue))
+			default:
+				ret = strings.TrimSpace(fmt.Sprintf("%s %s %s %v %s %s", msg.Source, msg.Service, msg.Type, msg.Value, msg.Storage.Strategy[:3], msg.Storage.SubValue))
+			}
+		} else {
+			switch msg.Value.(type) {
+			case float32, float64:
+				ret = fmt.Sprintf("%s %s %s %.2f", msg.Source, msg.Service, msg.Type, msg.Value)
+			default:
+				ret = fmt.Sprintf("%s %s %s %v", msg.Source, msg.Service, msg.Type, msg.Value)
+			}
+		}
+	} else {
+		ret = fmt.Sprintf("%s %s %v", msg.Source, msg.Type, msg.Value)
+	}
+
+	return ret
+}
+
+func NewMessage(type_ string, service fimptype.ServiceNameT, valueType string, value any, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
 	msg := FimpMessage{Type: type_,
 		Service:      service,
 		ValueType:    valueType,
@@ -349,64 +377,64 @@ func NewMessage(type_ string, service fimptype.ServiceTypeT, valueType string, v
 	return &msg
 }
 
-func NewNullMessage(type_ string, service fimptype.ServiceTypeT, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
+func NewNullMessage(type_ string, service fimptype.ServiceNameT, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeNull, nil, props, tags, rqMsg)
 }
 
-func NewStringMessage(type_ string, service fimptype.ServiceTypeT, value string, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
+func NewStringMessage(type_ string, service fimptype.ServiceNameT, value string, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeString, value, props, tags, rqMsg)
 }
 
-func NewIntMessage(type_ string, service fimptype.ServiceTypeT, value int, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
+func NewIntMessage(type_ string, service fimptype.ServiceNameT, value int, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeInt, value, props, tags, rqMsg)
 }
 
-func NewFloatMessage(type_ string, service fimptype.ServiceTypeT, value float64, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
+func NewFloatMessage(type_ string, service fimptype.ServiceNameT, value float64, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeFloat, value, props, tags, rqMsg)
 }
 
-func NewBoolMessage(type_ string, service fimptype.ServiceTypeT, value bool, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
+func NewBoolMessage(type_ string, service fimptype.ServiceNameT, value bool, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeBool, value, props, tags, rqMsg)
 }
 
-func NewStrArrayMessage(type_ string, service fimptype.ServiceTypeT, value []string, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
+func NewStrArrayMessage(type_ string, service fimptype.ServiceNameT, value []string, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeStrArray, value, props, tags, rqMsg)
 }
 
-func NewIntArrayMessage(type_ string, service fimptype.ServiceTypeT, value []int, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
+func NewIntArrayMessage(type_ string, service fimptype.ServiceNameT, value []int, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeIntArray, value, props, tags, rqMsg)
 }
 
-func NewFloatArrayMessage(type_ string, service fimptype.ServiceTypeT, value []float64, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
+func NewFloatArrayMessage(type_ string, service fimptype.ServiceNameT, value []float64, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeFloatArray, value, props, tags, rqMsg)
 }
 
-func NewBoolArrayMessage(type_ string, service fimptype.ServiceTypeT, value []bool, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
+func NewBoolArrayMessage(type_ string, service fimptype.ServiceNameT, value []bool, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeBoolArray, value, props, tags, rqMsg)
 }
 
-func NewStrMapMessage(type_ string, service fimptype.ServiceTypeT, value map[string]string, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
+func NewStrMapMessage(type_ string, service fimptype.ServiceNameT, value map[string]string, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeStrMap, value, props, tags, rqMsg)
 }
 
-func NewIntMapMessage(type_ string, service fimptype.ServiceTypeT, value map[string]int, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
+func NewIntMapMessage(type_ string, service fimptype.ServiceNameT, value map[string]int, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeIntMap, value, props, tags, rqMsg)
 }
 
-func NewFloatMapMessage(type_ string, service fimptype.ServiceTypeT, value map[string]float64, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
+func NewFloatMapMessage(type_ string, service fimptype.ServiceNameT, value map[string]float64, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeFloatMap, value, props, tags, rqMsg)
 }
 
-func NewBoolMapMessage(type_ string, service fimptype.ServiceTypeT, value map[string]bool, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
+func NewBoolMapMessage(type_ string, service fimptype.ServiceNameT, value map[string]bool, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeBoolMap, value, props, tags, rqMsg)
 }
 
-func NewObjectMessage(type_ string, service fimptype.ServiceTypeT, value any, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
+func NewObjectMessage(type_ string, service fimptype.ServiceNameT, value any, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeObject, value, props, tags, rqMsg)
 }
 
 // NewBinaryMessage transport message is meant to carry original message using either encryption , signing or
-func NewBinaryMessage(type_ string, service fimptype.ServiceTypeT, value []byte, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
+func NewBinaryMessage(type_ string, service fimptype.ServiceNameT, value []byte, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
 	valEnc := base64.StdEncoding.EncodeToString(value)
 	return NewMessage(type_, service, VTypeBinary, valEnc, props, tags, rqMsg)
 }
@@ -423,7 +451,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	if err != nil {
 		log.Warnf("[fimpgo] NewMessageFromBytes serv err: %v", err)
 	} else {
-		fimpmsg.Service = fimptype.ServiceTypeT(serviceStr)
+		fimpmsg.Service = fimptype.ServiceNameT(serviceStr)
 	}
 	if fimpmsg.ValueType, err = jsonparser.GetString(msg, "val_t"); err != nil {
 		log.Warnf("[fimpgo] NewMessageFromBytes val_t err: %v", err)
@@ -446,7 +474,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	if err != nil {
 		log.Tracef("[fimpgo] NewMessageFromBytes src err: %v", err)
 	} else {
-		fimpmsg.Source = fimptype.ServiceTypeT(sourceStr)
+		fimpmsg.Source = fimptype.ServiceNameT(sourceStr)
 	}
 
 	if fimpmsg.Topic, err = jsonparser.GetString(msg, "topic"); err != nil {

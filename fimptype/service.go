@@ -4,34 +4,34 @@ import (
 	"encoding/json"
 )
 
-type ServiceTypeT string
+type ServiceNameT string
 
 const (
-	BalanceGuardService    ServiceTypeT = "balance_guard"
-	CloudBridgeService     ServiceTypeT = "clbridge"
-	DefaService            ServiceTypeT = "defa"
-	EcollectorSrevice      ServiceTypeT = "ecollector"
-	EnergyGuardService     ServiceTypeT = "energy_guard"
-	EaseeService           ServiceTypeT = "easee"
-	FhButlerService        ServiceTypeT = "fhbutler"
-	GatewayService         ServiceTypeT = "gateway"
-	KindOwlService         ServiceTypeT = "kind_owl"
-	MaxGuardService        ServiceTypeT = "max_guard"
-	PriceGuardService      ServiceTypeT = "price_guard"
-	ScheduleService        ServiceTypeT = "schedule"
-	TibberService          ServiceTypeT = "tibber"
-	TimeOwlService         ServiceTypeT = "time_owl"
-	TpFlowService          ServiceTypeT = "tpflow"
-	VinculumService        ServiceTypeT = "vinculum"
-	ZaptecService          ServiceTypeT = "zaptec"
-	ZigbeeService          ServiceTypeT = "zigbee"
-	ZwaveDeprecatedService ServiceTypeT = "zw"
-	ZwaveService           ServiceTypeT = "zwave-ad"
+	BalanceGuardService    ServiceNameT = "balance_guard"
+	CloudBridgeService     ServiceNameT = "clbridge"
+	DefaService            ServiceNameT = "defa"
+	EcollectorSrevice      ServiceNameT = "ecollector"
+	EnergyGuardService     ServiceNameT = "energy_guard"
+	EaseeService           ServiceNameT = "easee"
+	FhButlerService        ServiceNameT = "fhbutler"
+	GatewayService         ServiceNameT = "gateway"
+	KindOwlService         ServiceNameT = "kind_owl"
+	MaxGuardService        ServiceNameT = "max_guard"
+	PriceGuardService      ServiceNameT = "price_guard"
+	ScheduleService        ServiceNameT = "schedule"
+	TibberService          ServiceNameT = "tibber"
+	TimeOwlService         ServiceNameT = "time_owl"
+	TpFlowService          ServiceNameT = "tpflow"
+	VinculumService        ServiceNameT = "vinculum"
+	ZaptecService          ServiceNameT = "zaptec"
+	ZigbeeService          ServiceNameT = "zigbee"
+	ZwaveDeprecatedService ServiceNameT = "zw"
+	ZwaveService           ServiceNameT = "zwave-ad"
 
-	FimpeeApp ServiceTypeT = "fimpee"
+	FimpeeApp ServiceNameT = "fimpee"
 )
 
-func (s ServiceTypeT) Str() string {
+func (s ServiceNameT) Str() string {
 	return string(s)
 }
 

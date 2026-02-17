@@ -116,7 +116,7 @@ func (sc *SyncClient) RemoveSubscription(topic string) error {
 }
 
 // SendFimpWithTopicResponse send message over mqtt and awaits response from responseTopic with responseService and responseMsgType
-func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessage, responseTopic string, responseService fimptype.ServiceTypeT, responseMsgType string, timeout int, autoSubscribe bool) (*FimpMessage, error) {
+func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessage, responseTopic string, responseService fimptype.ServiceNameT, responseMsgType string, timeout int, autoSubscribe bool) (*FimpMessage, error) {
 	var conId int
 	var conn *MqttTransport
 	var inboundCh = make(MessageCh, 10)
@@ -196,12 +196,12 @@ func (sc *SyncClient) SendFimp(topic string, fimpMsg *FimpMessage, timeout int) 
 }
 
 // SendFimpWithTopicResponse send message over mqtt and awaits response from responseTopic with responseService and responseMsgType (the method is for backward compatibility)
-func (sc *SyncClient) SendFimpWithTopicResponse(topic string, fimpMsg *FimpMessage, responseTopic string, responseService fimptype.ServiceTypeT, responseMsgType string, timeout int) (*FimpMessage, error) {
+func (sc *SyncClient) SendFimpWithTopicResponse(topic string, fimpMsg *FimpMessage, responseTopic string, responseService fimptype.ServiceNameT, responseMsgType string, timeout int) (*FimpMessage, error) {
 	return sc.sendFimpWithTopicResponse(topic, fimpMsg, responseTopic, responseService, responseMsgType, timeout, false)
 }
 
 // startResponseListener starts response listener , it blocks callers proc until response is received or timeout.
-func (sc *SyncClient) startResponseListener(requestMsg *FimpMessage, respMsgType string, respService fimptype.ServiceTypeT, respTopic string, inboundCh MessageCh, timeout int) chan *FimpMessage {
+func (sc *SyncClient) startResponseListener(requestMsg *FimpMessage, respMsgType string, respService fimptype.ServiceNameT, respTopic string, inboundCh MessageCh, timeout int) chan *FimpMessage {
 	respChan := make(chan *FimpMessage)
 
 	go func() {

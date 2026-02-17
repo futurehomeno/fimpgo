@@ -18,7 +18,7 @@ func DiscoverResources(mqt *fimpgo.MqttTransport, timeout int) ([]Resource, erro
 	}
 	mqt.RegisterChannelWithFilter(channel, resCh, struct {
 		Topic     string
-		Service   fimptype.ServiceTypeT
+		Service   fimptype.ServiceNameT
 		Interface string
 	}{Topic: "pt:j1/mt:evt/rt:discovery", Service: "*", Interface: "*"})
 
