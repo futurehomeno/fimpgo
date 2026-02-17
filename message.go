@@ -471,8 +471,10 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	if fimpmsg.Topic, err = jsonparser.GetString(msg, "topic"); err != nil {
 		log.Tracef("[fimpgo] NewMessageFromBytes topic err: %v", err)
 	}
-	if fimpmsg.Version, err = jsonparser.GetString(msg, "ver"); err != nil {
-		log.Debugf("[fimpgo] NewMessageFromBytes ver err: %v", err)
+	if fimpmsg.Version, err = jsonparser.GetString(msg, "version"); err != nil {
+		if fimpmsg.Version, err = jsonparser.GetString(msg, "ver"); err != nil {
+			log.Debugf("[fimpgo] NewMessageFromBytes ver err: %v", err)
+		}
 	}
 
 	err = nil

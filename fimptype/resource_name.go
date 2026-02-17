@@ -13,6 +13,7 @@ const (
 	GatewayRn        ResourceNameT = "gateway"
 	KindOwlRn        ResourceNameT = "kind_owl"
 	ScheduleRn       ResourceNameT = "schedule"
+	SmarthomeAppRn   ResourceNameT = "smarthome-app"
 	TibberRn         ResourceNameT = "tibber"
 	TimeOwlRn        ResourceNameT = "time_owl"
 	TpFlowRn         ResourceNameT = "tpflow"
