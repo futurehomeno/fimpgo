@@ -7,41 +7,15 @@ import (
 	"github.com/futurehomeno/fimpgo/fimptype"
 )
 
-type MsgTypeT string
-
 const (
 	DefaultPayload        = "j1"
 	CompressedJsonPayload = "j1c1"
-
-	MsgTypeCmd     MsgTypeT = "cmd"
-	MsgTypeEvt     MsgTypeT = "evt"
-	MsgTypeRsp     MsgTypeT = "rsp"
-	MsgTypeUnknown MsgTypeT = ""
 )
-
-func (rn MsgTypeT) Str() string {
-	return string(rn)
-}
-
-func InterfaceMsgType(iface string) MsgTypeT {
-	iface = strings.TrimSpace(iface)
-
-	switch {
-	case strings.HasPrefix(iface, MsgTypeCmd.Str()):
-		return MsgTypeCmd
-	case strings.HasPrefix(iface, MsgTypeEvt.Str()):
-		return MsgTypeEvt
-	case strings.HasPrefix(iface, MsgTypeCmd.Str()):
-		return MsgTypeRsp
-	}
-
-	return MsgTypeUnknown
-}
 
 type Address struct {
 	GlobalPrefix    string
 	PayloadType     string
-	MsgType         MsgTypeT
+	MsgType         fimptype.MsgTypeT
 	ResourceType    fimptype.ResourceTypeT
 	ResourceName    fimptype.ResourceNameT
 	ResourceAddress string
@@ -107,7 +81,7 @@ func NewAddressFromString(address string) (*Address, error) {
 			case "pt":
 				addr.PayloadType = keyVal[1]
 			case "mt":
-				addr.MsgType = MsgTypeT(keyVal[1])
+				addr.MsgType = fimptype.MsgTypeT(keyVal[1])
 			case "rt":
 				addr.ResourceType = fimptype.ResourceTypeT(keyVal[1])
 			case "rn":

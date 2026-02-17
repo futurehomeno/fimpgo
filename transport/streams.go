@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/futurehomeno/fimpgo"
+	"github.com/futurehomeno/fimpgo/fimptype"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -142,7 +143,7 @@ func (su *BufferedStream) ConfigureChanelSink(size int) chan []byte {
 
 func (su *BufferedStream) serializeBuffer() error {
 	for i := range su.buffer {
-		if su.buffer[i].ValueType == fimpgo.VTypeObject {
+		if su.buffer[i].ValueType == fimptype.VTypeObject {
 			if err := su.buffer[i].GetObjectValue(&su.buffer[i].Value); err != nil {
 				return err
 			}

@@ -338,7 +338,7 @@ func (mh *ApiClient) notifyRouter() {
 }
 
 func (mh *ApiClient) responseAddress() fimpgo.Address {
-	respAddr := fimpgo.Address{PayloadType: mh.responsePayloadType, MsgType: fimpgo.MsgTypeRsp, ResourceType: fimptype.ResourceTypeApp, ResourceName: fimptype.ResourceNameT(mh.clientID), ResourceAddress: "1"}
+	respAddr := fimpgo.Address{PayloadType: mh.responsePayloadType, MsgType: fimptype.MsgTypeRsp, ResourceType: fimptype.ResourceTypeApp, ResourceName: fimptype.ResourceNameT(mh.clientID), ResourceAddress: "1"}
 	if mh.cloudService != "" {
 		respAddr.ResourceType = fimptype.ResourceTypeCloud
 		respAddr.ResourceName = fimptype.BackendServiceRn
@@ -348,27 +348,27 @@ func (mh *ApiClient) responseAddress() fimpgo.Address {
 }
 
 func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, error) {
-	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimptype.ResourceTypeApp, ResourceName: fimptype.VinculumRn, ResourceAddress: "1"}
+	reqAddr := fimpgo.Address{MsgType: fimptype.MsgTypeCmd, ResourceType: fimptype.ResourceTypeApp, ResourceName: fimptype.VinculumRn, ResourceAddress: "1"}
 	respAddr := mh.responseAddress()
 	responseAddress := respAddr.Serialize()
 
 	param := RequestParam{Components: components}
 	req := Request{Cmd: CmdGet, Param: &param}
 
-	msg := fimpgo.NewMessage("cmd.pd7.request", fimptype.VinculumService, fimpgo.VTypeObject, req, nil, nil, nil)
+	msg := fimpgo.NewMessage("cmd.pd7.request", fimptype.VinculumService, fimptype.VTypeObject, req, nil, nil, nil)
 	msg.ResponseToTopic = responseAddress
 	msg.Source = fimptype.ResourceNameT(mh.clientID)
 	return mh.sClient.SendReqRespFimp(reqAddr.Serialize(), responseAddress, msg, 5, true)
 }
 
 func (mh *ApiClient) sendSetRequest(component string, value any) (*fimpgo.FimpMessage, error) {
-	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimptype.ResourceTypeApp, ResourceName: fimptype.VinculumRn, ResourceAddress: "1"}
+	reqAddr := fimpgo.Address{MsgType: fimptype.MsgTypeCmd, ResourceType: fimptype.ResourceTypeApp, ResourceName: fimptype.VinculumRn, ResourceAddress: "1"}
 	respAddr := mh.responseAddress()
 	responseAddress := respAddr.Serialize()
 
 	req := Request{Cmd: CmdSet, Component: component, Id: value}
 
-	msg := fimpgo.NewMessage("cmd.pd7.request", fimptype.VinculumService, fimpgo.VTypeObject, req, nil, nil, nil)
+	msg := fimpgo.NewMessage("cmd.pd7.request", fimptype.VinculumService, fimptype.VTypeObject, req, nil, nil, nil)
 	msg.ResponseToTopic = responseAddress
 	msg.Source = fimptype.ResourceNameT(mh.clientID)
 	return mh.sClient.SendReqRespFimp(reqAddr.Serialize(), responseAddress, msg, 5, true)

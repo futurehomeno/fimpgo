@@ -9,6 +9,7 @@ import (
 	"github.com/golang-jwt/jwt"
 
 	"github.com/futurehomeno/fimpgo"
+	"github.com/futurehomeno/fimpgo/fimptype"
 	"github.com/futurehomeno/fimpgo/security"
 )
 
@@ -77,7 +78,7 @@ func SignMessageES256(payload *fimpgo.FimpMessage, requestMsg *fimpgo.FimpMessag
 		props = &fimpgo.Props{"user_id": userId}
 	}
 	msgType := "evt.transport.signed"
-	if fimpgo.InterfaceMsgType(payload.Interface) == fimpgo.MsgTypeCmd {
+	if fimptype.InterfaceMsgType(payload.Interface) == fimptype.MsgTypeCmd {
 		msgType = "cmd.transport.signed"
 	}
 	signedMsg := fimpgo.NewBinaryMessage(msgType, payload.Service, serializedMsg, *props, nil, requestMsg)

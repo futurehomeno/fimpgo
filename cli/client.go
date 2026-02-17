@@ -47,7 +47,7 @@ func main() {
 	log.Info("[fimpgo] Publish message")
 
 	msg := fimpgo.NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
-	adr := fimpgo.Address{MsgType: fimpgo.MsgTypeEvt, ResourceType: fimptype.ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
+	adr := fimpgo.Address{MsgType: fimptype.MsgTypeEvt, ResourceType: fimptype.ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
 	if err := mqtt.Publish(&adr, msg); err != nil {
 		log.Errorf("[fimpgo] Publish err: %v", err)
 	}

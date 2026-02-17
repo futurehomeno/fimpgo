@@ -85,8 +85,8 @@ func (sr *ServiceDiscoveryResponder) responder() {
 	for {
 		select {
 		case <-sr.requestsCh:
-			msg := fimpgo.NewMessage("evt.discovery.report", "system", fimpgo.VTypeObject, sr.resource, nil, nil, nil)
-			adr := fimpgo.Address{MsgType: fimpgo.MsgTypeEvt, ResourceType: fimptype.ResourceTypeDiscovery}
+			msg := fimpgo.NewMessage("evt.discovery.report", "system", fimptype.VTypeObject, sr.resource, nil, nil, nil)
+			adr := fimpgo.Address{MsgType: fimptype.MsgTypeEvt, ResourceType: fimptype.ResourceTypeDiscovery}
 			if err := sr.mqtt.Publish(&adr, msg); err != nil {
 				logrus.Error("[fimpgo] Discovery responder publish err: ", err)
 			}

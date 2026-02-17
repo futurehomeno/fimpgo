@@ -108,7 +108,7 @@ func TestSyncClient_SendFimp(t *testing.T) {
 		temp := float64(0.0)
 		for msg := range msgChanS {
 			if msg.Payload.Interface == "cmd.sensor.get_report" {
-				adr := Address{MsgType: MsgTypeEvt, ResourceType: fimptype.ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
+				adr := Address{MsgType: fimptype.MsgTypeEvt, ResourceType: fimptype.ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
 				responseMsg := NewFloatMessage("evt.sensor.report", "temp_sensor", temp, nil, nil, msg.Payload)
 				temp += 0.1
 				err = mqtt.Publish(&adr, responseMsg)
@@ -123,7 +123,7 @@ func TestSyncClient_SendFimp(t *testing.T) {
 
 	expVal := float64(0.0)
 	for range 5 {
-		adr := Address{MsgType: MsgTypeCmd, ResourceType: fimptype.ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
+		adr := Address{MsgType: fimptype.MsgTypeCmd, ResourceType: fimptype.ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
 		msg := NewNullMessage("cmd.sensor.get_report", "temp_sensor", nil, nil, nil)
 		response, err := syncClient.SendFimp(adr.Serialize(), msg, 2)
 		if err != nil {
@@ -170,7 +170,7 @@ func TestSyncClient_SendFimpWithTopicResponse(t *testing.T) {
 		temp := float64(0.0)
 		for msg := range msgChanS {
 			if msg.Payload.Interface == "cmd.sensor.get_report" {
-				adr := Address{MsgType: MsgTypeEvt, ResourceType: fimptype.ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
+				adr := Address{MsgType: fimptype.MsgTypeEvt, ResourceType: fimptype.ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
 				responseMsg := NewFloatMessage("evt.sensor.report", "temp_sensor", temp, nil, nil, nil)
 				err = mqtt.Publish(&adr, responseMsg)
 				if err != nil {
@@ -185,8 +185,8 @@ func TestSyncClient_SendFimpWithTopicResponse(t *testing.T) {
 	expVal := float64(0.0)
 
 	for range 5 {
-		reqAddr := Address{MsgType: MsgTypeCmd, ResourceType: fimptype.ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
-		respAddr := Address{MsgType: MsgTypeEvt, ResourceType: fimptype.ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
+		reqAddr := Address{MsgType: fimptype.MsgTypeCmd, ResourceType: fimptype.ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
+		respAddr := Address{MsgType: fimptype.MsgTypeEvt, ResourceType: fimptype.ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
 
 		msg := NewNullMessage("cmd.sensor.get_report", "temp_sensor", nil, nil, nil)
 		response, err := syncClient.SendFimpWithTopicResponse(reqAddr.Serialize(), msg, respAddr.Serialize(), "temp_sensor", "evt.sensor.report", 5)

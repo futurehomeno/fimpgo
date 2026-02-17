@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/buger/jsonparser"
+	"github.com/futurehomeno/fimpgo/fimptype"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -81,7 +82,7 @@ func TestNewObjectMessage(t *testing.T) {
 		Field1: 1,
 		Field2: 2,
 	})
-	msg := NewMessage("evt.timeline.report", "kind-owl", VTypeObject, obj, nil, nil, nil)
+	msg := NewMessage("evt.timeline.report", "kind-owl", fimptype.VTypeObject, obj, nil, nil, nil)
 	serVal, err := msg.SerializeToJson()
 
 	if err != nil {
