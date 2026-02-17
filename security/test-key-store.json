@@ -1,1 +1,0 @@
-[{"UserId":"alex@mail.com","DeviceId":"t-a-1","Algorithm":"ES256","KeyType":"pub","SerializedKey":"-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEDatfysXZHs0Xs8shgcgRLRkhOGd6\nLKcJ+jTGhxqu48aWe0SWRA5vOKh8IYMdYSfpigisFkj9/qzoAPA5xhxN8Q==\n-----END PUBLIC KEY-----\n","EcdsaKey":null,"AddedAt":"2026-02-17T15:22:39+01:00"}]
