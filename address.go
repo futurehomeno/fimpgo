@@ -56,7 +56,7 @@ type Address struct {
 	PayloadType     string
 	MsgType         MsgTypeT
 	ResourceType    ResourceTypeT
-	ResourceName    string
+	ResourceName    fimptype.ResourceNameT
 	ResourceAddress string
 	ServiceName     fimptype.ServiceNameT
 	ServiceAddress  string
