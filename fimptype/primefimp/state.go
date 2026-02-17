@@ -447,7 +447,7 @@ func (sav StateAttributeValue) GetIntArrayValue() ([]int, error) {
 		}
 		return ret, nil
 	}
-	return nil, fmt.Errorf(wrongValueFormat, "[]int]", reflect.ValueOf(sav.Val))
+	return nil, fmt.Errorf(wrongValueFormat, "[]int", reflect.ValueOf(sav.Val))
 }
 
 func (sav StateAttributeValue) GetFloatArrayValue() ([]float64, error) {
