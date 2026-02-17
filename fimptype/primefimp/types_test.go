@@ -90,7 +90,7 @@ func TestPrimeFimpSendFimpWithTopicResponse(t *testing.T) {
 	param := RequestParam{Components: []string{"device"}}
 	req := Request{Cmd: "get", Param: &param}
 
-	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimptype.VTypeObject, req, nil, nil, nil)
+	msg := fimpgo.NewMessage("cmd.pd7.request", fimptype.VinculumService, fimptype.VTypeObject, req, nil, nil, nil)
 	msg.ResponseToTopic = respAddr.Serialize()
 	msg.Source = "fimpgo-test"
 	response, err := syncClient.SendFimpWithTopicResponse(reqAddr.Serialize(), msg, respAddr.Serialize(), "temp_sensor", "", 5)
