@@ -23,7 +23,7 @@ func InterfaceMsgType(iface string) MsgTypeT {
 		return MsgTypeCmd
 	case strings.HasPrefix(iface, MsgTypeEvt.Str()):
 		return MsgTypeEvt
-	case strings.HasPrefix(iface, MsgTypeCmd.Str()):
+	case strings.HasPrefix(iface, MsgTypeRsp.Str()):
 		return MsgTypeRsp
 	}
 

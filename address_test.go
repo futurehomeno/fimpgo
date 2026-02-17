@@ -57,6 +57,7 @@ func TestNewAddressFromStringAdapter(t *testing.T) {
 		t.Error("Wrong resource address")
 	}
 }
+
 func TestNewAddressFromStringAdapterGlobalPrefix(t *testing.T) {
 	addrString := "BDNF123/pt:j1/mt:evt/rt:ad/rn:zw/ad:1"
 	adr, err := NewAddressFromString(addrString)
@@ -92,9 +93,9 @@ func TestAddress_Serialize(t *testing.T) {
 }
 
 func TestAddress_SerializeWithGlobalPrefix(t *testing.T) {
-	adr := Address{MsgType: fimptype.MsgTypeEvt, ResourceType: fimptype.ResourceTypeDevice, ResourceName: fimptype.ZwaveRn, ResourceAddress: "1", ServiceName: "sensor_presence", ServiceAddress: "16", GlobalPrefix: "BDNF123"}
+	adr := Address{MsgType: fimptype.MsgTypeEvt, ResourceType: fimptype.ResourceTypeDevice, ResourceName: fimptype.ZwaveRn, ResourceAddress: "1", ServiceName: "sensor_presence", ServiceAddress: "16", GlobalPrefix: "DNF123"}
 	adrStr := adr.Serialize()
-	if adrStr != "BDNF123/pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:sensor_presence/ad:16" {
+	if adrStr != "DNF123/pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:sensor_presence/ad:16" {
 		t.Error("Serialization is incorrect . Result is -  ", adrStr)
 	}
 }
