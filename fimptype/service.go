@@ -4,6 +4,36 @@ import (
 	"encoding/json"
 )
 
+type ServiceTypeT string
+
+const (
+	BalanceGuardService    ServiceTypeT = "balance_guard"
+	CloudBridge            ServiceTypeT = "clbridge"
+	EcollectorSrevice      ServiceTypeT = "ecollector"
+	EnergyGuardService     ServiceTypeT = "energy_guard"
+	EaseeService           ServiceTypeT = "easee"
+	FhButlerService        ServiceTypeT = "fhbutler"
+	GatewayService         ServiceTypeT = "gateway"
+	KindOwlService         ServiceTypeT = "kind_owl"
+	MaxGuardService        ServiceTypeT = "max_guard"
+	PriceGuardService      ServiceTypeT = "price_guard"
+	ScheduleService        ServiceTypeT = "schedule"
+	TibberService          ServiceTypeT = "tibber"
+	TimeOwlService         ServiceTypeT = "time_owl"
+	TpFlowService          ServiceTypeT = "tpflow"
+	VinculumService        ServiceTypeT = "vinculum"
+	ZaptecService          ServiceTypeT = "zaptec"
+	ZigbeeService          ServiceTypeT = "zigbee"
+	ZwaveDeprecatedService ServiceTypeT = "zw"
+	ZwaveService           ServiceTypeT = "zwave-ad"
+
+	FimpeeApp ServiceTypeT = "fimpee"
+)
+
+func (s ServiceTypeT) Str() string {
+	return string(s)
+}
+
 // Service represents a specification of the service supported by the thing.
 type Service struct {
 	Name             string         `json:"name" storm:"index"`
