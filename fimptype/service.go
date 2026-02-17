@@ -37,7 +37,7 @@ func (s ServiceNameT) Str() string {
 
 // Service represents a specification of the service supported by the thing.
 type Service struct {
-	Name             string         `json:"name" storm:"index"`
+	Name             ServiceNameT   `json:"name" storm:"index"`
 	Alias            string         `json:"alias"`
 	Address          string         `json:"address"`
 	Enabled          bool           `json:"enabled"`
