@@ -321,11 +321,16 @@ func (msg *FimpMessage) Str() string {
 
 	if msg.Service != "" {
 		if msg.Storage != nil && msg.Storage.Strategy != StorageStrategyNone {
+			strategyStr := string(msg.Storage.Strategy)
+			if len(strategyStr) >= 3 {
+				strategyStr = strategyStr[:3]
+			}
+
 			switch msg.Value.(type) {
 			case float32, float64:
-				ret = strings.TrimSpace(fmt.Sprintf("%s %s %s %.2f %s %s", msg.Source, msg.Service, msg.Interface, msg.Value, msg.Storage.Strategy[:3], msg.Storage.SubValue))
+				ret = strings.TrimSpace(fmt.Sprintf("%s %s %s %.2f %s %s", msg.Source, msg.Service, msg.Interface, msg.Value, strategyStr, msg.Storage.SubValue))
 			default:
-				ret = strings.TrimSpace(fmt.Sprintf("%s %s %s %v %s %s", msg.Source, msg.Service, msg.Interface, msg.Value, msg.Storage.Strategy[:3], msg.Storage.SubValue))
+				ret = strings.TrimSpace(fmt.Sprintf("%s %s %s %v %s %s", msg.Source, msg.Service, msg.Interface, msg.Value, strategyStr, msg.Storage.SubValue))
 			}
 		} else {
 			switch msg.Value.(type) {
@@ -493,7 +498,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 		_, err = jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, e := jsonparser.ParseBoolean(value)
 			if e != nil {
-				log.Warnf("[fimpgo] Parse fimptype.VTypeBoolArray err: %v", e)
+				log.Warnf("[fimpgo] Parse VTypeBoolArray err: %v", e)
 				return
 			}
 			val = append(val, item)
@@ -506,7 +511,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 		_, err = jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, e := jsonparser.ParseString(value)
 			if e != nil {
-				log.Warnf("[fimpgo] Parse fimptype.VTypeStrArray err: %v", e)
+				log.Warnf("[fimpgo] Parse VTypeStrArray err: %v", e)
 				return
 			}
 			val = append(val, item)
@@ -519,7 +524,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 		_, err = jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, e := jsonparser.ParseInt(value)
 			if e != nil {
-				log.Warnf("[fimpgo] Parse fimptype.VTypeIntArray err: %v", e)
+				log.Warnf("[fimpgo] Parse VTypeIntArray err: %v", e)
 				return
 			}
 			val = append(val, int(item))
@@ -532,7 +537,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 		_, err = jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, e := jsonparser.ParseFloat(value)
 			if e != nil {
-				log.Warnf("[fimpgo] Parse fimptype.VTypeFloatArray err: %v", e)
+				log.Warnf("[fimpgo] Parse VTypeFloatArray err: %v", e)
 				return
 			}
 			val = append(val, item)
@@ -545,7 +550,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 		err = jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 			tempStr, e := jsonparser.ParseString(value)
 			if e != nil {
-				log.Warnf("[fimpgo] Parse fimptype.VTypeStrMap err: %v", e)
+				log.Warnf("[fimpgo] Parse VTypeStrMap err: %v", e)
 			} else {
 				val[string(key)] = tempStr
 			}
@@ -559,7 +564,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 		err = jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 			tempInt, e := jsonparser.ParseInt(value)
 			if e != nil {
-				log.Warnf("[fimpgo] Parse fimptype.VTypeIntMap err: %v", e)
+				log.Warnf("[fimpgo] Parse VTypeIntMap err: %v", e)
 			} else {
 				val[string(key)] = int(tempInt)
 			}
@@ -573,7 +578,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 		err = jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 			tempFLoat, e := jsonparser.ParseFloat(value)
 			if e != nil {
-				log.Warnf("[fimpgo] Parse fimptype.VTypeFloatMap err: %v", e)
+				log.Warnf("[fimpgo] Parse VTypeFloatMap err: %v", e)
 			} else {
 				val[string(key)] = tempFLoat
 			}
@@ -587,7 +592,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 		err = jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 			tempBool, e := jsonparser.ParseBoolean(value)
 			if e != nil {
-				log.Warnf("[fimpgo] Parse fimptype.VTypeBoolMap err: %v", e)
+				log.Warnf("[fimpgo] Parse VTypeBoolMap err: %v", e)
 			} else {
 				val[string(key)] = tempBool
 			}

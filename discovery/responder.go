@@ -15,7 +15,7 @@ const (
 )
 
 type Resource struct {
-	ResourceName     string                 `json:"resource_name"`      // zigbee , fimpui
+	ResourceName     fimptype.ResourceNameT `json:"resource_name"`      // zigbee, fimpui
 	ResourceType     fimptype.ResourceTypeT `json:"resource_type"`      // ad - adapter , app -  application
 	ResourceFullName string                 `json:"resource_full_name"` // full name is a name for app store or another registry
 	Description      string                 `json:"description"`

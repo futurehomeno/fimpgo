@@ -70,6 +70,10 @@ func NewMqttTransportFromConfigs(cfg MqttConnectionConfigs, errHandler func(erro
 		return nil
 	}
 
+	if cfg.GlobalTopicPrefix != "" {
+		mh.SetGlobalTopicPrefix(cfg.GlobalTopicPrefix)
+	}
+
 	if cfg.StartFailRetryCount > 0 {
 		mh.startFailRetryCount = cfg.StartFailRetryCount
 	}

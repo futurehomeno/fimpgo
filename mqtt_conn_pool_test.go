@@ -55,7 +55,7 @@ func TestMqttConnectionPool_GetConnection(t *testing.T) {
 		}
 		response := NewStringMessage("evt.test.response", "tester", val, nil, nil, iotMsg)
 		if err := responderConn.RespondToRequest(iotMsg, response); err != nil {
-			log.Error("Respond to rq err:", err)
+			t.Error("Respond to rq err:", err)
 		}
 	})
 
@@ -84,8 +84,9 @@ func TestMqttConnectionPool_GetConnection(t *testing.T) {
 	var i int
 	for {
 		if i > 3 {
-			log.Errorf("Failed %t %t %t", isResp1.Load(), isResp2.Load(), isResp3.Load())
+			t.Errorf("Failed %t %t %t", isResp1.Load(), isResp2.Load(), isResp3.Load())
 			t.Fail()
+			return
 		}
 
 		time.Sleep(100 * time.Millisecond)

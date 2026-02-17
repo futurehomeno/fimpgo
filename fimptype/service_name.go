@@ -6,7 +6,7 @@ const (
 	BalanceGuardService    ServiceNameT = "balance_guard"
 	CloudBridgeService     ServiceNameT = "clbridge"
 	DefaService            ServiceNameT = "defa"
-	EcollectorSrevice      ServiceNameT = "ecollector"
+	EcollectorService      ServiceNameT = "ecollector"
 	EnergyGuardService     ServiceNameT = "energy_guard"
 	EaseeService           ServiceNameT = "easee"
 	FhButlerService        ServiceNameT = "fhbutler"
