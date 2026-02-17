@@ -8,7 +8,7 @@ type ServiceTypeT string
 
 const (
 	BalanceGuardService    ServiceTypeT = "balance_guard"
-	CloudBridge            ServiceTypeT = "clbridge"
+	CloudBridgeService     ServiceTypeT = "clbridge"
 	EcollectorSrevice      ServiceTypeT = "ecollector"
 	EnergyGuardService     ServiceTypeT = "energy_guard"
 	EaseeService           ServiceTypeT = "easee"
