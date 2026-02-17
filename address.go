@@ -7,7 +7,6 @@ import (
 	"github.com/futurehomeno/fimpgo/fimptype"
 )
 
-type ResourceTypeT string
 type MsgTypeT string
 
 const (
@@ -18,19 +17,7 @@ const (
 	MsgTypeEvt     MsgTypeT = "evt"
 	MsgTypeRsp     MsgTypeT = "rsp"
 	MsgTypeUnknown MsgTypeT = ""
-
-	ResourceTypeDevice    ResourceTypeT = "dev"
-	ResourceTypeApp       ResourceTypeT = "app"
-	ResourceTypeAdapter   ResourceTypeT = "ad"
-	ResourceTypeCloud     ResourceTypeT = "cloud"
-	ResourceTypeDiscovery ResourceTypeT = "discovery"
-	ResourceTypeLocation  ResourceTypeT = "loc"
-	ResourceTypeUnknown   ResourceTypeT = ""
 )
-
-func (rn ResourceTypeT) Str() string {
-	return string(rn)
-}
 
 func (rn MsgTypeT) Str() string {
 	return string(rn)
@@ -55,7 +42,7 @@ type Address struct {
 	GlobalPrefix    string
 	PayloadType     string
 	MsgType         MsgTypeT
-	ResourceType    ResourceTypeT
+	ResourceType    fimptype.ResourceTypeT
 	ResourceName    fimptype.ResourceNameT
 	ResourceAddress string
 	ServiceName     fimptype.ServiceNameT
@@ -69,23 +56,23 @@ func (addr *Address) Serialize() string {
 	result := ""
 
 	switch addr.ResourceType {
-	case ResourceTypeAdapter, ResourceTypeApp, ResourceTypeCloud:
+	case fimptype.ResourceTypeAdapter, fimptype.ResourceTypeApp, fimptype.ResourceTypeCloud:
 		result = fmt.Sprintf("%s/%s/%s/%s/%s",
 			addr.prepComp("pt", addr.PayloadType),
 			addr.prepComp("mt", addr.MsgType.Str()),
 			addr.prepComp("rt", addr.ResourceType.Str()),
-			addr.prepComp("rn", addr.ResourceName),
+			addr.prepComp("rn", addr.ResourceName.Str()),
 			addr.prepComp("ad", addr.ResourceAddress))
-	case ResourceTypeDevice:
+	case fimptype.ResourceTypeDevice:
 		result = fmt.Sprintf("%s/%s/%s/%s/%s/%s/%s",
 			addr.prepComp("pt", addr.PayloadType),
 			addr.prepComp("mt", addr.MsgType.Str()),
 			addr.prepComp("rt", addr.ResourceType.Str()),
-			addr.prepComp("rn", addr.ResourceName),
+			addr.prepComp("rn", addr.ResourceName.Str()),
 			addr.prepComp("ad", addr.ResourceAddress),
 			addr.prepComp("sv", addr.ServiceName.Str()),
 			addr.prepComp("ad", addr.ServiceAddress))
-	case ResourceTypeDiscovery:
+	case fimptype.ResourceTypeDiscovery:
 		result = fmt.Sprintf("%s/%s/%s",
 			addr.prepComp("pt", addr.PayloadType),
 			addr.prepComp("mt", addr.MsgType.Str()),
@@ -122,9 +109,9 @@ func NewAddressFromString(address string) (*Address, error) {
 			case "mt":
 				addr.MsgType = MsgTypeT(keyVal[1])
 			case "rt":
-				addr.ResourceType = ResourceTypeT(keyVal[1])
+				addr.ResourceType = fimptype.ResourceTypeT(keyVal[1])
 			case "rn":
-				addr.ResourceName = keyVal[1]
+				addr.ResourceName = fimptype.ResourceNameT(keyVal[1])
 			case "ad":
 				if addr.ServiceName == "" {
 					addr.ResourceAddress = keyVal[1]

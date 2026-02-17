@@ -30,7 +30,7 @@ func DiscoverResources(mqt *fimpgo.MqttTransport, timeout int) ([]Resource, erro
 	}()
 
 	msg := fimpgo.NewNullMessage("cmd.discovery.request", "system", nil, nil, nil)
-	addr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeDiscovery}
+	addr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimptype.ResourceTypeDiscovery}
 	resultsCh := make(chan []Resource, 20)
 
 	// Response aggregator

@@ -1,6 +1,10 @@
 package fimpgo
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/futurehomeno/fimpgo/fimptype"
+)
 
 func TestNewAddressFromStringDevice(t *testing.T) {
 	addrString := "pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:sensor_presence/ad:16"
@@ -14,7 +18,7 @@ func TestNewAddressFromStringDevice(t *testing.T) {
 	if adr.MsgType != MsgTypeEvt {
 		t.Error("Wrong message type")
 	}
-	if adr.ResourceType != ResourceTypeDevice {
+	if adr.ResourceType != fimptype.ResourceTypeDevice {
 		t.Error("Wrong resource type")
 	}
 	if adr.ResourceName != "zw" {
@@ -43,7 +47,7 @@ func TestNewAddressFromStringAdapter(t *testing.T) {
 	if adr.MsgType != MsgTypeEvt {
 		t.Error("Wrong message type")
 	}
-	if adr.ResourceType != ResourceTypeAdapter {
+	if adr.ResourceType != fimptype.ResourceTypeAdapter {
 		t.Error("Wrong resource type")
 	}
 	if adr.ResourceName != "zw" {
@@ -68,7 +72,7 @@ func TestNewAddressFromStringAdapterGlobalPrefix(t *testing.T) {
 	if adr.MsgType != MsgTypeEvt {
 		t.Error("Wrong message type")
 	}
-	if adr.ResourceType != ResourceTypeAdapter {
+	if adr.ResourceType != fimptype.ResourceTypeAdapter {
 		t.Error("Wrong resource type")
 	}
 	if adr.ResourceName != "zw" {
@@ -80,7 +84,7 @@ func TestNewAddressFromStringAdapterGlobalPrefix(t *testing.T) {
 }
 
 func TestAddress_Serialize(t *testing.T) {
-	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "zw", ResourceAddress: "1", ServiceName: "sensor_presence", ServiceAddress: "16"}
+	adr := Address{MsgType: MsgTypeEvt, ResourceType: fimptype.ResourceTypeDevice, ResourceName: fimptype.ZwaveRn, ResourceAddress: "1", ServiceName: "sensor_presence", ServiceAddress: "16"}
 	adrStr := adr.Serialize()
 	if adrStr != "pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:sensor_presence/ad:16" {
 		t.Error("Serialization is incorrect . Result is -  ", adrStr)
@@ -88,7 +92,7 @@ func TestAddress_Serialize(t *testing.T) {
 }
 
 func TestAddress_SerializeWithGlobalPrefix(t *testing.T) {
-	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "zw", ResourceAddress: "1", ServiceName: "sensor_presence", ServiceAddress: "16", GlobalPrefix: "BDNF123"}
+	adr := Address{MsgType: MsgTypeEvt, ResourceType: fimptype.ResourceTypeDevice, ResourceName: fimptype.ZwaveRn, ResourceAddress: "1", ServiceName: "sensor_presence", ServiceAddress: "16", GlobalPrefix: "BDNF123"}
 	adrStr := adr.Serialize()
 	if adrStr != "BDNF123/pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:sensor_presence/ad:16" {
 		t.Error("Serialization is incorrect . Result is -  ", adrStr)

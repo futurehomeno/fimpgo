@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/futurehomeno/fimpgo/fimptype"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -50,7 +51,7 @@ func TestMqttTransport_Publish(t *testing.T) {
 	}
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
-	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
+	adr := Address{MsgType: MsgTypeEvt, ResourceType: fimptype.ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
 	err = mqtt.Publish(&adr, msg)
 	if err != nil {
 		t.Fatal("Publish err:", err)
@@ -79,7 +80,7 @@ func TestMqttTransport_PublishStopPublish(t *testing.T) {
 	}
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
-	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
+	adr := Address{MsgType: MsgTypeEvt, ResourceType: fimptype.ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
 	err = mqtt.Publish(&adr, msg)
 	if err != nil {
 		t.Fatal("Publish err:", err)
@@ -131,7 +132,7 @@ func TestMqttTransport_PublishSync(t *testing.T) {
 	}
 
 	msg := NewIntMessage("evt.sensor.report", "temp_sensor", 35, nil, nil, nil)
-	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
+	adr := Address{MsgType: MsgTypeEvt, ResourceType: fimptype.ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
 
 	expVal := int(0)
 	for range 10 {
@@ -170,7 +171,7 @@ func TestMqttTransport_SubUnsub(t *testing.T) {
 	}
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
-	adr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
+	adr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeEvt, ResourceType: fimptype.ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
 	err = mqtt.PublishSync(&adr, msg)
 	if err != nil {
 		t.Error("PublishSync err:", err)
@@ -217,7 +218,7 @@ func TestMqttTransport_PublishTLS(t *testing.T) {
 	}
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
-	adr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
+	adr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeEvt, ResourceType: fimptype.ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
 	err = mqtt.Publish(&adr, msg)
 	if err != nil {
 		t.Fatal("Publish err:", err)
@@ -269,7 +270,7 @@ func TestMqttTransport_PublishTls_2(t *testing.T) {
 	}
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
-	adr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
+	adr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeEvt, ResourceType: fimptype.ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
 	err = mqtt.Publish(&adr, msg)
 	if err != nil {
 		t.Fatal("Publish err:", err)
@@ -322,7 +323,7 @@ func TestMqttTransport_TestChannels(t *testing.T) {
 	wg.Wait()
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
-	adr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
+	adr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeEvt, ResourceType: fimptype.ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
 	err = mqtt.Publish(&adr, msg)
 	if err != nil {
 		t.Fatal("Generate err:", err)
@@ -411,7 +412,7 @@ func TestMqttTransport_TestResponder(t *testing.T) {
 
 	msg := NewFloatMessage("cmd.test.get_response", "tester", float64(35.5), nil, nil, nil)
 	msg.ResponseToTopic = "pt:j1c1/mt:rsp/rt:app/rn:response_tester/ad:1"
-	addr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "test", ResourceAddress: "1"}
+	addr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeCmd, ResourceType: fimptype.ResourceTypeApp, ResourceName: "test", ResourceAddress: "1"}
 	err = mqtt.Publish(&addr, msg)
 	if err != nil {
 		t.Fatal("Publish err:", err)
@@ -515,7 +516,7 @@ func TestMqttTransport_TestChannelsWithFilters(t *testing.T) {
 	startedWg.Wait()
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
-	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
+	adr := Address{MsgType: MsgTypeEvt, ResourceType: fimptype.ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
 	err = mqtt.Publish(&adr, msg)
 	if err != nil {
 		t.Fatal("Publish err:", err)

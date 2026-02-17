@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/futurehomeno/fimpgo"
+	"github.com/futurehomeno/fimpgo/fimptype"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
@@ -79,8 +80,8 @@ func TestPrimeFimpSendFimpWithTopicResponse(t *testing.T) {
 	// Actual test
 	syncClient := fimpgo.NewSyncClient(mqtt)
 
-	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
-	respAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeRsp, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "fimpgo-test", ResourceAddress: "1"}
+	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimptype.ResourceTypeApp, ResourceName: fimptype.VinculumRn, ResourceAddress: "1"}
+	respAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeRsp, ResourceType: fimptype.ResourceTypeApp, ResourceName: "fimpgo-test", ResourceAddress: "1"}
 	if err := syncClient.AddSubscription(respAddr.Serialize()); err != nil {
 		t.Error("Error adding subscription", err)
 		t.Fail()
