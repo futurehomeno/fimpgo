@@ -119,8 +119,8 @@ const (
 type FimpMessage struct {
 	Interface       string                 `json:"type"`
 	Service         fimptype.ServiceNameT  `json:"serv"`
-	ValueType       fimptype.ValueTypeT    `json:ValTypeField`
-	Value           any                    `json:ValField`
+	ValueType       fimptype.ValueTypeT    `json:"val_t"`
+	Value           any                    `json:"val"`
 	ValueObj        []byte                 `json:"-"`
 	Tags            Tags                   `json:"tags"`
 	Properties      Props                  `json:"props"`
