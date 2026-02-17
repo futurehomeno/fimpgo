@@ -258,7 +258,7 @@ func (sa StateAttribute) GetFirstPropAsString(propName string) (string, error) {
 
 type StateAttributeValue struct {
 	Timestamp string            `json:"ts"`
-	ValType   string            `json:"val_t"`
+	ValType   fimpgo.ValueTypeT `json:"val_t"`
 	Val       any               `json:"val"`
 	Props     map[string]string `json:"props"`
 }
@@ -271,23 +271,23 @@ func (sav *StateAttributeValue) parse() error {
 
 	switch sav.ValType {
 	case fimpgo.VTypeString:
-		sav.Val, err = jsonparser.GetString(b, fimpgo.Val)
+		sav.Val, err = jsonparser.GetString(b, fimpgo.ValField)
 	case fimpgo.VTypeBool:
-		sav.Val, err = jsonparser.GetBoolean(b, fimpgo.Val)
+		sav.Val, err = jsonparser.GetBoolean(b, fimpgo.ValField)
 	case fimpgo.VTypeInt:
 		var temp int64
-		temp, err = jsonparser.GetInt(b, fimpgo.Val)
+		temp, err = jsonparser.GetInt(b, fimpgo.ValField)
 		if err == nil {
 			sav.Val = int(temp)
 		}
 	case fimpgo.VTypeFloat:
-		sav.Val, err = jsonparser.GetFloat(b, fimpgo.Val)
+		sav.Val, err = jsonparser.GetFloat(b, fimpgo.ValField)
 	case fimpgo.VTypeBoolArray:
 		var val []bool
 		_, err = jsonparser.ArrayEach(b, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, _ := jsonparser.ParseBoolean(value)
 			val = append(val, item)
-		}, fimpgo.Val)
+		}, fimpgo.ValField)
 
 		sav.Val = val
 	case fimpgo.VTypeStrArray:
@@ -295,28 +295,28 @@ func (sav *StateAttributeValue) parse() error {
 		_, err = jsonparser.ArrayEach(b, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, _ := jsonparser.ParseString(value)
 			val = append(val, item)
-		}, fimpgo.Val)
+		}, fimpgo.ValField)
 		sav.Val = val
 	case fimpgo.VTypeIntArray:
 		var val []int
 		_, err = jsonparser.ArrayEach(b, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, _ := jsonparser.ParseInt(value)
 			val = append(val, int(item))
-		}, fimpgo.Val)
+		}, fimpgo.ValField)
 		sav.Val = val
 	case fimpgo.VTypeFloatArray:
 		var val []float64
 		_, err = jsonparser.ArrayEach(b, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 			item, _ := jsonparser.ParseFloat(value)
 			val = append(val, item)
-		}, fimpgo.Val)
+		}, fimpgo.ValField)
 		sav.Val = val
 	case fimpgo.VTypeStrMap:
 		val := make(map[string]string)
 		err = jsonparser.ObjectEach(b, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
 			val[string(key)], err = jsonparser.ParseString(value)
 			return nil
-		}, fimpgo.Val)
+		}, fimpgo.ValField)
 		sav.Val = val
 	case fimpgo.VTypeIntMap:
 		val := make(map[string]int)
@@ -326,7 +326,7 @@ func (sav *StateAttributeValue) parse() error {
 				val[string(key)] = int(tempInt)
 			}
 			return e
-		}, fimpgo.Val)
+		}, fimpgo.ValField)
 		sav.Val = val
 	case fimpgo.VTypeFloatMap:
 		val := make(map[string]float64)
@@ -334,7 +334,7 @@ func (sav *StateAttributeValue) parse() error {
 			var e error
 			val[string(key)], e = jsonparser.ParseFloat(value)
 			return e
-		}, fimpgo.Val)
+		}, fimpgo.ValField)
 		sav.Val = val
 	case fimpgo.VTypeBoolMap:
 		val := make(map[string]bool)
@@ -342,7 +342,7 @@ func (sav *StateAttributeValue) parse() error {
 			var e error
 			val[string(key)], e = jsonparser.ParseBoolean(value)
 			return e
-		}, fimpgo.Val)
+		}, fimpgo.ValField)
 		sav.Val = val
 	}
 

@@ -89,7 +89,7 @@ type MqttTransport struct {
 	globalTopicPrefixLock sync.RWMutex
 	_globalTopicPrefix    string
 	defaultSourceLock     sync.RWMutex
-	defaultSource         fimptype.ServiceNameT
+	defaultSource         fimptype.ResourceNameT
 	startFailRetryCount   int
 	certDir               string
 	receiveChTimeout      atomic.Uint32

@@ -235,7 +235,7 @@ func (mh *MqttTransport) globalTopicPrefix() string {
 
 // SetDefaultSource safely sets default source name for all outgoing messages.
 // Default source is used only if it was not set explicitly before.
-func (mh *MqttTransport) SetDefaultSource(source fimptype.ServiceNameT) {
+func (mh *MqttTransport) SetDefaultSource(source fimptype.ResourceNameT) {
 	mh.defaultSourceLock.Lock()
 	defer mh.defaultSourceLock.Unlock()
 

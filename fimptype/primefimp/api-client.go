@@ -357,7 +357,7 @@ func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, e
 
 	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimpgo.VTypeObject, req, nil, nil, nil)
 	msg.ResponseToTopic = responseAddress
-	msg.Source = fimptype.ServiceNameT(mh.clientID)
+	msg.Source = fimptype.ResourceNameT(mh.clientID)
 	return mh.sClient.SendReqRespFimp(reqAddr.Serialize(), responseAddress, msg, 5, true)
 }
 
@@ -370,7 +370,7 @@ func (mh *ApiClient) sendSetRequest(component string, value any) (*fimpgo.FimpMe
 
 	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimpgo.VTypeObject, req, nil, nil, nil)
 	msg.ResponseToTopic = responseAddress
-	msg.Source = fimptype.ServiceNameT(mh.clientID)
+	msg.Source = fimptype.ResourceNameT(mh.clientID)
 	return mh.sClient.SendReqRespFimp(reqAddr.Serialize(), responseAddress, msg, 5, true)
 }
 

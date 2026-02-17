@@ -16,28 +16,34 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type ValueTypeT string
+
 const (
 	TimeFormat         = "2006-01-02T15:04:05.999Z07:00"
-	VTypeString        = "string"
-	VTypeInt           = "int"
-	VTypeFloat         = "float"
-	VTypeBool          = "bool"
-	VTypeStrMap        = "str_map"
-	VTypeIntMap        = "int_map"
-	VTypeFloatMap      = "float_map"
-	VTypeBoolMap       = "bool_map"
-	VTypeStrArray      = "str_array"
-	VTypeIntArray      = "int_array"
-	VTypeFloatArray    = "float_array"
-	VTypeBoolArray     = "bool_array"
-	VTypeObject        = "object"
-	VTypeBase64        = "base64"
-	VTypeBinary        = "bin"
-	VTypeNull          = "null"
 	invalidValueFormat = "invalid value=%v type=%s exp=%T"
+	ValField           = "val"
 
-	Val = "val"
+	VTypeString     ValueTypeT = "string"
+	VTypeInt        ValueTypeT = "int"
+	VTypeFloat      ValueTypeT = "float"
+	VTypeBool       ValueTypeT = "bool"
+	VTypeStrMap     ValueTypeT = "str_map"
+	VTypeIntMap     ValueTypeT = "int_map"
+	VTypeFloatMap   ValueTypeT = "float_map"
+	VTypeBoolMap    ValueTypeT = "bool_map"
+	VTypeStrArray   ValueTypeT = "str_array"
+	VTypeIntArray   ValueTypeT = "int_array"
+	VTypeFloatArray ValueTypeT = "float_array"
+	VTypeBoolArray  ValueTypeT = "bool_array"
+	VTypeObject     ValueTypeT = "object"
+	VTypeBase64     ValueTypeT = "base64"
+	VTypeBinary     ValueTypeT = "bin"
+	VTypeNull       ValueTypeT = "null"
 )
+
+func (vt ValueTypeT) Str() string {
+	return string(vt)
+}
 
 var timestampFormats = []string{
 	time.RFC3339Nano,
@@ -133,24 +139,24 @@ const (
 )
 
 type FimpMessage struct {
-	Interface       string                `json:"type"`
-	Service         fimptype.ServiceNameT `json:"serv"`
-	ValueType       string                `json:"val_t"`
-	Value           any                   `json:"val"`
-	ValueObj        []byte                `json:"-"`
-	Tags            Tags                  `json:"tags"`
-	Properties      Props                 `json:"props"`
-	Storage         *Storage              `json:"storage,omitempty"`
-	Version         string                `json:"ver"`
-	CorrelationID   string                `json:"corid"`
-	ResponseToTopic string                `json:"resp_to,omitempty"`
-	Source          fimptype.ServiceNameT `json:"src,omitempty"`
-	CreationTime    string                `json:"ctime"`
-	UID             string                `json:"uid"`
-	Topic           string                `json:"topic,omitempty"` // The field should be used to store original topic. It can be useful for converting message from MQTT to other transports.
+	Interface       string                 `json:"type"`
+	Service         fimptype.ServiceNameT  `json:"serv"`
+	ValueType       ValueTypeT             `json:"val_t"`
+	Value           any                    `json:"val"`
+	ValueObj        []byte                 `json:"-"`
+	Tags            Tags                   `json:"tags"`
+	Properties      Props                  `json:"props"`
+	Storage         *Storage               `json:"storage,omitempty"`
+	Version         string                 `json:"ver"`
+	CorrelationID   string                 `json:"corid"`
+	ResponseToTopic string                 `json:"resp_to,omitempty"`
+	Source          fimptype.ResourceNameT `json:"src,omitempty"`
+	CreationTime    string                 `json:"ctime"`
+	UID             string                 `json:"uid"`
+	Topic           string                 `json:"topic,omitempty"` // The field should be used to store original topic. It can be useful for converting message from MQTT to other transports.
 }
 
-func (msg *FimpMessage) SetValue(value any, valType string) {
+func (msg *FimpMessage) SetValue(value any, valType ValueTypeT) {
 	msg.Value = value
 	msg.ValueType = valType
 }
@@ -358,7 +364,7 @@ func (msg *FimpMessage) Str() string {
 	return ret
 }
 
-func NewMessage(iface string, service fimptype.ServiceNameT, valueType string, value any, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
+func NewMessage(iface string, service fimptype.ServiceNameT, valueType ValueTypeT, value any, props Props, tags Tags, rqMsg *FimpMessage) *FimpMessage {
 	msg := FimpMessage{
 		Interface:    iface,
 		Service:      service,
@@ -455,9 +461,15 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	} else {
 		fimpmsg.Service = fimptype.ServiceNameT(serviceStr)
 	}
-	if fimpmsg.ValueType, err = jsonparser.GetString(msg, "val_t"); err != nil {
+
+	valueTypeStr, err := jsonparser.GetString(msg, "val_t")
+
+	if err != nil {
 		log.Warnf("[fimpgo] NewMessageFromBytes val_t err: %v", err)
+	} else {
+		fimpmsg.ValueType = ValueTypeT(valueTypeStr)
 	}
+
 	if fimpmsg.UID, err = jsonparser.GetString(msg, "uid"); err != nil {
 		log.Tracef("[fimpgo] NewMessageFromBytes uid err: %v", err)
 	}
@@ -476,7 +488,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	if err != nil {
 		log.Tracef("[fimpgo] NewMessageFromBytes src err: %v", err)
 	} else {
-		fimpmsg.Source = fimptype.ServiceNameT(sourceStr)
+		fimpmsg.Source = fimptype.ResourceNameT(sourceStr)
 	}
 
 	if fimpmsg.Topic, err = jsonparser.GetString(msg, "topic"); err != nil {
