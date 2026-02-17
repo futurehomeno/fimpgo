@@ -82,14 +82,14 @@ func TestNewObjectMessage(t *testing.T) {
 		Field1: 1,
 		Field2: 2,
 	})
-	msg := NewMessage("evt.timeline.report", "kind-owl", fimptype.VTypeObject, obj, nil, nil, nil)
+	msg := NewMessage("evt.timeline.report", fimptype.KindOwlService, fimptype.VTypeObject, obj, nil, nil, nil)
 	serVal, err := msg.SerializeToJson()
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	if !strings.HasPrefix(string(serVal), `{"type":"evt.timeline.report","serv":"kind-owl","val_t":"object","val":[{"Field1":1,"Field2":2}],"tags":null,"props":null,"ver":"1","corid":"","ctime":"`) {
+	if !strings.HasPrefix(string(serVal), `{"type":"evt.timeline.report","serv":"kind_owl","val_t":"object","val":[{"Field1":1,"Field2":2}],"tags":null,"props":null,"ver":"1","corid":"","ctime":"`) {
 		t.Error("Serialization failed")
 	}
 }

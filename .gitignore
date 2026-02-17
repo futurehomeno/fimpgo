@@ -4,3 +4,4 @@
 fimpgo
 build/*
 build/
+/security/test-key-store.json

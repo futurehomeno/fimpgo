@@ -20,6 +20,7 @@ const (
 	TimeFormat         = "2006-01-02T15:04:05.999Z07:00"
 	invalidValueFormat = "invalid value=%v type=%s exp=%T"
 	ValField           = "val"
+	ValTypeField       = "val_t"
 )
 
 var timestampFormats = []string{
@@ -118,8 +119,8 @@ const (
 type FimpMessage struct {
 	Interface       string                 `json:"type"`
 	Service         fimptype.ServiceNameT  `json:"serv"`
-	ValueType       fimptype.ValueTypeT    `json:"val_t"`
-	Value           any                    `json:"val"`
+	ValueType       fimptype.ValueTypeT    `json:ValTypeField`
+	Value           any                    `json:ValField`
 	ValueObj        []byte                 `json:"-"`
 	Tags            Tags                   `json:"tags"`
 	Properties      Props                  `json:"props"`
@@ -278,7 +279,7 @@ func (msg *FimpMessage) SerializeToJson() ([]byte, error) {
 	if msg.ValueType == fimptype.VTypeObject {
 		if msg.Value == nil && msg.ValueObj != nil {
 			// This is for object pass though.
-			jsonBA, err = jsonparser.Set(jsonBA, msg.ValueObj, "val")
+			jsonBA, err = jsonparser.Set(jsonBA, msg.ValueObj, ValField)
 		}
 	}
 
@@ -439,7 +440,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 		fimpmsg.Service = fimptype.ServiceNameT(serviceStr)
 	}
 
-	valueTypeStr, err := jsonparser.GetString(msg, "val_t")
+	valueTypeStr, err := jsonparser.GetString(msg, ValTypeField)
 
 	if err != nil {
 		log.Warnf("[fimpgo] NewMessageFromBytes val_t err: %v", err)
@@ -480,13 +481,13 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 
 	switch fimpmsg.ValueType {
 	case fimptype.VTypeString:
-		fimpmsg.Value, err = jsonparser.GetString(msg, "val")
+		fimpmsg.Value, err = jsonparser.GetString(msg, ValField)
 	case fimptype.VTypeBool:
-		fimpmsg.Value, err = jsonparser.GetBoolean(msg, "val")
+		fimpmsg.Value, err = jsonparser.GetBoolean(msg, ValField)
 	case fimptype.VTypeInt:
-		fimpmsg.Value, err = jsonparser.GetInt(msg, "val")
+		fimpmsg.Value, err = jsonparser.GetInt(msg, ValField)
 	case fimptype.VTypeFloat:
-		fimpmsg.Value, err = jsonparser.GetFloat(msg, "val")
+		fimpmsg.Value, err = jsonparser.GetFloat(msg, ValField)
 	case fimptype.VTypeBoolArray:
 		val := make([]bool, 0)
 		_, err = jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
@@ -496,7 +497,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 				return
 			}
 			val = append(val, item)
-		}, "val")
+		}, ValField)
 
 		fimpmsg.Value = val
 
@@ -509,7 +510,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 				return
 			}
 			val = append(val, item)
-		}, "val")
+		}, ValField)
 
 		fimpmsg.Value = val
 
@@ -522,7 +523,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 				return
 			}
 			val = append(val, int(item))
-		}, "val")
+		}, ValField)
 
 		fimpmsg.Value = val
 
@@ -535,7 +536,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 				return
 			}
 			val = append(val, item)
-		}, "val")
+		}, ValField)
 
 		fimpmsg.Value = val
 
@@ -549,7 +550,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 				val[string(key)] = tempStr
 			}
 			return e
-		}, "val")
+		}, ValField)
 
 		fimpmsg.Value = val
 
@@ -563,7 +564,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 				val[string(key)] = int(tempInt)
 			}
 			return e
-		}, "val")
+		}, ValField)
 
 		fimpmsg.Value = val
 
@@ -577,7 +578,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 				val[string(key)] = tempFLoat
 			}
 			return e
-		}, "val")
+		}, ValField)
 
 		fimpmsg.Value = val
 
@@ -591,18 +592,18 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 				val[string(key)] = tempBool
 			}
 			return e
-		}, "val")
+		}, ValField)
 
 		fimpmsg.Value = val
 
 	case fimptype.VTypeBinary:
-		fimpmsg.Value, err = jsonparser.GetString(msg, "val")
+		fimpmsg.Value, err = jsonparser.GetString(msg, ValField)
 		if err != nil {
 			log.Warnf("[fimpgo] GetString val err: %v", err)
 		}
 
 	case fimptype.VTypeObject:
-		fimpmsg.ValueObj, _, _, err = jsonparser.Get(msg, "val")
+		fimpmsg.ValueObj, _, _, err = jsonparser.Get(msg, ValField)
 	case fimptype.VTypeNull:
 		fimpmsg.Value = nil
 	default:
