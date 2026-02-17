@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/futurehomeno/fimpgo"
+	"github.com/futurehomeno/fimpgo/fimptype"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -17,7 +18,7 @@ func DiscoverResources(mqt *fimpgo.MqttTransport, timeout int) ([]Resource, erro
 	}
 	mqt.RegisterChannelWithFilter(channel, resCh, struct {
 		Topic     string
-		Service   string
+		Service   fimptype.ServiceTypeT
 		Interface string
 	}{Topic: "pt:j1/mt:evt/rt:discovery", Service: "*", Interface: "*"})
 

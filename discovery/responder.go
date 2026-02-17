@@ -2,6 +2,7 @@ package discovery
 
 import (
 	"github.com/futurehomeno/fimpgo"
+	"github.com/futurehomeno/fimpgo/fimptype"
 	"github.com/sirupsen/logrus"
 )
 
@@ -60,7 +61,7 @@ func (sr *ServiceDiscoveryResponder) Start() {
 
 	sr.mqtt.RegisterChannelWithFilter(discoverChanName, sr.requestsCh, struct {
 		Topic     string
-		Service   string
+		Service   fimptype.ServiceTypeT
 		Interface string
 	}{Topic: sr.discoveryRequestTopic, Service: "*", Interface: "*"})
 

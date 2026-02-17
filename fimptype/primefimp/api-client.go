@@ -11,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/futurehomeno/fimpgo"
+	"github.com/futurehomeno/fimpgo/fimptype"
 	"github.com/futurehomeno/fimpgo/utils"
 )
 
@@ -356,7 +357,7 @@ func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, e
 
 	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimpgo.VTypeObject, req, nil, nil, nil)
 	msg.ResponseToTopic = responseAddress
-	msg.Source = mh.clientID
+	msg.Source = fimptype.ServiceTypeT(mh.clientID)
 	return mh.sClient.SendReqRespFimp(reqAddr.Serialize(), responseAddress, msg, 5, true)
 }
 
@@ -369,7 +370,7 @@ func (mh *ApiClient) sendSetRequest(component string, value any) (*fimpgo.FimpMe
 
 	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimpgo.VTypeObject, req, nil, nil, nil)
 	msg.ResponseToTopic = responseAddress
-	msg.Source = mh.clientID
+	msg.Source = fimptype.ServiceTypeT(mh.clientID)
 	return mh.sClient.SendReqRespFimp(reqAddr.Serialize(), responseAddress, msg, 5, true)
 }
 
