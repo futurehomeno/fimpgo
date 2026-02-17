@@ -149,13 +149,13 @@ func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
 		}
 	}
 
-	responseTopic := fmt.Sprintf("pt:j1/mt:rsp/rt:app/rn:%s/ad:1", oac.appName)
-	if err := oac.syncClient.AddSubscription(responseTopic); err != nil {
+	rspTopic := fmt.Sprintf("pt:j1/mt:rsp/rt:app/rn:%s/ad:1", oac.appName)
+	if err := oac.syncClient.AddSubscription(rspTopic); err != nil {
 		return err
 	}
 
 	reqMsg := fimpgo.NewStringMessage("cmd.clbridge.get_auth_token", "clbridge", "", nil, nil, nil)
-	reqMsg.ResponseToTopic = responseTopic
+	reqMsg.ResponseToTopic = rspTopic
 	var err error
 	var response *fimpgo.FimpMessage
 	for range oac.cbRetry {
@@ -171,7 +171,7 @@ func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
 	if err != nil {
 		return err
 	}
-	if response.Type != "evt.clbridge.auth_token_report" {
+	if response.Interface != "evt.clbridge.auth_token_report" {
 		return errors.New("wrong response msg type")
 	}
 	oac.hubToken, err = response.GetStringValue()

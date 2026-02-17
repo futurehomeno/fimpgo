@@ -469,7 +469,7 @@ func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr
 	if msg != nil {
 		if utils.RouteIncludesTopic(filter.Topic, topic) &&
 			(msg.Service == filter.Service || filter.Service == "*") &&
-			(msg.Type == filter.Interface || filter.Interface == "*") {
+			(msg.Interface == filter.Interface || filter.Interface == "*") {
 			return true
 		}
 	} else {

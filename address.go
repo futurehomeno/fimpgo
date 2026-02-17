@@ -14,9 +14,10 @@ const (
 	DefaultPayload        = "j1"
 	CompressedJsonPayload = "j1c1"
 
-	MsgTypeCmd MsgTypeT = "cmd"
-	MsgTypeEvt MsgTypeT = "evt"
-	MsgTypeRsp MsgTypeT = "rsp"
+	MsgTypeCmd     MsgTypeT = "cmd"
+	MsgTypeEvt     MsgTypeT = "evt"
+	MsgTypeRsp     MsgTypeT = "rsp"
+	MsgTypeUnknown MsgTypeT = ""
 
 	ResourceTypeDevice    ResourceTypeT = "dev"
 	ResourceTypeApp       ResourceTypeT = "app"
@@ -24,6 +25,7 @@ const (
 	ResourceTypeCloud     ResourceTypeT = "cloud"
 	ResourceTypeDiscovery ResourceTypeT = "discovery"
 	ResourceTypeLocation  ResourceTypeT = "loc"
+	ResourceTypeUnknown   ResourceTypeT = ""
 )
 
 func (rn ResourceTypeT) Str() string {
@@ -32,6 +34,21 @@ func (rn ResourceTypeT) Str() string {
 
 func (rn MsgTypeT) Str() string {
 	return string(rn)
+}
+
+func InterfaceMsgType(iface string) MsgTypeT {
+	iface = strings.TrimSpace(iface)
+
+	switch {
+	case strings.HasPrefix(iface, MsgTypeCmd.Str()):
+		return MsgTypeCmd
+	case strings.HasPrefix(iface, MsgTypeEvt.Str()):
+		return MsgTypeEvt
+	case strings.HasPrefix(iface, MsgTypeCmd.Str()):
+		return MsgTypeRsp
+	}
+
+	return MsgTypeUnknown
 }
 
 type Address struct {

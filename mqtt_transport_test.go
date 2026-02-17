@@ -467,7 +467,7 @@ func TestMqttTransport_TestChannelsWithFilters(t *testing.T) {
 	})
 
 	testFilterFunc := func(topic string, addr *Address, iotMsg *FimpMessage) bool {
-		return iotMsg.Type == "evt.sensor.report"
+		return iotMsg.Interface == "evt.sensor.report"
 	}
 
 	mqtt.RegisterChannelWithFilterFunc("chan5", chan5, testFilterFunc)

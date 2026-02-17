@@ -41,7 +41,7 @@ func TestSyncClient_Connect(t *testing.T) {
 		wg.Done()
 		testVal := float64(0.0)
 		for msg := range msgChanS {
-			if msg.Payload.Type == "cmd.sensor.get_report" {
+			if msg.Payload.Interface == "cmd.sensor.get_report" {
 				responseMsg := NewFloatMessage("evt.sensor.report", "temp_sensor", testVal, nil, nil, msg.Payload)
 				if err := mqtt.PublishToTopic("pt:j1/mt:evt/rt:app/rn:testapp/ad:1", responseMsg); err != nil {
 					t.Error("Publish error:", err)
@@ -106,7 +106,7 @@ func TestSyncClient_SendFimp(t *testing.T) {
 		wg.Done()
 		temp := float64(0.0)
 		for msg := range msgChanS {
-			if msg.Payload.Type == "cmd.sensor.get_report" {
+			if msg.Payload.Interface == "cmd.sensor.get_report" {
 				adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
 				responseMsg := NewFloatMessage("evt.sensor.report", "temp_sensor", temp, nil, nil, msg.Payload)
 				temp += 0.1
@@ -168,7 +168,7 @@ func TestSyncClient_SendFimpWithTopicResponse(t *testing.T) {
 		wg.Done()
 		temp := float64(0.0)
 		for msg := range msgChanS {
-			if msg.Payload.Type == "cmd.sensor.get_report" {
+			if msg.Payload.Interface == "cmd.sensor.get_report" {
 				adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeApp, ResourceName: "testapp", ResourceAddress: "1"}
 				responseMsg := NewFloatMessage("evt.sensor.report", "temp_sensor", temp, nil, nil, nil)
 				err = mqtt.Publish(&adr, responseMsg)

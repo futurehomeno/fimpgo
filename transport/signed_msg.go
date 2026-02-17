@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/golang-jwt/jwt"
 
@@ -78,7 +77,7 @@ func SignMessageES256(payload *fimpgo.FimpMessage, requestMsg *fimpgo.FimpMessag
 		props = &fimpgo.Props{"user_id": userId}
 	}
 	msgType := "evt.transport.signed"
-	if strings.Contains(payload.Type, "cmd") {
+	if fimpgo.InterfaceMsgType(payload.Interface) == fimpgo.MsgTypeCmd {
 		msgType = "cmd.transport.signed"
 	}
 	signedMsg := fimpgo.NewBinaryMessage(msgType, payload.Service, serializedMsg, *props, nil, requestMsg)
@@ -99,7 +98,7 @@ func SignMessageES256(payload *fimpgo.FimpMessage, requestMsg *fimpgo.FimpMessag
 }
 
 func GetVerifiedMessageES256(signedMsg *fimpgo.FimpMessage, key *security.EcdsaKey) (*fimpgo.FimpMessage, error) {
-	if signedMsg.Type != "cmd.transport.signed" && signedMsg.Type != "evt.transport.signed" {
+	if signedMsg.Interface != "cmd.transport.signed" && signedMsg.Interface != "evt.transport.signed" {
 		return nil, errors.New("incorrect message type")
 	}
 	origMsgBin, ok1 := signedMsg.Value.(string)
