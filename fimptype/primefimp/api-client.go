@@ -267,6 +267,7 @@ func (mh *ApiClient) UpdateSite(notif *Notify) error {
 		switch notif.Component {
 		case ComponentRoom:
 		case ComponentHub:
+		case ComponentDevice:
 		default:
 			return fmt.Errorf("unknown component=%s set", notif.Component)
 		}
