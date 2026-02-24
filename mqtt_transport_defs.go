@@ -7,6 +7,7 @@ import (
 	"time"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
+	"github.com/futurehomeno/fimpgo/fimptype"
 )
 
 const (
@@ -42,7 +43,7 @@ type Message struct {
 
 type FimpFilter struct {
 	Topic     string
-	Service   string
+	Service   fimptype.ServiceNameT
 	Interface string
 }
 
@@ -88,7 +89,7 @@ type MqttTransport struct {
 	globalTopicPrefixLock sync.RWMutex
 	_globalTopicPrefix    string
 	defaultSourceLock     sync.RWMutex
-	defaultSource         string
+	defaultSource         fimptype.ResourceNameT
 	startFailRetryCount   int
 	certDir               string
 	receiveChTimeout      atomic.Uint32

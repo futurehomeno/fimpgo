@@ -43,7 +43,7 @@ func TestNewMsgCompressor2(t *testing.T) {
 			t.Fatal("Deserialization error")
 		}
 		msg.Topic = "some/topic"
-		if msg.ValueType == VTypeObject {
+		if msg.ValueType == fimptype.VTypeObject {
 			err := msg.GetObjectValue(&msg.Value)
 			if err != nil {
 				t.Fatal("Compression fimp error:", err.Error())

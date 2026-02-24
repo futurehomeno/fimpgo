@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/futurehomeno/fimpgo"
+	"github.com/futurehomeno/fimpgo/fimptype"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
@@ -79,8 +80,8 @@ func TestPrimeFimpSendFimpWithTopicResponse(t *testing.T) {
 	// Actual test
 	syncClient := fimpgo.NewSyncClient(mqtt)
 
-	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
-	respAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeRsp, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "fimpgo-test", ResourceAddress: "1"}
+	reqAddr := fimpgo.Address{MsgType: fimptype.MsgTypeCmd, ResourceType: fimptype.ResourceTypeApp, ResourceName: fimptype.VinculumRn, ResourceAddress: "1"}
+	respAddr := fimpgo.Address{MsgType: fimptype.MsgTypeRsp, ResourceType: fimptype.ResourceTypeApp, ResourceName: "fimpgo-test", ResourceAddress: "1"}
 	if err := syncClient.AddSubscription(respAddr.Serialize()); err != nil {
 		t.Error("Error adding subscription", err)
 		t.Fail()
@@ -89,7 +90,7 @@ func TestPrimeFimpSendFimpWithTopicResponse(t *testing.T) {
 	param := RequestParam{Components: []string{"device"}}
 	req := Request{Cmd: "get", Param: &param}
 
-	msg := fimpgo.NewMessage("cmd.pd7.request", "vinculum", fimpgo.VTypeObject, req, nil, nil, nil)
+	msg := fimpgo.NewMessage("cmd.pd7.request", fimptype.VinculumService, fimptype.VTypeObject, req, nil, nil, nil)
 	msg.ResponseToTopic = respAddr.Serialize()
 	msg.Source = "fimpgo-test"
 	response, err := syncClient.SendFimpWithTopicResponse(reqAddr.Serialize(), msg, respAddr.Serialize(), "temp_sensor", "", 5)
