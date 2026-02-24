@@ -202,7 +202,7 @@ type TimerAction struct {
 }
 
 type Timer struct {
-	TimerAction
+	Action  TimerAction    `json:"action"`
 	Client  Client         `json:"client"`
 	Enabled bool           `json:"enabled"`
 	Time    map[string]any `json:"time"`
