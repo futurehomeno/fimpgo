@@ -13,15 +13,13 @@ import (
 
 // SyncClient allows sync interaction over async channel.
 type SyncClient struct {
-	mqttTransportLock   sync.Mutex
-	mqttTransport       *MqttTransport
-	mqttConnPool        *MqttConnectionPool
-	isConnPoolEnabled   bool
-	transactionPoolSize int // Max transaction pool size
-	inboundBufferSize   int // Inbound message channel buffer size
-	stopSignalCh        chan bool
-	globalPrefix        string
-	mqttStarted         bool
+	mqttTransportLock sync.Mutex
+	mqttTransport     *MqttTransport
+	mqttConnPool      *MqttConnectionPool
+	isConnPoolEnabled bool
+	stopSignalCh      chan bool
+	globalPrefix      string
+	mqttStarted       bool
 }
 
 // SetGlobalPrefix configures global prefix/site_id . Most be used from backend services.
@@ -29,39 +27,18 @@ func (sc *SyncClient) SetGlobalPrefix(globalPrefix string) {
 	sc.globalPrefix = globalPrefix
 }
 
-func (sc *SyncClient) SetTransactionPoolSize(transactionPoolSize int) {
-	sc.transactionPoolSize = transactionPoolSize
-}
-
 // NewSyncClient creates sync client using existing mqtt connection
 func NewSyncClient(mqttTransport *MqttTransport) *SyncClient {
 	sc := SyncClient{mqttTransport: mqttTransport}
-	sc.transactionPoolSize = 20
-	sc.inboundBufferSize = 10
 	sc.init()
 	return &sc
 }
 
 // NewSyncClientV2 creates new sync client using existing mqtt connection and configures transactionPool size and inboundBufferSize
-func NewSyncClientV2(mqttTransport *MqttTransport, transactionPoolSize int, inboundBuffSize int) *SyncClient {
+func NewSyncClientV2(mqttTransport *MqttTransport) *SyncClient {
 	sc := SyncClient{mqttTransport: mqttTransport}
-	sc.transactionPoolSize = transactionPoolSize
-	sc.inboundBufferSize = inboundBuffSize
 	sc.init()
 	return &sc
-}
-
-func (sc *SyncClient) SetConfigs(transactionPoolSize int, inboundBuffSize int) {
-	if transactionPoolSize == 0 {
-		transactionPoolSize = 20
-	}
-
-	if inboundBuffSize == 0 {
-		inboundBuffSize = 10
-	}
-
-	sc.transactionPoolSize = transactionPoolSize
-	sc.inboundBufferSize = inboundBuffSize
 }
 
 func (sc *SyncClient) init() {
