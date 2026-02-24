@@ -1,5 +1,10 @@
 name: Go
 
+permissions:
+  contents: read
+  pull-requests: read
+  checks: write
+
 on:
   push:
     branches: [main]
@@ -7,11 +12,6 @@ on:
       - 'v*'
   pull_request:
     types: [opened, synchronize, reopened]
-
-permissions:
-  contents: read
-  pull-requests: read
-  checks: write
 
 jobs:
   build:
@@ -39,10 +39,87 @@ jobs:
         name: fimpgo-armhf
         path: build/fimpgo_*
 
+  linter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.9.0
+          working-directory: ./
+      - name: Run staticcheck
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+          staticcheck ./...
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs:
+      - build
+      - linter
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Configure git auth
+        run: |
+          export "GH_TOKEN=${{ secrets.GH_OAUTH_TOKEN }}"
+          git config --global url."https://$GH_TOKEN@github.com/".insteadOf "https://github.com/"
+
+      - name: Create Mosquitto config
+        run: |
+          mkdir -p .ci
+          cat > .ci/mosquitto.conf <<EOF
+          listener 11883
+          allow_anonymous true
+          persistence false
+          EOF
+
+      - name: Start Mosquitto
+        run: |
+          docker run -d --name mosquitto \
+            -p 11883:11883 \
+            -v "$PWD/.ci/mosquitto.conf:/mosquitto/config/mosquitto.conf" \
+            eclipse-mosquitto:2
+
+      - name: Wait for Mosquitto
+        run: |
+          for i in {1..5}; do
+            nc -z 127.0.0.1 11883 && exit 0
+            sleep 2
+          done
+          echo "Mosquitto not ready"
+          docker logs mosquitto
+          exit 1
+
+      - name: Run tests
+        run: |
+          set -o pipefail
+          go test ./... -p 1 -count=1 -timeout=5m --failfast | tee test.log
+
+      - name: Upload test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-log
+          path: test.log
+
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    needs: build
+    needs: test
     permissions:
       contents: write
 

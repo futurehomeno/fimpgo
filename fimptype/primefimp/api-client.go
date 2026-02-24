@@ -1,16 +1,17 @@
 package primefimp
 
 import (
-	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"runtime/debug"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/futurehomeno/fimpgo"
+	"github.com/futurehomeno/fimpgo/utils"
 )
 
 const VincEventTopic = "pt:j1/mt:evt/rt:app/rn:vinculum/ad:1"
@@ -29,8 +30,8 @@ type ApiClient struct {
 	notifySubChannels     map[string]chan Notify
 	subFilters            map[string]NotifyFilter
 	inMsgChan             fimpgo.MessageCh
-	stopFlag              bool
-	isNotifyRouterStarted bool
+	stopFlag              atomic.Bool
+	isNotifyRouterStarted atomic.Bool
 	notifChMux            sync.RWMutex
 	isVincAppsSyncEnabled bool
 	cloudService          string
@@ -61,7 +62,7 @@ func NewApiClient(clientID string, mqttTransport *fimpgo.MqttTransport, loadSite
 	}
 	if loadSiteIntoCache {
 		if err := api.ReloadSiteToCache(3); err != nil {
-			log.Error("[fimpgo] Error reloading cache: ", err)
+			log.Error("[fimpgo] Reload cache err: ", err)
 		}
 	}
 
@@ -95,9 +96,9 @@ func (mh *ApiClient) IsCacheEmpty() bool {
 // ValidateAndReloadSiteCache validates cache , if empty it makes one reload attempt. The method can be used for cache lazy loading.
 func (mh *ApiClient) ValidateAndReloadSiteCache() bool {
 	if mh.IsCacheEmpty() {
-		log.Debug("[fimpgo] Empty site cache.Reloading...")
+		log.Debug("[fimpgo] Empty site cache. Reload")
 		if err := mh.ReloadSiteToCache(1); err != nil {
-			log.Error("[fimpgo] Error reloading cache: ", err)
+			log.Error("[fimpgo] Reload cache err: ", err)
 		}
 		if mh.IsCacheEmpty() {
 			return false
@@ -112,15 +113,14 @@ func (mh *ApiClient) ReloadSiteToCache(retry int) error {
 	var site *Site
 	var err error
 	for i := 1; i < retry; i++ {
-		log.Debug("[fimpgo] Reloading site into the cache.Attempt ", i)
+		log.Debug("[fimpgo] Reload site into the cache. Attempt=", i)
 		site, err = mh.GetSite(false)
 		if err == nil {
 			log.Debug("[fimpgo] Site loaded successfully")
 			break
 		}
-		log.Error("[fimpgo] site sync error :", err.Error())
+		log.Error("[fimpgo] Site sync err: ", err.Error())
 		time.Sleep(time.Second * time.Duration(5*i))
-
 	}
 	if err != nil {
 		mh.isCacheEnabled = false
@@ -129,13 +129,13 @@ func (mh *ApiClient) ReloadSiteToCache(retry int) error {
 	}
 	mh.isCacheEnabled = true
 	mh.siteCache = *site
-	log.Debug("[fimpgo] Site info successfully loaded to cache")
+	log.Debug("[fimpgo] Site info loaded to cache")
 	return nil
 }
 
 // LoadVincResponseFromFile Loads site from file . File should be in exactly the same format as vinculum response
 func (mh *ApiClient) LoadVincResponseFromFile(fileName string) error {
-	bSite, err := ioutil.ReadFile(fileName)
+	bSite, err := os.ReadFile(fileName) //nolint:gosec
 	if err != nil {
 		return err
 	}
@@ -177,25 +177,29 @@ func (mh *ApiClient) UnregisterChannel(channelId string) {
 }
 
 func (mh *ApiClient) StartNotifyRouter() {
+	alreadyStarted := !mh.isNotifyRouterStarted.CompareAndSwap(false, true)
+
+	if alreadyStarted {
+		return
+	}
+
 	go func() {
-		mh.isNotifyRouterStarted = true
-		for {
-			if mh.stopFlag {
-				break
-			}
+		for !mh.stopFlag.Load() {
 			mh.notifyRouter()
 			log.Info("[fimpgo] Restarting notify router")
 		}
-		log.Info("[fimpgo] Notify router stopped ")
+		log.Info("[fimpgo] Notify router stopped")
 	}()
 }
 
 // Stop : This is destructor
 func (mh *ApiClient) Stop() {
 	mh.sClient.Stop()
-	if mh.isNotifyRouterStarted {
-		mh.stopFlag = true
-		mh.inMsgChan <- &fimpgo.Message{}
+	if mh.isNotifyRouterStarted.Load() {
+		mh.stopFlag.Store(true)
+		if mh.inMsgChan != nil {
+			mh.inMsgChan <- &fimpgo.Message{}
+		}
 	}
 }
 
@@ -230,13 +234,17 @@ func (mh *ApiClient) UpdateSite(notif *Notify) error {
 			return fmt.Errorf("unknown Component=%s add", notif.Component)
 		}
 	case CmdDelete:
-		notifID, ok := notif.Id.(float64)
+		temp, ok := notif.Id.(float64)
+		notifID := int(temp)
 		if !ok {
-			return fmt.Errorf("notify ID type assertion error")
+			notifID, ok = notif.Id.(int)
+			if !ok {
+				return fmt.Errorf("notify ID type assertion error")
+			}
 		}
-		err := mh.siteCache.RemoveWithID(notif.Component, int(notifID))
+		err := mh.siteCache.RemoveWithID(notif.Component, notifID)
 		if err != nil {
-			return fmt.Errorf("remove with ID err: %v", err)
+			return fmt.Errorf("remove with ID err: %w", err)
 		}
 	case CmdEdit:
 		switch notif.Component {
@@ -259,6 +267,7 @@ func (mh *ApiClient) UpdateSite(notif *Notify) error {
 		switch notif.Component {
 		case ComponentRoom:
 		case ComponentHub:
+		case ComponentDevice:
 		default:
 			return fmt.Errorf("unknown component=%s set", notif.Component)
 		}
@@ -281,47 +290,43 @@ func (mh *ApiClient) notifyRouter() {
 	mh.inMsgChan = make(fimpgo.MessageCh, 10)
 	mh.mqttTransport.RegisterChannel(mh.clientID, mh.inMsgChan)
 	if err := mh.mqttTransport.Subscribe(VincEventTopic); err != nil {
-		log.Error("[fimpgo] Subscribe to the vinculum event topic err: ", err)
+		log.Error("[fimpgo] Subscribe to vinculum event topic err:", err)
 	}
 
 	for msg := range mh.inMsgChan {
-		if mh.stopFlag {
+		if mh.stopFlag.Load() {
 			break
 		}
+
 		if msg.Topic != VincEventTopic {
 			continue
 		}
+
 		notif, err := FimpToNotify(msg)
 		if err != nil {
 			log.Warnf("[fimpgo] Cast %v to Notify err: %v", msg, err)
 			continue
-		} else {
-			if err := mh.UpdateSite(notif); err != nil {
-				log.Warnf("[fimpgo] Update site err: %v", err)
-			}
+		}
 
-			if mh.isNotifyRouterStarted { // make sure notify router is started
-				mh.notifChMux.RLock()
-				for cid, nfCh := range mh.notifySubChannels { // check all subfilters
-					nfFilter, ok := mh.subFilters[cid]
-					var send bool
-					if ok {
-						if nfFilter.Cmd == notif.Cmd && nfFilter.Component == notif.Component {
-							send = true
-						}
-					} else {
-						send = true
-					}
-					if send {
+		if err := mh.UpdateSite(notif); err != nil {
+			log.Warnf("[fimpgo] Update site from notify err: %v", err)
+		}
+
+		if mh.isNotifyRouterStarted.Load() { // make sure notify router is started
+			mh.notifChMux.RLock()
+			for cid, nfCh := range mh.notifySubChannels { // check all subfilters
+				nfFilter, ok := mh.subFilters[cid]
+				if ok {
+					if nfFilter.Cmd == notif.Cmd && nfFilter.Component == notif.Component {
 						select {
 						case nfCh <- *notif: // send notification to corresponding subchannel if there is match
 						default:
-							log.Warnf("[fimpgo] Send channel %s is blocked", cid)
+							log.Warnf("[fimpgo] Send channel %s is blocked ", cid)
 						}
 					}
 				}
-				mh.notifChMux.RUnlock()
 			}
+			mh.notifChMux.RUnlock()
 		}
 	}
 }
@@ -350,7 +355,7 @@ func (mh *ApiClient) sendGetRequest(components []string) (*fimpgo.FimpMessage, e
 	return mh.sClient.SendReqRespFimp(reqAddr.Serialize(), responseAddress, msg, 5, true)
 }
 
-func (mh *ApiClient) sendSetRequest(component string, value interface{}) (*fimpgo.FimpMessage, error) {
+func (mh *ApiClient) sendSetRequest(component string, value any) (*fimpgo.FimpMessage, error) {
 	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
 	respAddr := mh.responseAddress()
 	responseAddress := respAddr.Serialize()
@@ -381,7 +386,7 @@ func (mh *ApiClient) GetDevices(fromCache bool) ([]Device, error) {
 		}
 	}
 
-	return nil, errors.New("cache is empty")
+	return nil, utils.ErrEmptyCache
 }
 
 // GetRooms Gets the rooms
@@ -400,9 +405,8 @@ func (mh *ApiClient) GetRooms(fromCache bool) ([]Room, error) {
 		if mh.ValidateAndReloadSiteCache() {
 			return mh.siteCache.Rooms, nil
 		}
-
 	}
-	return nil, errors.New("cache is empty")
+	return nil, utils.ErrEmptyCache
 }
 
 // GetAreas Gets the areas
@@ -422,7 +426,7 @@ func (mh *ApiClient) GetAreas(fromCache bool) ([]Area, error) {
 			return mh.siteCache.Areas, nil
 		}
 	}
-	return nil, errors.New("cache is empty")
+	return nil, utils.ErrEmptyCache
 }
 
 // GetThings Gets the things
@@ -442,7 +446,7 @@ func (mh *ApiClient) GetThings(fromCache bool) ([]Thing, error) {
 			return mh.siteCache.Things, nil
 		}
 	}
-	return nil, errors.New("cache is empty")
+	return nil, utils.ErrEmptyCache
 }
 
 // GetShortcuts Gets the shortcuts
@@ -462,7 +466,7 @@ func (mh *ApiClient) GetShortcuts(fromCache bool) ([]Shortcut, error) {
 			return mh.siteCache.Shortcuts, nil
 		}
 	}
-	return nil, errors.New("cache is empty")
+	return nil, utils.ErrEmptyCache
 }
 
 // GetShortcuts Gets the modes
@@ -482,7 +486,7 @@ func (mh *ApiClient) GetModes(fromCache bool) ([]Mode, error) {
 			return mh.siteCache.Modes, nil
 		}
 	}
-	return nil, errors.New("cache is empty")
+	return nil, utils.ErrEmptyCache
 }
 
 func (mh *ApiClient) GetCurrentMode(fromCache bool) (*House, error) {
@@ -502,7 +506,7 @@ func (mh *ApiClient) GetCurrentMode(fromCache bool) (*House, error) {
 			return mh.siteCache.House, nil
 		}
 	}
-	return nil, errors.New("cache is empty")
+	return nil, utils.ErrEmptyCache
 }
 
 // GetShortcuts Gets the modes
@@ -522,7 +526,7 @@ func (mh *ApiClient) GetTimers(fromCache bool) ([]Timer, error) {
 			return mh.siteCache.Timers, nil
 		}
 	}
-	return nil, errors.New("cache is empty")
+	return nil, utils.ErrEmptyCache
 }
 
 // GetVincServices Gets vinculum services
@@ -542,7 +546,7 @@ func (mh *ApiClient) GetVincServices(fromCache bool) (VincServices, error) {
 			return mh.siteCache.Services, nil
 		}
 	}
-	return VincServices{}, errors.New("cache is empty")
+	return VincServices{}, utils.ErrEmptyCache
 }
 
 // GetSite Gets the whole site information
@@ -570,12 +574,11 @@ func (mh *ApiClient) GetSite(fromCache bool) (*Site, error) {
 		} else {
 			return SiteFromResponse(response), err
 		}
-	} else {
-		if mh.ValidateAndReloadSiteCache() {
-			return &mh.siteCache, nil
-		}
+	} else if mh.ValidateAndReloadSiteCache() {
+		return &mh.siteCache, nil
 	}
-	return nil, errors.New("cache is empty")
+
+	return nil, utils.ErrEmptyCache
 }
 
 func (mh *ApiClient) GetState() (State, error) {

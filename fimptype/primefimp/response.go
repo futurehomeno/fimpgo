@@ -2,23 +2,23 @@ package primefimp
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 
 	"github.com/futurehomeno/fimpgo"
 )
 
 type Response struct {
-	Errors    interface{}                `json:"errors"`
+	Errors    any                        `json:"errors"`
 	Cmd       string                     `json:"cmd"`
 	ParamRaw  map[string]json.RawMessage `json:"param"`
-	RequestID interface{}                `json:",requestId"`
+	RequestID any                        `json:"requestId,omitempty"`
 	Success   bool                       `json:"success"`
-	Id        interface{}                `json:"id,omitempty"`
+	Id        any                        `json:"id,omitempty"`
 }
 
 func FimpToResponse(msg *fimpgo.FimpMessage) (*Response, error) {
 	if msg.Type != "evt.pd7.response" {
-		return nil, errors.New("wrong fimp msg type")
+		return nil, fmt.Errorf("wrong fimp msg type=%s", msg.Type)
 	}
 	response := Response{}
 	err := msg.GetObjectValue(&response)

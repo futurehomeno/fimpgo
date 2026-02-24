@@ -15,7 +15,7 @@ type Manifest struct {
 	InitFlow    []string     `json:"init_flow"`
 	Services    []AppService `json:"services"`
 	AppState    AppStates    `json:"app_state"`
-	ConfigState interface{}  `json:"config_state"`
+	ConfigState any          `json:"config_state"`
 }
 
 type AppConfig struct {
@@ -34,7 +34,7 @@ func (b *AppConfig) Hide() {
 }
 
 func (b *AppConfig) Show() {
-	b.Hidden = true
+	b.Hidden = false
 }
 
 type MultilingualLabel map[string]string
@@ -57,12 +57,12 @@ type AppService struct {
 }
 
 type Value struct {
-	Default interface{} `json:"default"`
+	Default any `json:"default"`
 }
 
 type AppConfigUI struct {
-	Type   string      `json:"type"`
-	Select interface{} `json:"select"`
+	Type   string `json:"type"`
+	Select any    `json:"select"`
 }
 
 type UIButton struct {
@@ -81,7 +81,7 @@ func (b *UIButton) Hide() {
 }
 
 func (b *UIButton) Show() {
-	b.Hidden = true
+	b.Hidden = false
 }
 
 type ButtonActionResponse struct {
@@ -107,7 +107,7 @@ func (b *AppUBLock) Hide() {
 }
 
 func (b *AppUBLock) Show() {
-	b.Hidden = true
+	b.Hidden = false
 }
 
 func NewManifest() *Manifest {
@@ -115,7 +115,7 @@ func NewManifest() *Manifest {
 }
 
 func (m *Manifest) LoadFromFile(filePath string) error {
-	file, err := os.ReadFile(filePath)
+	file, err := os.ReadFile(filePath) //nolint:gosec
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func (m *Manifest) SaveToFile(filePath string) error {
 		return err
 	}
 
-	err = os.WriteFile(filePath, flowMetaByte, 0644)
+	err = os.WriteFile(filePath, flowMetaByte, 0644) //nolint:gosec
 	if err != nil {
 		return err
 	}

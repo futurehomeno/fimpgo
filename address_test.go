@@ -29,7 +29,6 @@ func TestNewAddressFromStringDevice(t *testing.T) {
 	if adr.ServiceAddress != "16" {
 		t.Error("Wrong service address")
 	}
-
 }
 
 func TestNewAddressFromStringAdapter(t *testing.T) {
@@ -78,8 +77,6 @@ func TestNewAddressFromStringAdapterGlobalPrefix(t *testing.T) {
 	if adr.ResourceAddress != "1" {
 		t.Error("Wrong resource address")
 	}
-
-	t.Log("Global prefix = ", adr.GlobalPrefix)
 }
 
 func TestAddress_Serialize(t *testing.T) {
@@ -88,7 +85,6 @@ func TestAddress_Serialize(t *testing.T) {
 	if adrStr != "pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:sensor_presence/ad:16" {
 		t.Error("Serialization is incorrect . Result is -  ", adrStr)
 	}
-	t.Log(adrStr)
 }
 
 func TestAddress_SerializeWithGlobalPrefix(t *testing.T) {
@@ -97,5 +93,4 @@ func TestAddress_SerializeWithGlobalPrefix(t *testing.T) {
 	if adrStr != "BDNF123/pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:sensor_presence/ad:16" {
 		t.Error("Serialization is incorrect . Result is -  ", adrStr)
 	}
-	t.Log(adrStr)
 }

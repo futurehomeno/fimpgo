@@ -36,7 +36,7 @@ const (
 	ConnStateDisconnected = "DISCONNECTED"
 	ConnStateNA           = "NA"
 
-	//EventStarting            = "STARTING"
+	// EventStarting            = "STARTING"
 	EventConfiguring = "CONFIGURING" // All configurations loaded and brokers configured
 	EventConfigError = "CONF_ERROR"  // All configurations loaded and brokers configured
 	EventConfigured  = "CONFIGURED"  // All configurations loaded and brokers configured
@@ -101,7 +101,7 @@ func (al *Lifecycle) ConfigState() State {
 }
 
 func (al *Lifecycle) SetConfigState(configState State) {
-	log.Debug("[edgeapp] New CONFIG state = ", configState)
+	log.Debug("[edgeapp] New CONFIG state=", configState)
 	al.configState = configState
 	for i := range al.systemEventBus {
 		select {
@@ -117,7 +117,7 @@ func (al *Lifecycle) AuthState() State {
 }
 
 func (al *Lifecycle) SetAuthState(authState State) {
-	log.Debug("[edgeapp] New AUTH state = ", authState)
+	log.Debug("[edgeapp] New AUTH state=", authState)
 	al.authState = authState
 
 	for i := range al.systemEventBus {
@@ -134,7 +134,7 @@ func (al *Lifecycle) ConnectionState() State {
 }
 
 func (al *Lifecycle) SetConnectionState(connectivityState State) {
-	log.Debug("[edgeapp] New CONNECTION state = ", connectivityState)
+	log.Debug("[edgeapp] New connection ", connectivityState)
 	al.connectionState = connectivityState
 	for i := range al.systemEventBus {
 		select {
@@ -166,9 +166,8 @@ func (al *Lifecycle) SetAppState(currentState State, params map[string]string) {
 		select {
 		case al.systemEventBus[i] <- SystemEvent{Type: SystemEventTypeState, State: currentState, Info: "sys", Params: params}:
 		default:
-			log.Warnf("[edgeapp] State listener %s is busy , event dropped", i)
+			log.Warnf("[edgeapp] State listener %s busy event dropped", i)
 		}
-
 	}
 	al.busMux.Unlock()
 }
@@ -188,9 +187,8 @@ func (al *Lifecycle) Publish(event SystemEvent, src string, params map[string]st
 		select {
 		case al.systemEventBus[i] <- event:
 		default:
-			log.Warnf("[edgeapp] Event listener %s is busy , event dropped", i)
+			log.Warnf("[edgeapp] Event listener %s busy event dropped", i)
 		}
-
 	}
 	defer al.busMux.Unlock()
 }
@@ -213,7 +211,7 @@ func (al *Lifecycle) Unsubscribe(subId string) {
 
 // WaitForState blocks until target state is reached
 func (al *Lifecycle) WaitForState(subId string, stateType string, targetState State) {
-	log.Debugf("[edgeapp] Waiting for state = %s , current state = %s", targetState, al.AppState())
+	log.Debugf("[edgeapp] Waiting for state=%s current state=%s", targetState, al.AppState())
 	if al.AppState() == targetState && stateType == SystemEventTypeState ||
 		al.ConfigState() == targetState && stateType == SystemEventTypeConfigState ||
 		al.AuthState() == targetState && stateType == SystemEventTypeAuthState ||

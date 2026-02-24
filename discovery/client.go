@@ -4,15 +4,14 @@ import (
 	"time"
 
 	"github.com/futurehomeno/fimpgo"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
-// DiscoverResources discovers resources around , timeout is set in seconds
+// DiscoverResources discovers resources around, timeout is set in seconds
 func DiscoverResources(mqt *fimpgo.MqttTransport, timeout int) ([]Resource, error) {
-	msg := fimpgo.NewNullMessage("cmd.discovery.request", "system", nil, nil, nil)
-	adr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeDiscovery}
 	resCh := make(fimpgo.MessageCh)
 	channel := "resource-discovery-client"
+
 	if err := mqt.Subscribe("pt:j1/mt:evt/rt:discovery"); err != nil {
 		return nil, err
 	}
@@ -23,41 +22,45 @@ func DiscoverResources(mqt *fimpgo.MqttTransport, timeout int) ([]Resource, erro
 	}{Topic: "pt:j1/mt:evt/rt:discovery", Service: "*", Interface: "*"})
 
 	defer func() {
-		mqt.Unsubscribe("pt:j1/mt:evt/rt:discovery")
+		if err := mqt.Unsubscribe("pt:j1/mt:evt/rt:discovery"); err != nil {
+			log.Error("[fimpgo] Unsubscribe err:", err)
+		}
 		mqt.UnregisterChannel("resource-discovery-client")
 	}()
 
+	msg := fimpgo.NewNullMessage("cmd.discovery.request", "system", nil, nil, nil)
+	addr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeDiscovery}
 	resultsCh := make(chan []Resource, 20)
+
 	// Response aggregator
 	go func() {
-		logrus.Info("Starting listener ")
 		results := make([]Resource, 0)
 		stop := false
-		for {
+		for !stop {
 			select {
 			case msg := <-resCh:
-				logrus.Debug("Discovery response from ", msg.Topic)
 				res := Resource{}
 				err := msg.Payload.GetObjectValue(&res)
 
 				if err == nil {
 					results = append(results, res)
 				} else {
-					logrus.Error("Error parsing object ", err)
+					log.Error("[fimpgo] Parsing object err:", err)
 				}
 
 			case <-time.After(time.Duration(timeout) * time.Second):
 				stop = true
-				break
-			}
-			if stop {
-				break
 			}
 		}
+
 		resultsCh <- results
 	}()
-	//Sending request
-	mqt.Publish(&adr, msg)
+
+	// Sending request
+	if err := mqt.Publish(&addr, msg); err != nil {
+		return nil, err
+	}
+
 	result := <-resultsCh
 	return result, nil
 }

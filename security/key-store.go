@@ -3,7 +3,6 @@ package security
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 )
@@ -65,7 +64,6 @@ func (cs *KeyStore) UpdateSerializedKey(userId, deviceId, key, keyType, algo str
 			cs.keyStore[i].SerializedKey = key
 			cs.keyStore[i].AddedAt = time.Now().Format(time.RFC3339)
 			return true, cs.SaveToDisk()
-
 		}
 	}
 	return false, nil
@@ -96,14 +94,17 @@ func (cs *KeyStore) GetEcdsaKey(userId, deviceId, keyType string) (*EcdsaKey, er
 					return nil, fmt.Errorf("empty key string")
 				} else {
 					cs.keyStore[i].EcdsaKey = NewEcdsaKey()
+
 					var err error
-					if cs.keyStore[i].KeyType == KeyTypePrivate {
+					switch cs.keyStore[i].KeyType {
+					case KeyTypePrivate:
 						err = cs.keyStore[i].EcdsaKey.ImportX509PrivateKey(cs.keyStore[i].SerializedKey)
-					} else if cs.keyStore[i].KeyType == KeyTypePublic {
+					case KeyTypePublic:
 						err = cs.keyStore[i].EcdsaKey.ImportX509PublicKey(cs.keyStore[i].SerializedKey)
-					} else {
+					default:
 						return nil, fmt.Errorf("unknown key type %s", keyType)
 					}
+
 					if err != nil {
 						return nil, err
 					}
@@ -129,34 +130,31 @@ func (cs *KeyStore) GetAllUserKeys(userId string) []KeyRecord {
 
 func (cs *KeyStore) SaveToDisk() error {
 	bpayload, err := json.Marshal(cs.keyStore)
+	if err != nil {
+		return err
+	}
+
 	var mode os.FileMode
 	if cs.isPrivate {
 		mode = 0600
 	} else {
 		mode = 0664
 	}
-	err = ioutil.WriteFile(cs.keyStoreFilePath, bpayload, mode)
-	if err != nil {
-		return err
-	}
-	return err
-	return nil
+
+	return os.WriteFile(cs.keyStoreFilePath, bpayload, mode)
 }
 
 func (cs *KeyStore) LoadFromDisk() error {
-	configFileBody, err := ioutil.ReadFile(cs.keyStoreFilePath)
+	configFileBody, err := os.ReadFile(cs.keyStoreFilePath)
 	if err != nil {
 		return err
 	}
-	err = json.Unmarshal(configFileBody, &cs.keyStore)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return json.Unmarshal(configFileBody, &cs.keyStore)
 }
 
 // An app should call the method to authenticate message
-//func (cs *KeyStore) IsMessageAuthenticated(msg *fimpgo.FimpMessage) (bool) {
+// func (cs *KeyStore) IsMessageAuthenticated(msg *fimpgo.FimpMessage) (bool) {
 //	//1. Extract username and signature from user message
 //	//2. Query public key from local key store
 //	//3. Validate signature using public key

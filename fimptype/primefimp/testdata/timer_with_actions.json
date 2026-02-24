@@ -1,10 +1,10 @@
 {
   "action": {
-    "device": {
-      "37": {
-        "power": "on"
+      "device": {
+        "37": {
+          "power": "on"
+        }
       }
-    }
   },
   "client": {
     "name": "Test Timer"

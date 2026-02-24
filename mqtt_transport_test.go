@@ -1,17 +1,21 @@
 package fimpgo
 
 import (
+	"math/rand"
+	"runtime/debug"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
-	MQTT "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 var msgChan = make(chan int)
 
 func onMsg(topic string, addr *Address, iotMsg *FimpMessage, rawMessage []byte) {
-	log.Info("New message")
+	log.Infof("New msg %s val=%v", topic, iotMsg.Value)
 	if addr.ServiceName == "temp_sensor" && addr.ServiceAddress == "300" {
 		msgChan <- 1
 	} else {
@@ -19,171 +23,218 @@ func onMsg(topic string, addr *Address, iotMsg *FimpMessage, rawMessage []byte) 
 	}
 }
 
-var isCorrect = make(map[int]bool)
+func TestMqttTransport_Options(t *testing.T) {
+	clientTest := "test_options"
+	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", clientTest, "", "", true, 1, 1, nil)
+
+	optionsReader := mqtt.client.OptionsReader()
+
+	assert.Equal(t, clientTest, optionsReader.ClientID())
+	assert.Equal(t, true, optionsReader.AutoReconnect())
+	assert.Equal(t, 30*time.Second, optionsReader.ConnectRetryInterval())
+	assert.Equal(t, true, optionsReader.ConnectRetry())
+	assert.Equal(t, 15*time.Second, optionsReader.WriteTimeout())
+	assert.Equal(t, true, optionsReader.CleanSession())
+}
 
 func TestMqttTransport_Publish(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start()
-	t.Log("Connected")
+	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "test_publish", "", "", true, 1, 1, nil)
+	err := mqtt.Start(5 * time.Second)
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
 
 	mqtt.SetMessageHandler(onMsg)
-	mqtt.Subscribe("#")
-	t.Log("Publishing message")
+	if err := mqtt.Subscribe("#"); err != nil {
+		t.Fatal("Subscribe err:", err)
+	}
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
 	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
-	mqtt.Publish(&adr, msg)
-
-	t.Log("Waiting for new message")
-	result := <-msgChan
-	t.Log("Got new message")
-	mqtt.Stop()
-	if result != 1 {
-		t.Error("Wrong message")
+	err = mqtt.Publish(&adr, msg)
+	if err != nil {
+		t.Fatal("Publish err:", err)
 	}
 
+	result := <-msgChan
+
+	if result != 1 {
+		t.Error("Wrong message result=", result)
+	}
+
+	mqtt.Stop()
 }
 
 func TestMqttTransport_PublishStopPublish(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start()
-	t.Log("Connected")
+	clientID := "test_publish_stop"
+	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", clientID, "", "", true, 1, 1, nil)
+	err := mqtt.Start(5 * time.Second)
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
 
 	mqtt.SetMessageHandler(onMsg)
-	mqtt.Subscribe("#")
-	t.Log("Publishing message")
+	if err := mqtt.Subscribe("#"); err != nil {
+		t.Fatal("Subscribe err:", err)
+	}
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
 	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
-	mqtt.Publish(&adr, msg)
-
-	t.Log("Waiting for new message")
-	result := <-msgChan
-	t.Log("Got new message")
-	mqtt.Stop()
-	if result != 1 {
-		t.Error("Wrong message")
-	}
-	time.Sleep(time.Second * 5)
-	mqtt = NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
-	err = mqtt.Start()
-	t.Log("Connected 2")
+	err = mqtt.Publish(&adr, msg)
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Publish err:", err)
 	}
 
-	time.Sleep(time.Second * 5)
+	result := <-msgChan
+	if result != 1 {
+		t.Errorf("Wrong message result=%d", result)
+	}
 
-	t.Log("Done")
+	mqtt.Stop()
+
+	mqtt = NewMqttTransport("tcp://127.0.0.1:11883", clientID, "", "", true, 1, 1, nil)
+	err = mqtt.Start(5 * time.Second)
+	if err != nil {
+		t.Fatal("Start MQTT err:", err)
+	}
+
 	mqtt.Stop()
 }
 
 func TestMqttTransport_PublishSync(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
-	MQTT.DEBUG = log.StandardLogger()
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start()
-	t.Log("Connected")
+	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "test_publishsync", "", "", true, 1, 1, nil)
+	err := mqtt.Start(5 * time.Second)
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
 
-	t.Log("Publishing message")
+	var cnt atomic.Int64
 
-	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
+	mqtt.SetMessageHandler(func(topic string, addr *Address, iotMsg *FimpMessage, rawMessage []byte) {
+		if addr.ServiceName != "temp_sensor" {
+			return
+		}
+
+		t.Logf("msg %s %v", topic, *iotMsg)
+
+		val, err := iotMsg.GetIntValue()
+		if err != nil {
+			t.Error(string(debug.Stack()))
+			t.Error(err)
+		} else {
+			cnt.Add(int64(val))
+		}
+	})
+
+	if err := mqtt.Subscribe("pt:j1/mt:evt/#"); err != nil {
+		t.Fatal("Subscribe err:", err)
+	}
+
+	msg := NewIntMessage("evt.sensor.report", "temp_sensor", 35, nil, nil, nil)
 	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
 
+	expVal := int(0)
 	for range 10 {
+		msg.Value = rand.Intn(100) //nolint:gosec
+		expVal += msg.Value.(int)  //nolint:forcetypeassert
+
 		err = mqtt.PublishSync(&adr, msg)
 		if err != nil {
-			log.Info("Publish failed . Err :")
-		} else {
-			log.Info("Publish success ")
+			log.Info("Publish failed err:", err)
 		}
-		time.Sleep(time.Second * 5)
 	}
 
-	t.Log("Waiting for new message")
-	t.Log("Got new message")
+	time.Sleep(200 * time.Millisecond)
 	mqtt.Stop()
+
+	assert.Equal(t, expVal, int(cnt.Load()))
 }
 
 func TestMqttTransport_SubUnsub(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start()
-	t.Log("Connected")
+	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "test_subUnsub", "", "", true, 1, 1, nil)
+	err := mqtt.Start(5 * time.Second)
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
 
 	mqtt.SetMessageHandler(onMsg)
-	mqtt.Subscribe("pt:j1/mt:evt/#")
-	//mqtt.Subscribe("pt:j1/mt:evt/rt:dev/rn:test/ad:1/sv:temp_sensor/ad:300")
-	//mqtt.Unsubscribe("pt:j1/mt:evt/rt:dev/rn:test/ad:1/sv:temp_sensor/ad:300")
-	mqtt.Unsubscribe("pt:j1/mt:evt/#")
-	t.Log("Publishing message")
+	if err := mqtt.Subscribe("pt:j1/mt:evt/#"); err != nil {
+		t.Fatal("Subscribe err:", err)
+		return
+	}
+
+	// unsubscribe and send message, shall not receive it
+	err = mqtt.Unsubscribe("pt:j1/mt:evt/#")
+	if err != nil {
+		t.Fatal("Unsubscribe err:", err)
+	}
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
 	adr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
-	mqtt.PublishSync(&adr, msg)
-
-	t.Log("Waiting for new message")
-	result := <-msgChan
-	t.Log("Got new message")
-	mqtt.Stop()
-	if result != 1 {
-		t.Error("Wrong message")
+	err = mqtt.PublishSync(&adr, msg)
+	if err != nil {
+		t.Error("PublishSync err:", err)
+		t.FailNow()
 	}
+
+	err = mqtt.Publish(&adr, msg)
+	if err != nil {
+		t.Fatal("Publish err:", err)
+	}
+
+	select {
+	case <-msgChan:
+		t.Error("Should not receive msg")
+	case <-time.After(2 * time.Second):
+	}
+
+	mqtt.Stop()
 }
 
-func TestMqttTransport_PublishTls(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+// TODO: Fix, awsiot.private.key is not available in the repo
+func TestMqttTransport_PublishTLS(t *testing.T) {
+	t.Skip()
 	// for test replace XYZ with actual AWS IoT core address and ABC with actual clientid
-	mqtt := NewMqttTransport("ssl://a1ds8ixdqbiw53-ats.iot.eu-central-1.amazonaws.com:443", "00000000alexdevtest", "", "", false, 1, 1, nil)
+	mqtt := NewMqttTransportTLS("ssl://a1ds8ixdqbiw53-ats.iot.eu-central-1.amazonaws.com:443", "00000000alexdevtest", "", "", false, 1, 1, nil,
+		"awsiot.private.key", "awsiot.crt", "./certs", true)
+
+	if mqtt == nil {
+		t.Fatal("Configure TLS err")
+	}
 
 	// for test enter valid site-id
 	mqtt.SetGlobalTopicPrefix("331D092F-4685-4CC9-8337-2598E6F5D8D5")
-	// for test place certificate and key into certs folder
-	err := mqtt.ConfigureTls("awsiot.private.key", "awsiot.crt", "./certs", true)
 
+	err := mqtt.Start(5 * time.Second)
 	if err != nil {
-		t.Error("Certificate error :", err)
-	}
-
-	err = mqtt.Start()
-	t.Log("Connected")
-	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
 
 	mqtt.SetMessageHandler(onMsg)
-	time.Sleep(time.Second * 1)
-	mqtt.Subscribe("#")
-	t.Log("Publishing message")
+
+	if err := mqtt.Subscribe("#"); err != nil {
+		t.Fatal("Subscribe err:", err)
+	}
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
 	adr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
-	mqtt.Publish(&adr, msg)
-
-	t.Log("Waiting for new message")
-	result := <-msgChan
-	t.Log("Got new message")
-	mqtt.Stop()
-	if result != 1 {
-		t.Error("Wrong message")
+	err = mqtt.Publish(&adr, msg)
+	if err != nil {
+		t.Fatal("Publish err:", err)
 	}
+
+	result := <-msgChan
+
+	if result != 1 {
+		t.Errorf("Unexpected message value=%d", result)
+	}
+
+	mqtt.Stop()
 }
 
+// TODO: Fix, awsiot.private.key is not available in the repo
 func TestMqttTransport_PublishTls_2(t *testing.T) {
+	t.Skip()
 	connConfig := MqttConnectionConfigs{
 		ServerURI:          "ssl://a1ds8ixdqbiw53-ats.iot.eu-central-1.amazonaws.com:443",
 		ClientID:           "00000000alexdevtest",
@@ -193,160 +244,209 @@ func TestMqttTransport_PublishTls_2(t *testing.T) {
 		CertDir:            "./certs",
 		PrivateKeyFileName: "awsiot.private.key",
 		CertFileName:       "awsiot.crt",
+		IsAws:              true,
 	}
 
-	log.SetLevel(log.DebugLevel)
 	// for test replace XYZ with actual AWS IoT core address and ABC with actual clientid
-	mqtt := NewMqttTransportFromConfigs(connConfig)
+	mqtt := NewMqttTransportFromConfigs(connConfig, nil)
+
+	if mqtt == nil {
+		t.Fatal("Configure TLS error")
+	}
 
 	// for test enter valid site-id
 	mqtt.SetGlobalTopicPrefix("331D092F-4685-4CC9-8337-2598E6F5D8D5")
-	// for test place certificate and key into certs folder
-	err := mqtt.ConfigureTls("awsiot.private.key", "awsiot.crt", "./certs", true)
 
+	err := mqtt.Start(5 * time.Second)
 	if err != nil {
-		t.Error("Certificate error :", err)
-	}
-
-	err = mqtt.Start()
-	t.Log("Connected")
-	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
 
 	mqtt.SetMessageHandler(onMsg)
-	time.Sleep(time.Second * 1)
-	mqtt.Subscribe("#")
-	t.Log("Publishing message")
+
+	if err := mqtt.Subscribe("#"); err != nil {
+		t.Fatal("Subscribe err:", err)
+	}
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
 	adr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
-	mqtt.Publish(&adr, msg)
-
-	t.Log("Waiting for new message")
-	result := <-msgChan
-	t.Log("Got new message")
-	mqtt.Stop()
-	if result != 1 {
-		t.Error("Wrong message")
+	err = mqtt.Publish(&adr, msg)
+	if err != nil {
+		t.Fatal("Publish err:", err)
 	}
+
+	result := <-msgChan
+	if result != 1 {
+		t.Errorf("Unexpected message value=%d", result)
+	}
+
+	mqtt.Stop()
 }
 
 func TestMqttTransport_TestChannels(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start()
-	t.Log("Connected")
-	time.Sleep(time.Second * 1)
-	mqtt.Subscribe("#")
+	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "test_channels", "", "", true, 1, 1, nil)
+	err := mqtt.Start(5 * time.Second)
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
+
+	if err := mqtt.Subscribe("#"); err != nil {
+		t.Fatal("Subscribe err:", err)
+	}
+
 	chan1 := make(MessageCh)
 	chan2 := make(MessageCh)
 	mqtt.RegisterChannel("chan1", chan1)
 	mqtt.RegisterChannel("chan2", chan2)
-	isCorrect[1] = false
-	isCorrect[2] = false
+	correctMsg := make(chan int, 2)
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
 	go func(msgChan MessageCh) {
-		newMsg := <-chan1
+		wg.Done()
+		newMsg := <-msgChan
 		if newMsg.Payload.Service == "temp_sensor" {
-			isCorrect[1] = true
+			correctMsg <- 1
 		}
 	}(chan1)
+
 	go func(msgChan MessageCh) {
-		newMsg := <-chan2
+		wg.Done()
+		newMsg := <-msgChan
 		if newMsg.Payload.Service == "temp_sensor" {
-			isCorrect[2] = true
+			correctMsg <- 2
 		}
 	}(chan2)
 
+	wg.Wait()
+
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
 	adr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
-	mqtt.Publish(&adr, msg)
-	time.Sleep(time.Second * 1)
+	err = mqtt.Publish(&adr, msg)
+	if err != nil {
+		t.Fatal("Generate err:", err)
+	}
+
+	expVals := map[int]bool{1: true, 2: true}
+
+	for len(expVals) > 0 {
+		select {
+		case val := <-correctMsg:
+			delete(expVals, val)
+
+		case <-time.After(2 * time.Second):
+			t.Fatal("Message not received within timeout missing:", expVals)
+		}
+	}
+
 	mqtt.UnregisterChannel("chan1")
 	mqtt.UnregisterChannel("chan2")
-	if isCorrect[1] && isCorrect[2] {
-		t.Log("Channel test - OK")
-	} else {
-		t.Error("Wrong result")
-		t.Fail()
-	}
+	mqtt.Stop()
 }
 
 func TestMqttTransport_TestResponder(t *testing.T) {
 	log.SetLevel(log.TraceLevel)
-	var isResponseReceived bool
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest-1", "", "", true, 1, 1, nil)
-	err := mqtt.Start()
-	t.Log("Connected")
-	time.Sleep(time.Second * 1)
-	mqtt.Subscribe("#")
 
-	mqtt2 := NewMqttTransport("tcp://localhost:1883", "fimpgotest-2", "", "", true, 1, 1, nil)
-	err = mqtt2.Start()
-	t.Log("Connected")
-	time.Sleep(time.Second * 1)
-	mqtt2.Subscribe("pt:j1c1/mt:rsp/rt:app/rn:response_tester/ad:1")
+	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "test_responder-1", "", "", true, 1, 1, nil)
+	err := mqtt.Start(5 * time.Second)
+	if err != nil {
+		t.Fatal("Start MQTT err:", err)
+	}
+
+	if err := mqtt.Subscribe("#"); err != nil {
+		t.Fatal("Subscribe err:", err)
+	}
+
+	assert.True(t, mqtt.IsConnected())
+
+	mqtt2 := NewMqttTransport("tcp://127.0.0.1:11883", "test_responder-2", "", "", true, 1, 1, nil)
+	err = mqtt2.Start(10 * time.Second)
 
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT 2 err:", err)
 	}
+
+	if err := mqtt2.Subscribe("pt:j1c1/mt:rsp/rt:app/rn:response_tester/ad:1"); err != nil {
+		t.Fatal("Subscribe response_tester err:", err)
+	}
+
+	assert.True(t, mqtt2.IsConnected())
+
 	chan1 := make(MessageCh)
 	chan2 := make(MessageCh)
 	mqtt.RegisterChannel("chan1", chan1)
 	mqtt2.RegisterChannel("chan2", chan2)
-	// responder
-	go func(msgChan MessageCh) {
-		for {
-			newMsg := <-chan1
-			t.Log("New message for responder. Service = " + newMsg.Payload.Service)
-			if newMsg.Payload.Service == "tester" {
-				mqtt.RespondToRequest(newMsg.Payload, NewFloatMessage("evt.test.response", "test_responder", 35.5, nil, nil, nil))
+
+	ready1 := make(chan struct{})
+	ready2 := make(chan struct{})
+	rspReceived := make(chan struct{})
+
+	go func() {
+		ready1 <- struct{}{}
+		newMsg := <-chan1
+		t.Logf("msg1: %v", newMsg)
+		if newMsg.Payload.Service == "tester" {
+			if err := mqtt.RespondToRequest(newMsg.Payload, NewFloatMessage("evt.test.response", "test_responder", 35.5, nil, nil, nil)); err != nil {
+				t.Error("Error responding to request:", err)
 			}
+			return
 		}
+	}()
 
-	}(chan1)
-
-	go func(msgChan MessageCh) {
-		for {
-			newMsg := <-chan2
-			t.Log("Service = " + newMsg.Payload.Service)
-			if newMsg.Payload.Service == "test_responder" && newMsg.Topic == "pt:j1c1/mt:rsp/rt:app/rn:response_tester/ad:1" {
-				isResponseReceived = true
-			}
+	go func() {
+		ready2 <- struct{}{}
+		newMsg := <-chan2
+		t.Logf("msg2: %v", newMsg)
+		if newMsg.Payload.Service == "test_responder" && newMsg.Topic == "pt:j1c1/mt:rsp/rt:app/rn:response_tester/ad:1" {
+			close(rspReceived)
+			return
+		} else {
+			t.Error("Wrong response message received: ", newMsg)
 		}
+	}()
 
-	}(chan2)
+	<-ready1
+	<-ready2
 
 	msg := NewFloatMessage("cmd.test.get_response", "tester", float64(35.5), nil, nil, nil)
 	msg.ResponseToTopic = "pt:j1c1/mt:rsp/rt:app/rn:response_tester/ad:1"
-	adr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "test", ResourceAddress: "1"}
-	mqtt.Publish(&adr, msg)
-	time.Sleep(time.Second * 2)
-	mqtt.UnregisterChannel("chan1")
-	mqtt.UnregisterChannel("chan2")
-	mqtt.Unsubscribe("#")
-	if isResponseReceived {
-		t.Log("Response received")
-	} else {
-		t.Error("Wrong result")
+	addr := Address{PayloadType: DefaultPayload, MsgType: MsgTypeCmd, ResourceType: ResourceTypeApp, ResourceName: "test", ResourceAddress: "1"}
+	err = mqtt.Publish(&addr, msg)
+	if err != nil {
+		t.Fatal("Publish err:", err)
+	}
+
+	select {
+	case <-rspReceived:
+		t.Logf("Received")
+	case <-time.After(3 * time.Second):
+		t.Error("Response not received within timeout")
 		t.Fail()
 	}
+
+	mqtt.UnregisterChannel("chan1")
+	mqtt.UnregisterChannel("chan2")
+	err = mqtt.Unsubscribe("#")
+	if err != nil {
+		t.Fatal("AddSubscription err:", err)
+	}
+	mqtt.Stop()
 }
 
 func TestMqttTransport_TestChannelsWithFilters(t *testing.T) {
-
-	log.SetLevel(log.DebugLevel)
-	mqtt := NewMqttTransport("tcp://localhost:1883", "fimpgotest", "", "", true, 1, 1, nil)
-	err := mqtt.Start()
-	t.Log("Connected")
-	time.Sleep(time.Second * 1)
-	mqtt.Subscribe("#")
+	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "test_ch_with_filters", "", "", true, 1, 1, nil)
+	err := mqtt.Start(5 * time.Second)
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
+		return
 	}
+
+	if err := mqtt.Subscribe("#"); err != nil {
+		t.Fatal("Subscribe err:", err)
+		return
+	}
+
 	chan1 := make(MessageCh)
 	chan2 := make(MessageCh)
 	chan3 := make(MessageCh)
@@ -367,88 +467,100 @@ func TestMqttTransport_TestChannelsWithFilters(t *testing.T) {
 	})
 
 	testFilterFunc := func(topic string, addr *Address, iotMsg *FimpMessage) bool {
-		if iotMsg.Type == "evt.sensor.report" {
-			return true
-		}
-		return false
+		return iotMsg.Type == "evt.sensor.report"
 	}
 
 	mqtt.RegisterChannelWithFilterFunc("chan5", chan5, testFilterFunc)
 
-	isCorrect[1] = false
-	isCorrect[2] = false
-	isCorrect[3] = false
-	isCorrect[4] = true
-	isCorrect[5] = false
+	var startedWg sync.WaitGroup
+	startedWg.Add(5)
+	correctMsg := make(chan int, 2)
+
 	go func(msgChan MessageCh) {
+		startedWg.Done()
 		newMsg := <-msgChan
 		if newMsg.Payload.Service == "temp_sensor" {
-			isCorrect[1] = true
+			correctMsg <- 1
 		}
 	}(chan1)
+
 	go func(msgChan MessageCh) {
+		startedWg.Done()
 		newMsg := <-msgChan
 		if newMsg.Payload.Service == "temp_sensor" {
-			isCorrect[2] = true
+			correctMsg <- 2
 		}
 	}(chan2)
 
 	go func(msgChan MessageCh) {
+		startedWg.Done()
 		newMsg := <-msgChan
 		if newMsg.Payload.Service == "temp_sensor" {
-			isCorrect[3] = true
+			correctMsg <- 3
 		}
 	}(chan3)
-	// Negative test
-	go func(msgChan MessageCh) {
-		_ = <-msgChan
-		isCorrect[4] = false
 
+	go func(msgChan MessageCh) {
+		startedWg.Done()
+		<-msgChan
+		correctMsg <- 4
 	}(chan4)
 
 	go func(msgChan MessageCh) {
-		_ = <-msgChan
-		isCorrect[5] = true
-
+		startedWg.Done()
+		<-msgChan
+		correctMsg <- 5
 	}(chan5)
+
+	startedWg.Wait()
 
 	msg := NewFloatMessage("evt.sensor.report", "temp_sensor", float64(35.5), nil, nil, nil)
 	adr := Address{MsgType: MsgTypeEvt, ResourceType: ResourceTypeDevice, ResourceName: "test", ResourceAddress: "1", ServiceName: "temp_sensor", ServiceAddress: "300"}
-	mqtt.Publish(&adr, msg)
-	time.Sleep(time.Second * 1)
+	err = mqtt.Publish(&adr, msg)
+	if err != nil {
+		t.Fatal("Publish err:", err)
+	}
+
+	expVals := map[int]bool{1: true, 2: true, 3: true, 5: true}
+
+	for len(expVals) > 0 {
+		select {
+		case val := <-correctMsg:
+			if val == 4 {
+				t.Error("Should not receive msg on chan4")
+				t.Fail()
+				return
+			}
+
+			delete(expVals, val)
+
+		case <-time.After(2 * time.Second):
+			t.Fatal("Message not received within timeout missing:", expVals)
+		}
+	}
+
 	mqtt.UnregisterChannel("chan1")
 	mqtt.UnregisterChannel("chan2")
 	mqtt.UnregisterChannel("chan3")
 	mqtt.UnregisterChannel("chan4")
 	mqtt.UnregisterChannel("chan5")
-	if isCorrect[1] && isCorrect[2] && isCorrect[3] && isCorrect[4] && isCorrect[5] {
-		t.Log("Channel test - OK")
-	} else {
-		t.Error("Wrong result")
-		t.Log(isCorrect)
-		t.Fail()
-	}
-
+	mqtt.Stop()
 }
 
 func TestAddGlobalPrefixToTopic(t *testing.T) {
 	result := AddGlobalPrefixToTopic("12345", "pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0")
 	if result != "12345/pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0" {
 		t.Error("Wrong topic")
-	} else {
-		t.Log("AddGlobalPrefixToTopic test 1 - OK")
 	}
+
 	result = AddGlobalPrefixToTopic("12345", "/pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0")
 	if result != "12345/pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0" {
 		t.Error("Wrong topic")
-	} else {
-		t.Log("AddGlobalPrefixToTopic test 2 - OK")
 	}
+
 	result = AddGlobalPrefixToTopic("", "pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0")
 	if result != "pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0" {
 		t.Error("Wrong topic")
-	} else {
-		t.Log("AddGlobalPrefixToTopic test 3 - OK")
 	}
 }
 
@@ -456,14 +568,10 @@ func TestDetachGlobalPrefixFromTopic(t *testing.T) {
 	globalPrefix, topic := DetachGlobalPrefixFromTopic("12345/pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0")
 	if globalPrefix != "12345" || topic != "pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0" {
 		t.Error("Wrong topic")
-	} else {
-		t.Log("DetachGlobalPrefixFromTopic test 1 - OK")
 	}
+
 	globalPrefix, topic = DetachGlobalPrefixFromTopic("ABC/12345/pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0")
 	if globalPrefix != "ABC/12345" || topic != "pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:dev_sys/ad:49_0" {
 		t.Error("Wrong topic")
-	} else {
-		t.Log("Result ,", globalPrefix, topic)
-		t.Log("DetachGlobalPrefixFromTopic test 2 - OK")
 	}
 }

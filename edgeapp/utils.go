@@ -32,3 +32,12 @@ func SetupLog(logfile string, level string, logFormat string) {
 		log.SetOutput(&l)
 	}
 }
+
+func SetLogLevel(level string) {
+	logLevel, err := log.ParseLevel(level)
+	if err == nil {
+		log.SetLevel(logLevel)
+	} else {
+		log.SetLevel(log.DebugLevel)
+	}
+}
