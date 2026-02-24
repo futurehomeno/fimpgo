@@ -4,6 +4,7 @@ import (
 	"crypto"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/golang-jwt/jwt"
@@ -48,7 +49,12 @@ https://tools.ietf.org/html/rfc7518#section-3
 //  "type": "evt.transport.signed",
 //  "serv": "sensor_presence",
 //  "val_t": "bin",
-//  "val": "ewogICJ0eXBlIjogImV2dC5wcmVzZW5jZS5yZXBvcnQiLAogICJzZXJ2IjogInNlbnNvcl9wcmVzZW5jZSIsCiAgInZhbF90IjogImJvb2wiLAogICJ2YWwiOiB0cnVlLAogICJ0YWdzIjogbnVsbCwKICAicHJvcHMiOiBudWxsLAogICJ2ZXIiOiAiMSIsCiAgImNvcmlkIjogIiIsCiAgImN0aW1lIjogIjIwMjAtMDUtMDZUMDk6Mjk6NTkuNTI3KzA1OjAwIiwKICAidWlkIjogIjczZjYxMDMwLTQzOTktNGQyMS1iYjk3LTRjYTdjMTYyM2FjMyIKfQ==",
+//  "val":
+// "ewogICJ0eXBlIjogImV2dC5wcmVzZW5jZS5yZXBvcnQiLAogICJzZXJ2IjogInNlbnNvcl9w
+// cmVzZW5jZSIsCiAgInZhbF90IjogImJvb2wiLAogICJ2YWwiOiB0cnVlLAogICJ0YWdzIjogbnV
+// sbCwKICAicHJvcHMiOiBudWxsLAogICJ2ZXIiOiAiMSIsCiAgImNvcmlkIjogIiIsCiAgImN0aW1lI
+// jogIjIwMjAtMDUtMDZUMDk6Mjk6NTkuNTI3KzA1OjAwIiwKICAidWlkIjogIjczZjYxMDMwLTQzOTkt
+// NGQyMS1iYjk3LTRjYTdjMTYyM2FjMyIKfQ==",
 //  "tags": null,
 //  "props": {
 //  	"user_id":"aleks@gmail.com",
@@ -78,7 +84,13 @@ func SignMessageES256(payload *fimpgo.FimpMessage, requestMsg *fimpgo.FimpMessag
 	signedMsg := fimpgo.NewBinaryMessage(msgType, payload.Service, serializedMsg, *props, nil, requestMsg)
 
 	signingMethodES256 := &jwt.SigningMethodECDSA{Name: "ES256", Hash: crypto.SHA256, KeySize: 32, CurveBits: 256}
-	signature, err := signingMethodES256.Sign(signedMsg.Value.(string), keys.PrivateKey())
+	signedMsgStr, ok := signedMsg.Value.(string)
+
+	if !ok {
+		return nil, fmt.Errorf("cast signedMsg.Value type=%T error", signedMsg.Value)
+	}
+
+	signature, err := signingMethodES256.Sign(signedMsgStr, keys.PrivateKey())
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +99,6 @@ func SignMessageES256(payload *fimpgo.FimpMessage, requestMsg *fimpgo.FimpMessag
 }
 
 func GetVerifiedMessageES256(signedMsg *fimpgo.FimpMessage, key *security.EcdsaKey) (*fimpgo.FimpMessage, error) {
-
 	if signedMsg.Type != "cmd.transport.signed" && signedMsg.Type != "evt.transport.signed" {
 		return nil, errors.New("incorrect message type")
 	}

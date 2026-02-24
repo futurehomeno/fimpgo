@@ -2,23 +2,25 @@ package edgeapp
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"time"
+
 	"github.com/futurehomeno/fimpgo"
 	"github.com/futurehomeno/fimpgo/utils"
 	log "github.com/sirupsen/logrus"
-	"io/ioutil"
-	"net/http"
-	"time"
 )
 
 type OAuth2TokenResponse struct {
-	AccessToken  string      `json:"access_token"`
-	TokenType    string      `json:"token_type"`
-	ExpiresIn    int64       `json:"expires_in"`
-	RefreshToken string      `json:"refresh_token"`
-	Scope        interface{} `json:"scope"`
+	AccessToken  string `json:"access_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int64  `json:"expires_in"`
+	RefreshToken string `json:"refresh_token"`
+	Scope        any    `json:"scope"`
 }
 
 type OAuth2RefreshProxyRequest struct {
@@ -48,7 +50,7 @@ type FhOAuth2Client struct {
 	refreshTokenApiUrl string
 	authCodeApiUrl     string
 	refreshRetry       int
-	retryDelay         time.Duration // delay in seconds
+	retryDelay         time.Duration
 	cbRetry            int
 	cbRetryDelay       time.Duration
 }
@@ -73,9 +75,9 @@ func (oac *FhOAuth2Client) SetRefreshTokenApiUrl(refreshTokenApiUrl string) {
 	oac.refreshTokenApiUrl = refreshTokenApiUrl
 }
 
-//NewFhOAuth2Client implements OAuth client which communicates to 3rd party API over FH Auth proxy.
+// NewFhOAuth2Client implements OAuth client which communicates to 3rd party API over FH Auth proxy.
 func NewFhOAuth2Client(partnerName string, appName string, env string) *FhOAuth2Client {
-	client := &FhOAuth2Client{partnerName: partnerName, mqttServerURI: "tcp://localhost:1883", mqttClientID: "auth_client_" + appName}
+	client := &FhOAuth2Client{partnerName: partnerName, mqttServerURI: "tcp://127.0.0.1:1883", mqttClientID: "auth_client_" + appName}
 	if env == utils.EnvBeta {
 		client.refreshTokenApiUrl = "https://partners-beta.futurehome.io/api/control/edge/proxy/refresh"
 		client.authCodeApiUrl = "https://partners-beta.futurehome.io/api/control/edge/proxy/auth-code"
@@ -83,9 +85,9 @@ func NewFhOAuth2Client(partnerName string, appName string, env string) *FhOAuth2
 		client.refreshTokenApiUrl = "https://partners.futurehome.io/api/control/edge/proxy/refresh"
 		client.authCodeApiUrl = "https://partners.futurehome.io/api/control/edge/proxy/auth-code"
 	}
-	client.retryDelay = 60
+	client.retryDelay = 60 * time.Second
 	client.refreshRetry = 5
-	client.cbRetryDelay = 30
+	client.cbRetryDelay = 30 * time.Second
 	client.cbRetry = 7
 	client.appName = appName
 	return client
@@ -124,17 +126,18 @@ func (oac *FhOAuth2Client) SetParameters(mqttServerUri, authCodeApiUrl, refreshT
 // ConfigureFimpSyncClient configures fimp sync client , which is used to obtain Hub token from cloud bridge.
 func (oac *FhOAuth2Client) ConfigureFimpSyncClient() error {
 	if oac.mqt == nil {
-		oac.mqt = fimpgo.NewMqttTransport(oac.mqttServerURI, oac.mqttClientID, "", "", true, 1, 1)
-		err := oac.mqt.Start()
+		oac.mqt = fimpgo.NewMqttTransport(oac.mqttServerURI, oac.mqttClientID, "", "", true, 1, 1, nil)
+		err := oac.mqt.Start(10 * time.Second)
 		if err != nil {
-			log.Error("Error connecting to broker ", err)
+			log.Error("[edgeapp] Error connecting to broker ", err)
 			return err
 		}
-		log.Debug("Auth mqtt client connected")
+		log.Debug("[edgeapp] Auth mqtt client connected")
 		oac.syncClient = fimpgo.NewSyncClient(oac.mqt)
 	} else {
-		log.Error("Mqtt client is not configured")
+		log.Error("[edgeapp] Mqtt client already configured")
 	}
+
 	return nil
 }
 
@@ -142,22 +145,25 @@ func (oac *FhOAuth2Client) ConfigureFimpSyncClient() error {
 func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
 	if oac.mqt == nil || oac.syncClient == nil {
 		if err := oac.ConfigureFimpSyncClient(); err != nil {
-			log.Error(err)
+			return fmt.Errorf("[edgeapp] Configure FIMP sync client err: %w", err)
 		}
 	}
+
 	responseTopic := fmt.Sprintf("pt:j1/mt:rsp/rt:app/rn:%s/ad:1", oac.appName)
-	oac.syncClient.AddSubscription(responseTopic)
+	if err := oac.syncClient.AddSubscription(responseTopic); err != nil {
+		return err
+	}
+
 	reqMsg := fimpgo.NewStringMessage("cmd.clbridge.get_auth_token", "clbridge", "", nil, nil, nil)
 	reqMsg.ResponseToTopic = responseTopic
 	var err error
 	var response *fimpgo.FimpMessage
-	for i := 0; i < oac.cbRetry; i++ {
-		response, err = oac.syncClient.SendFimp("pt:j1/mt:cmd/rt:app/rn:clbridge/ad:1", reqMsg, 5)
+	for range oac.cbRetry {
+		response, err = oac.syncClient.SendFimp("pt:j1/mt:cmd/rt:app/rn:clbridge/ad:1", reqMsg, int(oac.cbRetryDelay.Seconds()))
 		if err == nil {
 			break
 		}
-		log.Error("CB is not responding.Retrying")
-		time.Sleep(time.Second * oac.cbRetryDelay)
+		log.Errorf("[edgeapp] No rsp from Cb err=%v", err)
 	}
 
 	oac.syncClient.Stop()
@@ -184,43 +190,71 @@ func (oac *FhOAuth2Client) ExchangeRefreshToken(refreshToken string) (*OAuth2Tok
 	return oac.postMsg(req, oac.refreshTokenApiUrl)
 }
 
-func (oac *FhOAuth2Client) postMsg(req interface{}, url string) (*OAuth2TokenResponse, error) {
+func (oac *FhOAuth2Client) postMsg(req any, url string) (*OAuth2TokenResponse, error) {
 	if oac.hubToken == "" {
-		log.Info("Empty token.Re-requesting new token")
 		err := oac.LoadHubTokenFromCB()
 		if err != nil {
 			return nil, errors.New("empty hub token.operation aborted")
 		}
 	}
+
 	reqB, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
 	}
+
 	client := &http.Client{Timeout: time.Second * 60}
-	r, _ := http.NewRequest("POST", url, bytes.NewBuffer(reqB))
-	r.Header.Add("Content-Type", "application/json")
-	r.Header.Add("Authorization", "Bearer "+oac.hubToken)
-	//log.Info("Sending using token :",oac.hubToken
 	var resp *http.Response
-	for i := 0; i < oac.refreshRetry; i++ {
-		resp, err = client.Do(r)
-		if err == nil && resp.StatusCode < 400 {
-			break
+	var lastErr error
+
+	for range oac.refreshRetry {
+		r, err := http.NewRequestWithContext(context.Background(), "POST", url, bytes.NewBuffer(reqB))
+		if err != nil {
+			return nil, err
 		}
-		log.Error("Error response from auth endpoint.Retrying...")
-		time.Sleep(time.Second * oac.retryDelay)
-	}
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("error %s response from server", resp.Status)
+		r.Header.Add("Content-Type", "application/json")
+		r.Header.Add("Authorization", "Bearer "+oac.hubToken)
+
+		resp, lastErr = client.Do(r)
+		if lastErr != nil {
+			log.Error("[edgeapp] Request err: ", lastErr)
+			time.Sleep(oac.retryDelay)
+			continue
+		}
+
+		if resp.StatusCode < 400 {
+			break // Success - exit retry loop
+		}
+
+		// Non-success status code - close body and retry
+		_ = resp.Body.Close()
+		log.Errorf("[edgeapp] Server returned status %d", resp.StatusCode)
+		time.Sleep(oac.retryDelay)
+		resp = nil // Clear for next iteration
 	}
 
-	bData, err := ioutil.ReadAll(resp.Body)
+	if resp == nil {
+		if lastErr != nil {
+			return nil, lastErr
+		}
+		return nil, errors.New("all retry attempts failed")
+	}
+
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Errorf("[edgeapp] Body close err: %v", err)
+		}
+	}()
+
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("server status code=%d", resp.StatusCode)
+	}
+
+	bData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
+
 	tResp := &OAuth2TokenResponse{}
 	err = json.Unmarshal(bData, tResp)
 	if err != nil {

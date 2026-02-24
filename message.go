@@ -4,33 +4,35 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"math"
 	"reflect"
 	"strconv"
 	"time"
 
 	"github.com/buger/jsonparser"
 	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
-	TimeFormat       = "2006-01-02T15:04:05.999Z07:00"
-	VTypeString      = "string"
-	VTypeInt         = "int"
-	VTypeFloat       = "float"
-	VTypeBool        = "bool"
-	VTypeStrMap      = "str_map"
-	VTypeIntMap      = "int_map"
-	VTypeFloatMap    = "float_map"
-	VTypeBoolMap     = "bool_map"
-	VTypeStrArray    = "str_array"
-	VTypeIntArray    = "int_array"
-	VTypeFloatArray  = "float_array"
-	VTypeBoolArray   = "bool_array"
-	VTypeObject      = "object"
-	VTypeBase64      = "base64"
-	VTypeBinary      = "bin"
-	VTypeNull        = "null"
-	wrongValueFormat = "wrong value type. expected %+v, got %+v"
+	TimeFormat         = "2006-01-02T15:04:05.999Z07:00"
+	VTypeString        = "string"
+	VTypeInt           = "int"
+	VTypeFloat         = "float"
+	VTypeBool          = "bool"
+	VTypeStrMap        = "str_map"
+	VTypeIntMap        = "int_map"
+	VTypeFloatMap      = "float_map"
+	VTypeBoolMap       = "bool_map"
+	VTypeStrArray      = "str_array"
+	VTypeIntArray      = "int_array"
+	VTypeFloatArray    = "float_array"
+	VTypeBoolArray     = "bool_array"
+	VTypeObject        = "object"
+	VTypeBase64        = "base64"
+	VTypeBinary        = "bin"
+	VTypeNull          = "null"
+	invalidValueFormat = "invalid value=%v type=%s exp=%T"
 
 	Val = "val"
 )
@@ -44,7 +46,7 @@ var timestampFormats = []string{
 
 type Props map[string]string
 
-func (p Props) GetIntValue(key string) (int64, bool, error) {
+func (p Props) GetIntValue(key string) (int, bool, error) {
 	val, ok := p[key]
 	if !ok {
 		return 0, false, nil
@@ -52,10 +54,10 @@ func (p Props) GetIntValue(key string) (int64, bool, error) {
 
 	i, err := strconv.ParseInt(val, 10, 64)
 	if err != nil {
-		return 0, true, fmt.Errorf("property %s has wrong value type, expected int, got %s", key, val)
+		return 0, true, fmt.Errorf("property %s value=%v invalid type exp=int got=%T", key, val, val)
 	}
 
-	return i, true, nil
+	return int(i), true, nil
 }
 
 func (p Props) GetStringValue(key string) (string, bool) {
@@ -75,7 +77,7 @@ func (p Props) GetFloatValue(key string) (float64, bool, error) {
 
 	f, err := strconv.ParseFloat(val, 64)
 	if err != nil {
-		return 0, true, fmt.Errorf("property %s has wrong value type, expected float, got %s", key, val)
+		return 0, true, fmt.Errorf("property %s value=%v invalid type exp=float64 got=%T", key, val, val)
 	}
 
 	return f, true, nil
@@ -89,7 +91,7 @@ func (p Props) GetBoolValue(key string) (bool, bool, error) {
 
 	b, err := strconv.ParseBool(val)
 	if err != nil {
-		return false, true, fmt.Errorf("property %s has wrong value type, expected bool, got %s", key, val)
+		return false, true, fmt.Errorf("property %s value=%v invalid type exp=bool got=%T", key, val, val)
 	}
 
 	return b, true, nil
@@ -103,7 +105,7 @@ func (p Props) GetTimestampValue(key string) (time.Time, bool, error) {
 
 	t := ParseTime(val)
 	if t.IsZero() {
-		return time.Time{}, true, fmt.Errorf("property %s has wrong value type, expected RFC3339 timestamp, got %s", key, val)
+		return time.Time{}, true, fmt.Errorf("property %s value=%v has invalid type exp=RFC3339 got=%T", key, val, val)
 	}
 
 	return t, true, nil
@@ -128,34 +130,44 @@ const (
 )
 
 type FimpMessage struct {
-	Type            string      `json:"type"`
-	Service         string      `json:"serv"`
-	ValueType       string      `json:"val_t"`
-	Value           interface{} `json:"val"`
-	ValueObj        []byte      `json:"-"`
-	Tags            Tags        `json:"tags"`
-	Properties      Props       `json:"props"`
-	Storage         *Storage    `json:"storage,omitempty"`
-	Version         string      `json:"ver"`
-	CorrelationID   string      `json:"corid"`
-	ResponseToTopic string      `json:"resp_to,omitempty"`
-	Source          string      `json:"src,omitempty"`
-	CreationTime    string      `json:"ctime"`
-	UID             string      `json:"uid"`
-	Topic           string      `json:"topic,omitempty"` // The field should be used to store original topic. It can be useful for converting message from MQTT to other transports.
+	Type            string   `json:"type"`
+	Service         string   `json:"serv"`
+	ValueType       string   `json:"val_t"`
+	Value           any      `json:"val"`
+	ValueObj        []byte   `json:"-"`
+	Tags            Tags     `json:"tags"`
+	Properties      Props    `json:"props"`
+	Storage         *Storage `json:"storage,omitempty"`
+	Version         string   `json:"ver"`
+	CorrelationID   string   `json:"corid"`
+	ResponseToTopic string   `json:"resp_to,omitempty"`
+	Source          string   `json:"src,omitempty"`
+	CreationTime    string   `json:"ctime"`
+	UID             string   `json:"uid"`
+	Topic           string   `json:"topic,omitempty"` // The field should be used to store original topic. It can be useful for converting message from MQTT to other transports.
 }
 
-func (msg *FimpMessage) SetValue(value interface{}, valType string) {
+func (msg *FimpMessage) SetValue(value any, valType string) {
 	msg.Value = value
 	msg.ValueType = valType
 }
 
-func (msg *FimpMessage) GetIntValue() (int64, error) {
-	val, ok := msg.Value.(int64)
-	if ok {
+func (msg *FimpMessage) GetIntValue() (int, error) {
+	switch val := msg.Value.(type) {
+	case int64:
+		if val > int64(math.MaxInt) || val < int64(math.MinInt) {
+			return 0, fmt.Errorf("int64 value %d overflows int", val)
+		}
+		return int(val), nil
+	case int:
 		return val, nil
+	case uint:
+		if val > uint(math.MaxInt) {
+			return 0, fmt.Errorf("uint value %d overflows int", val)
+		}
+		return int(val), nil
 	}
-	return 0, fmt.Errorf(wrongValueFormat, "int64", reflect.ValueOf(msg.Value))
+	return 0, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "int", msg.Value)
 }
 
 func (msg *FimpMessage) GetStringValue() (string, error) {
@@ -163,7 +175,7 @@ func (msg *FimpMessage) GetStringValue() (string, error) {
 	if ok {
 		return val, nil
 	}
-	return "", fmt.Errorf(wrongValueFormat, "string", reflect.ValueOf(msg.Value))
+	return "", fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "string", msg.Value)
 }
 
 func (msg *FimpMessage) GetBoolValue() (bool, error) {
@@ -171,7 +183,7 @@ func (msg *FimpMessage) GetBoolValue() (bool, error) {
 	if ok {
 		return val, nil
 	}
-	return false, fmt.Errorf(wrongValueFormat, "bool", reflect.ValueOf(msg.Value))
+	return false, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "bool", msg.Value)
 }
 
 func (msg *FimpMessage) GetFloatValue() (float64, error) {
@@ -179,7 +191,7 @@ func (msg *FimpMessage) GetFloatValue() (float64, error) {
 	if ok {
 		return val, nil
 	}
-	return 0, fmt.Errorf(wrongValueFormat, "float64", reflect.ValueOf(msg.Value))
+	return 0, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "float64", msg.Value)
 }
 
 func (msg *FimpMessage) GetStrArrayValue() ([]string, error) {
@@ -187,15 +199,26 @@ func (msg *FimpMessage) GetStrArrayValue() ([]string, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, fmt.Errorf(wrongValueFormat, "[]string", reflect.ValueOf(msg.Value))
+	return nil, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "[]string", msg.Value)
 }
 
-func (msg *FimpMessage) GetIntArrayValue() ([]int64, error) {
-	val, ok := msg.Value.([]int64)
+func (msg *FimpMessage) GetIntArrayValue() ([]int, error) {
+	val64, ok := msg.Value.([]int64)
+	if ok {
+		ret := []int{}
+
+		for _, v := range val64 {
+			ret = append(ret, int(v))
+		}
+		return ret, nil
+	}
+
+	val, ok := msg.Value.([]int)
 	if ok {
 		return val, nil
 	}
-	return nil, fmt.Errorf(wrongValueFormat, "[]int64]", reflect.ValueOf(msg.Value))
+
+	return nil, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "[]int", msg.Value)
 }
 
 func (msg *FimpMessage) GetFloatArrayValue() ([]float64, error) {
@@ -203,7 +226,7 @@ func (msg *FimpMessage) GetFloatArrayValue() ([]float64, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, fmt.Errorf(wrongValueFormat, "[]float64", reflect.ValueOf(msg.Value))
+	return nil, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "[]float64", msg.Value)
 }
 
 func (msg *FimpMessage) GetBoolArrayValue() ([]bool, error) {
@@ -211,7 +234,7 @@ func (msg *FimpMessage) GetBoolArrayValue() ([]bool, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, fmt.Errorf(wrongValueFormat, "[]bool", reflect.ValueOf(msg.Value))
+	return nil, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "[]bool", msg.Value)
 }
 
 func (msg *FimpMessage) GetStrMapValue() (map[string]string, error) {
@@ -219,15 +242,25 @@ func (msg *FimpMessage) GetStrMapValue() (map[string]string, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, fmt.Errorf(wrongValueFormat, "map[string]string", reflect.ValueOf(msg.Value))
+	return nil, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "map[string]string", msg.Value)
 }
 
-func (msg *FimpMessage) GetIntMapValue() (map[string]int64, error) {
-	val, ok := msg.Value.(map[string]int64)
+func (msg *FimpMessage) GetIntMapValue() (map[string]int, error) {
+	val64, ok := msg.Value.(map[string]int64)
+	if ok {
+		ret := map[string]int{}
+
+		for k, v := range val64 {
+			ret[k] = int(v)
+		}
+		return ret, nil
+	}
+
+	val, ok := msg.Value.(map[string]int)
 	if ok {
 		return val, nil
 	}
-	return nil, fmt.Errorf(wrongValueFormat, "map[string]int64", reflect.ValueOf(msg.Value))
+	return nil, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "map[string]int", msg.Value)
 }
 
 func (msg *FimpMessage) GetFloatMapValue() (map[string]float64, error) {
@@ -235,7 +268,7 @@ func (msg *FimpMessage) GetFloatMapValue() (map[string]float64, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, fmt.Errorf(wrongValueFormat, "map[string]float64", reflect.ValueOf(msg.Value))
+	return nil, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "map[string]float64", msg.Value)
 }
 
 func (msg *FimpMessage) GetBoolMapValue() (map[string]bool, error) {
@@ -243,14 +276,14 @@ func (msg *FimpMessage) GetBoolMapValue() (map[string]bool, error) {
 	if ok {
 		return val, nil
 	}
-	return nil, fmt.Errorf(wrongValueFormat, "map[string]bool", reflect.ValueOf(msg.Value))
+	return nil, fmt.Errorf(invalidValueFormat, reflect.ValueOf(msg.Value), "map[string]bool", msg.Value)
 }
 
 func (msg *FimpMessage) GetRawObjectValue() []byte {
 	return msg.ValueObj
 }
 
-func (msg *FimpMessage) GetObjectValue(objectBindVar interface{}) error {
+func (msg *FimpMessage) GetObjectValue(objectBindVar any) error {
 	return json.Unmarshal(msg.ValueObj, objectBindVar)
 }
 
@@ -262,8 +295,8 @@ func (msg *FimpMessage) SerializeToJson() ([]byte, error) {
 			jsonBA, err = jsonparser.Set(jsonBA, msg.ValueObj, "val")
 		}
 	}
-	return jsonBA, err
 
+	return jsonBA, err
 }
 
 // GetCreationTime returns parsed creation time of the message.
@@ -296,7 +329,7 @@ func (msg *FimpMessage) WithTag(tag string) *FimpMessage {
 	return msg
 }
 
-func NewMessage(type_ string, service string, valueType string, value interface{}, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
+func NewMessage(type_ string, service string, valueType string, value any, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
 	msg := FimpMessage{Type: type_,
 		Service:      service,
 		ValueType:    valueType,
@@ -323,7 +356,7 @@ func NewStringMessage(type_ string, service string, value string, props Props, t
 	return NewMessage(type_, service, VTypeString, value, props, tags, requestMessage)
 }
 
-func NewIntMessage(type_ string, service string, value int64, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
+func NewIntMessage(type_ string, service string, value int, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeInt, value, props, tags, requestMessage)
 }
 
@@ -339,7 +372,7 @@ func NewStrArrayMessage(type_ string, service string, value []string, props Prop
 	return NewMessage(type_, service, VTypeStrArray, value, props, tags, requestMessage)
 }
 
-func NewIntArrayMessage(type_ string, service string, value []int64, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
+func NewIntArrayMessage(type_ string, service string, value []int, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeIntArray, value, props, tags, requestMessage)
 }
 
@@ -355,7 +388,7 @@ func NewStrMapMessage(type_ string, service string, value map[string]string, pro
 	return NewMessage(type_, service, VTypeStrMap, value, props, tags, requestMessage)
 }
 
-func NewIntMapMessage(type_ string, service string, value map[string]int64, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
+func NewIntMapMessage(type_ string, service string, value map[string]int, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeIntMap, value, props, tags, requestMessage)
 }
 
@@ -367,7 +400,7 @@ func NewBoolMapMessage(type_ string, service string, value map[string]bool, prop
 	return NewMessage(type_, service, VTypeBoolMap, value, props, tags, requestMessage)
 }
 
-func NewObjectMessage(type_ string, service string, value interface{}, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
+func NewObjectMessage(type_ string, service string, value any, props Props, tags Tags, requestMessage *FimpMessage) *FimpMessage {
 	return NewMessage(type_, service, VTypeObject, value, props, tags, requestMessage)
 }
 
@@ -377,19 +410,42 @@ func NewBinaryMessage(type_, service string, value []byte, props Props, tags Tag
 	return NewMessage(type_, service, VTypeBinary, valEnc, props, tags, requestMessage)
 }
 
-func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
+func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	fimpmsg := FimpMessage{}
 	var err error
-	fimpmsg.Type, err = jsonparser.GetString(msg, "type")
-	fimpmsg.Service, err = jsonparser.GetString(msg, "serv")
-	fimpmsg.ValueType, err = jsonparser.GetString(msg, "val_t")
-	fimpmsg.UID, _ = jsonparser.GetString(msg, "uid")
-	fimpmsg.CorrelationID, _ = jsonparser.GetString(msg, "corid")
-	fimpmsg.CreationTime, _ = jsonparser.GetString(msg, "ctime")
-	fimpmsg.ResponseToTopic, _ = jsonparser.GetString(msg, "resp_to")
-	fimpmsg.Source, _ = jsonparser.GetString(msg, "src")
-	fimpmsg.Topic, _ = jsonparser.GetString(msg, "topic")
-	fimpmsg.Version, _ = jsonparser.GetString(msg, "ver")
+
+	if fimpmsg.Type, err = jsonparser.GetString(msg, "type"); err != nil {
+		log.Warnf("[fimpgo] NewMessageFromBytes type err: %v", err)
+	}
+	if fimpmsg.Service, err = jsonparser.GetString(msg, "serv"); err != nil {
+		log.Warnf("[fimpgo] NewMessageFromBytes serv err: %v", err)
+	}
+	if fimpmsg.ValueType, err = jsonparser.GetString(msg, "val_t"); err != nil {
+		log.Warnf("[fimpgo] NewMessageFromBytes val_t err: %v", err)
+	}
+	if fimpmsg.UID, err = jsonparser.GetString(msg, "uid"); err != nil {
+		log.Tracef("[fimpgo] NewMessageFromBytes uid err: %v", err)
+	}
+	if fimpmsg.CorrelationID, err = jsonparser.GetString(msg, "corid"); err != nil {
+		log.Tracef("[fimpgo] NewMessageFromBytes coreid err: %v", err)
+	}
+	if fimpmsg.CreationTime, err = jsonparser.GetString(msg, "ctime"); err != nil {
+		log.Tracef("[fimpgo] NewMessageFromBytes ctime err: %v", err)
+	}
+	if fimpmsg.ResponseToTopic, err = jsonparser.GetString(msg, "resp_to"); err != nil {
+		log.Tracef("[fimpgo] NewMessageFromBytes resp_t err: %v", err)
+	}
+	if fimpmsg.Source, err = jsonparser.GetString(msg, "src"); err != nil {
+		log.Tracef("[fimpgo] NewMessageFromBytes src err: %v", err)
+	}
+	if fimpmsg.Topic, err = jsonparser.GetString(msg, "topic"); err != nil {
+		log.Tracef("[fimpgo] NewMessageFromBytes topic err: %v", err)
+	}
+	if fimpmsg.Version, err = jsonparser.GetString(msg, "ver"); err != nil {
+		log.Debugf("[fimpgo] NewMessageFromBytes ver err: %v", err)
+	}
+
+	err = nil
 
 	switch fimpmsg.ValueType {
 	case VTypeString:
@@ -402,98 +458,128 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) {
 		fimpmsg.Value, err = jsonparser.GetFloat(msg, "val")
 	case VTypeBoolArray:
 		val := make([]bool, 0)
-		if _, err := jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-			item, _ := jsonparser.ParseBoolean(value)
+		_, err = jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+			item, e := jsonparser.ParseBoolean(value)
+			if e != nil {
+				log.Warnf("[fimpgo] Parse VTypeBoolArray err: %v", e)
+				return
+			}
 			val = append(val, item)
-		}, "val"); err != nil {
-			return nil, err
-		}
+		}, "val")
 
 		fimpmsg.Value = val
+
 	case VTypeStrArray:
 		val := make([]string, 0)
-		if _, err := jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-			item, _ := jsonparser.ParseString(value)
+		_, err = jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+			item, e := jsonparser.ParseString(value)
+			if e != nil {
+				log.Warnf("[fimpgo] Parse VTypeStrArray err: %v", e)
+				return
+			}
 			val = append(val, item)
-		}, "val"); err != nil {
-			return nil, err
-		}
+		}, "val")
 
 		fimpmsg.Value = val
+
 	case VTypeIntArray:
-		val := make([]int64, 0)
-		if _, err := jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-			item, _ := jsonparser.ParseInt(value)
-			val = append(val, item)
+		val := make([]int, 0)
+		_, err = jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+			item, e := jsonparser.ParseInt(value)
+			if e != nil {
+				log.Warnf("[fimpgo] Parse VTypeIntArray err: %v", e)
+				return
+			}
+			val = append(val, int(item))
+		}, "val")
 
-		}, "val"); err != nil {
-			return nil, err
-		}
 		fimpmsg.Value = val
+
 	case VTypeFloatArray:
 		val := make([]float64, 0)
-		if _, err := jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
-			item, _ := jsonparser.ParseFloat(value)
+		_, err = jsonparser.ArrayEach(msg, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+			item, e := jsonparser.ParseFloat(value)
+			if e != nil {
+				log.Warnf("[fimpgo] Parse VTypeFloatArray err: %v", e)
+				return
+			}
 			val = append(val, item)
-		}, "val"); err != nil {
-			return nil, err
-		}
+		}, "val")
+
 		fimpmsg.Value = val
 
 	case VTypeStrMap:
 		val := make(map[string]string)
-		if err := jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
-			val[string(key)], err = jsonparser.ParseString(value)
-			return nil
-		}, "val"); err != nil {
-			return nil, err
-		}
+		err = jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+			tempStr, e := jsonparser.ParseString(value)
+			if e != nil {
+				log.Warnf("[fimpgo] Parse VTypeStrMap err: %v", e)
+			} else {
+				val[string(key)] = tempStr
+			}
+			return e
+		}, "val")
+
 		fimpmsg.Value = val
 
 	case VTypeIntMap:
-		val := make(map[string]int64)
-		if err := jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
-			val[string(key)], err = jsonparser.ParseInt(value)
-			return nil
-		}, "val"); err != nil {
-			return nil, err
-		}
+		val := make(map[string]int)
+		err = jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+			tempInt, e := jsonparser.ParseInt(value)
+			if e != nil {
+				log.Warnf("[fimpgo] Parse VTypeIntMap err: %v", e)
+			} else {
+				val[string(key)] = int(tempInt)
+			}
+			return e
+		}, "val")
+
 		fimpmsg.Value = val
 
 	case VTypeFloatMap:
 		val := make(map[string]float64)
-		if err := jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
-			val[string(key)], err = jsonparser.ParseFloat(value)
-			return nil
-		}, "val"); err != nil {
-			return nil, err
-		}
+		err = jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+			tempFLoat, e := jsonparser.ParseFloat(value)
+			if e != nil {
+				log.Warnf("[fimpgo] Parse VTypeFloatMap err: %v", e)
+			} else {
+				val[string(key)] = tempFLoat
+			}
+			return e
+		}, "val")
+
 		fimpmsg.Value = val
 
 	case VTypeBoolMap:
 		val := make(map[string]bool)
-		if err := jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
-			val[string(key)], err = jsonparser.ParseBoolean(value)
-			return nil
-		}, "val"); err != nil {
-			return nil, err
-		}
+		err = jsonparser.ObjectEach(msg, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+			tempBool, e := jsonparser.ParseBoolean(value)
+			if e != nil {
+				log.Warnf("[fimpgo] Parse VTypeBoolMap err: %v", e)
+			} else {
+				val[string(key)] = tempBool
+			}
+			return e
+		}, "val")
+
 		fimpmsg.Value = val
 
 	case VTypeBinary:
 		fimpmsg.Value, err = jsonparser.GetString(msg, "val")
-		//base64val, err := jsonparser.GetString(msg, "val")
-		//if err != nil {
-		//	return nil,err
-		//}
-		//fimpmsg.Value ,err = base64.StdEncoding.DecodeString(base64val)
-		//if err != nil {
-		//	return nil,err
-		//}
+		if err != nil {
+			log.Warnf("[fimpgo] GetString val err: %v", err)
+		}
 
 	case VTypeObject:
 		fimpmsg.ValueObj, _, _, err = jsonparser.Get(msg, "val")
+	case VTypeNull:
+		fimpmsg.Value = nil
+	default:
+		return nil, jsonparser.UnknownValueTypeError
+	}
 
+	if err != nil {
+		return nil, fmt.Errorf("val=%s err: %w", fimpmsg.ValueType, err)
 	}
 
 	if properties, dt, _, err := jsonparser.Get(msg, "props"); dt != jsonparser.NotExist && dt != jsonparser.Null && err == nil {

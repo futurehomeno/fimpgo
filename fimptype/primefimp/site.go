@@ -2,7 +2,6 @@ package primefimp
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
 )
 
 // Site object
@@ -112,8 +111,8 @@ func (s *Site) FindIndex(comp string, id int) int {
 			}
 		}
 	default:
-		log.Error("Component does not support find index.")
 	}
+
 	return -1
 }
 
@@ -170,7 +169,6 @@ func (s *Site) RemoveWithID(comp string, id int) error {
 		}
 	default:
 		return fmt.Errorf("RemoveWithID: %s does not support removal", comp)
-
 	}
 	return nil
 }
@@ -241,36 +239,36 @@ func (s *Site) UpdateShortcut(d *Shortcut) {
 	}
 }
 
-func (s *Site) GetRoomById(ID int) *Room {
+func (s *Site) GetRoomById(id int) *Room {
 	for i := range s.Rooms {
-		if s.Rooms[i].ID == ID {
+		if s.Rooms[i].ID == id {
 			return &s.Rooms[i]
 		}
 	}
 	return nil
 }
 
-func (s *Site) GetAreaById(ID int) *Area {
+func (s *Site) GetAreaById(id int) *Area {
 	for i := range s.Areas {
-		if s.Areas[i].ID == ID {
+		if s.Areas[i].ID == id {
 			return &s.Areas[i]
 		}
 	}
 	return nil
 }
 
-func (s *Site) GetThingById(ID int) *Thing {
+func (s *Site) GetThingById(id int) *Thing {
 	for i := range s.Things {
-		if s.Things[i].ID == ID {
+		if s.Things[i].ID == id {
 			return &s.Things[i]
 		}
 	}
 	return nil
 }
 
-func (s *Site) GetDeviceById(ID int) *Device {
+func (s *Site) GetDeviceById(id int) *Device {
 	for i := range s.Devices {
-		if s.Devices[i].ID == ID {
+		if s.Devices[i].ID == id {
 			return &s.Devices[i]
 		}
 	}

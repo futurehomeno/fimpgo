@@ -9,17 +9,11 @@ import (
 
 func match(route []string, topic []string) bool {
 	if len(route) == 0 {
-		if len(topic) == 0 {
-			return true
-		}
-		return false
+		return len(topic) == 0
 	}
 
 	if len(topic) == 0 {
-		if route[0] == "#" {
-			return true
-		}
-		return false
+		return route[0] == "#"
 	}
 
 	if route[0] == "#" {
@@ -55,17 +49,17 @@ func CopyFile(src, dst string) error {
 		return fmt.Errorf("%s is not a regular file", src)
 	}
 
-	source, err := os.Open(src)
+	source, err := os.Open(src) //nolint:gosec
 	if err != nil {
 		return err
 	}
-	defer source.Close()
+	defer func() { _ = source.Close() }()
 
-	destination, err := os.Create(dst)
+	destination, err := os.Create(dst) //nolint:gosec
 	if err != nil {
 		return err
 	}
-	defer destination.Close()
+	defer func() { _ = destination.Close() }()
 	_, err = io.Copy(destination, source)
 	return err
 }

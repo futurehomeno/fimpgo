@@ -2,9 +2,12 @@ package fimptype
 
 // ThingInclusionReport is the object send as value in thing inclusion reports.
 type ThingInclusionReport struct {
-	Address  string    `json:"address"`  // An arbitrary unique identifier of the thing within the adapter. Must consist only from alphanumeric characters. For example in Z-Wave it is equal to Node ID, while in Zigbee to UDID.
-	Groups   []string  `json:"groups"`   // Groups are used to link multiple services into one logical group. Each group is effectively a separate device within a single thing, equal to channels in Z-Wave or endpoints in Zigbee.
+	// An arbitrary unique identifier of the thing within the adapter. Must consist only from alphanumeric characters. For example in Z-Wave it is equal to Node ID, while in Zigbee to UDID.
+	Address string `json:"address"`
+
 	Services []Service `json:"services"` // An array of service definition objects for all services provided by the thing.
+	// Groups are used to link multiple services into one logical group. Each group is effectively a separate device within a single thing, equal to channels in Z-Wave or endpoints in Zigbee. //nolint:lll
+	Groups []string `json:"groups"`
 
 	ProductName    string `json:"product_name"`    // Optional initial human-readable name of the device as shown to the user. If empty falls back to product hash.
 	ProductHash    string `json:"product_hash"`    // Product hash is a unique identifier of the product consisting of joined adapter, manufacturer and product identifiers.
@@ -19,8 +22,8 @@ type ThingInclusionReport struct {
 	WakeUpInterval string `json:"wakeup_interval"` // Wakeup interval for battery powered devices in seconds, value "-1" indicates that it is not applicable.
 	Security       string `json:"security"`        // Level of communication security, either insecure or secure.
 
-	TechSpecificProps map[string]string                 `json:"tech_specific_props"` // Optional custom properties of the thing specific to the technology adapter.
-	PropSets          map[string]map[string]interface{} `json:"prop_set"`            // Optional map of custom property sets of services specific to the technology adapter. These sets can be referenced from service definition.
+	TechSpecificProps map[string]string         `json:"tech_specific_props"` // Optional custom properties of the thing specific to the technology adapter.
+	PropSets          map[string]map[string]any `json:"prop_set"`            // Optional map of custom property sets of services specific to the technology adapter. These sets can be referenced from service definition.
 }
 
 // ThingExclusionReport is the object send as value in thing exclusion reports.

@@ -6,15 +6,17 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/x509"
+	"encoding/hex"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/golang-jwt/jwt"
 )
 
 type JsonEcKey struct {
-	T string `json:"t"` //type - private/public
+	T string `json:"t"` // type - private/public
 	X string `json:"x"`
 	Y string `json:"y"`
 	D string `json:"d"` // only for private key
@@ -66,19 +68,42 @@ func (kp *EcdsaKey) ExportX509EncodedKeys() (string, string) {
 	return pemEncodedStr, pemEncodedPubStr
 }
 
-func (kp *EcdsaKey) ExportJsonEncodedKeys() (JsonEcKey, JsonEcKey) {
+func (kp *EcdsaKey) ExportJsonEncodedKeys() (privKey JsonEcKey, pubKey JsonEcKey, err error) {
+	// ----- PRIVATE KEY -----
+	privBytes, err := kp.privateKey.Bytes()
+	if err != nil {
+		return privKey, pubKey, err
+	}
+
 	privateKey := JsonEcKey{
 		T: "private",
-		X: kp.privateKey.X.Text(16),
-		Y: kp.privateKey.Y.Text(16),
-		D: kp.privateKey.D.Text(16),
+		D: hex.EncodeToString(privBytes),
 	}
-	pubKey := JsonEcKey{
+
+	// ----- PUBLIC KEY -----
+	pubBytes, err := kp.publicKey.Bytes()
+	if err != nil {
+		return privKey, pubKey, err
+	}
+
+	if len(pubBytes) == 0 || pubBytes[0] != 0x04 {
+		return privKey, pubKey, errors.New("unexpected public key encoding")
+	}
+
+	coordLen := (len(pubBytes) - 1) / 2
+	xBytes := pubBytes[1 : 1+coordLen]
+	yBytes := pubBytes[1+coordLen:]
+
+	privateKey.X = hex.EncodeToString(xBytes)
+	privateKey.Y = hex.EncodeToString(yBytes)
+
+	pubKey = JsonEcKey{
 		T: "public",
-		X: kp.publicKey.X.Text(16),
-		Y: kp.publicKey.Y.Text(16),
+		X: hex.EncodeToString(xBytes),
+		Y: hex.EncodeToString(yBytes),
 	}
-	return privateKey, pubKey
+
+	return privateKey, pubKey, nil
 }
 
 func (kp *EcdsaKey) ImportX509PublicKey(pemEncodedPub string) error {
@@ -91,7 +116,11 @@ func (kp *EcdsaKey) ImportX509PublicKey(pemEncodedPub string) error {
 	if err != nil {
 		return err
 	}
-	kp.publicKey = genericPublicKey.(*ecdsa.PublicKey)
+	var ok bool
+	kp.publicKey, ok = genericPublicKey.(*ecdsa.PublicKey)
+	if !ok {
+		return fmt.Errorf("genericPublicKey cast type=%T fail", genericPublicKey)
+	}
 	return nil
 }
 
@@ -100,10 +129,7 @@ func (kp *EcdsaKey) ImportX509PrivateKey(pemEncoded string) error {
 	block, _ := pem.Decode([]byte(pemEncoded))
 	x509Encoded := block.Bytes
 	kp.privateKey, err = x509.ParseECPrivateKey(x509Encoded)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (kp *EcdsaKey) ImportJsonPublicKey(jkey JsonEcKey) error {
@@ -151,9 +177,6 @@ func SignStringES256(payload string, keys *EcdsaKey) (string, error) {
 func VerifyStringES256(payload, sig string, key *EcdsaKey) bool {
 	signingMethodES256 := &jwt.SigningMethodECDSA{Name: "ES256", Hash: crypto.SHA256, KeySize: 32, CurveBits: 256}
 	err := signingMethodES256.Verify(payload, sig, key.PublicKey())
-	if err == nil {
-		return true
-	} else {
-		return false
-	}
+
+	return err == nil
 }

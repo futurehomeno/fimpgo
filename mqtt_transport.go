@@ -1,11 +1,7 @@
 package fimpgo
 
 import (
-	"crypto/tls"
-	"crypto/x509"
-	"fmt"
-	"io/ioutil"
-	"path/filepath"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -14,111 +10,19 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/futurehomeno/fimpgo/security"
 	"github.com/futurehomeno/fimpgo/utils"
 )
 
-const (
-	defaultMainQueueSize = 100
-)
-
-type MessageCh chan *Message
-
-type MqttConnectionConfigs struct {
-	ServerURI           string
-	ClientID            string
-	Username            string
-	Password            string
-	CleanSession        bool
-	SubQos              byte
-	PubQos              byte
-	GlobalTopicPrefix   string // Should be set for communicating one single hub via cloud
-	StartFailRetryCount int
-	CertDir             string // full path to directory where all certificates are stored. Cert dir should contains all CA root certificates .
-	PrivateKeyFileName  string //
-	CertFileName        string //
-	ReceiveChTimeout    int
-	IsAws               bool // Should be set to true if cloud broker is AwS IoT platform .
-	MainQueueSize       int
-
-	connectionLostHandler MQTT.ConnectionLostHandler
-}
-
-type Message struct {
-	Topic      string
-	Addr       *Address
-	Payload    *FimpMessage
-	RawPayload []byte
-}
-
-type FimpFilter struct {
-	Topic     string
-	Service   string
-	Interface string
-}
-
-type FilterFunc func(topic string, addr *Address, iotMsg *FimpMessage) bool
-
-type MqttTransport struct {
-	client         MQTT.Client
-	msgHandler     MessageHandler
-	subQos         byte
-	pubQos         byte
-	subs           map[string]byte
-	subChannels    map[string]MessageCh
-	subFilters     map[string]FimpFilter
-	subFilterFuncs map[string]FilterFunc
-
-	done      chan struct{}
-	wg        sync.WaitGroup
-	mainQueue chan MQTT.Message
-
-	globalTopicPrefixMux sync.RWMutex
-	globalTopicPrefix    string
-	defaultSourceLock    sync.RWMutex
-	defaultSource        string
-	startFailRetryCount  int
-	certDir              string
-	mqttOptions          *MQTT.ClientOptions
-	receiveChTimeout     int
-	syncPublishTimeout   time.Duration
-	channelRegMux        sync.Mutex
-	subMutex             sync.Mutex
-	compressor           *MsgCompressor
-}
-
-func (mh *MqttTransport) SetReceiveChTimeout(receiveChTimeout int) {
-	mh.receiveChTimeout = receiveChTimeout
-}
-
-func (mh *MqttTransport) SetCertDir(certDir string) {
-	mh.certDir = certDir
-}
-
-func (mh *MqttTransport) Options() *MQTT.ClientOptions {
-	return mh.mqttOptions
-}
-
-func (mh *MqttTransport) SetOptions(options *MQTT.ClientOptions) {
-	mh.client = MQTT.NewClient(options)
-}
-
 type MessageHandler func(topic string, addr *Address, iotMsg *FimpMessage, rawPayload []byte)
 
-// NewMqttTransport constructor. serverUri="tcp://localhost:1883"
-func NewMqttTransport(serverURI, clientID, username, password string, cleanSession bool, subQos byte, pubQos byte) *MqttTransport {
+func NewMqttTransport(serverURI, clientID, username, password string, cleanSession bool, subQos byte, pubQos byte, errHandler func(error)) *MqttTransport {
 	mh := MqttTransport{}
-	mh.mqttOptions = MQTT.NewClientOptions().AddBroker(serverURI)
-	mh.mqttOptions.SetClientID(clientID)
-	mh.mqttOptions.SetUsername(username)
-	mh.mqttOptions.SetPassword(password)
-	mh.mqttOptions.SetDefaultPublishHandler(mh.onMessage)
-	mh.mqttOptions.SetCleanSession(cleanSession)
-	mh.mqttOptions.SetAutoReconnect(true)
-	mh.mqttOptions.SetConnectionLostHandler(mh.onConnectionLost)
-	mh.mqttOptions.SetOnConnectHandler(mh.onConnect)
-	mh.mqttOptions.SetWriteTimeout(time.Second * 30)
-	//create and start a client using the above ClientOptions
-	mh.client = MQTT.NewClient(mh.mqttOptions)
+	clientOptions := defaultClientOptions(serverURI, clientID, username, password, cleanSession, mh.onConnectionLost)
+	clientOptions.SetDefaultPublishHandler(mh.onMessage)
+	clientOptions.SetOnConnectHandler(mh.onConnect)
+
+	mh.client = MQTT.NewClient(clientOptions)
 	mh.pubQos = pubQos
 	mh.subQos = subQos
 	mh.subs = make(map[string]byte)
@@ -127,9 +31,10 @@ func NewMqttTransport(serverURI, clientID, username, password string, cleanSessi
 	mh.subFilterFuncs = make(map[string]FilterFunc)
 	mh.mainQueue = make(chan MQTT.Message, defaultMainQueueSize)
 	mh.startFailRetryCount = 10
-	mh.receiveChTimeout = 10
+	mh.receiveChTimeout.Store(10)
 	mh.syncPublishTimeout = time.Second * 5
 	mh.compressor = NewMsgCompressor("", "")
+	mh.errorHandler = errHandler
 	return &mh
 }
 
@@ -144,83 +49,191 @@ func NewMqttTransportFromConnection(client MQTT.Client, subQos byte, pubQos byte
 	mh.subFilterFuncs = make(map[string]FilterFunc)
 	mh.mainQueue = make(chan MQTT.Message, defaultMainQueueSize)
 	mh.startFailRetryCount = 10
-	mh.receiveChTimeout = 10
+	mh.receiveChTimeout.Store(10)
 	mh.syncPublishTimeout = time.Second * 5
 	mh.compressor = NewMsgCompressor("", "")
 	return &mh
 }
 
-func NewMqttTransportFromConfigs(configs MqttConnectionConfigs, options ...Option) *MqttTransport {
+func NewMqttTransportFromConfigs(cfg MqttConnectionConfigs, errHandler func(error)) *MqttTransport {
+	var mh *MqttTransport
 
-	applyDefaults(&configs)
-
-	// apply extra options
-	for _, o := range options {
-		o.apply(&configs)
-	}
-
-	mh := MqttTransport{}
-	mh.mqttOptions = MQTT.NewClientOptions().AddBroker(configs.ServerURI)
-	mh.mqttOptions.SetClientID(configs.ClientID)
-	mh.mqttOptions.SetUsername(configs.Username)
-	mh.mqttOptions.SetPassword(configs.Password)
-	mh.mqttOptions.SetDefaultPublishHandler(mh.onMessage)
-	mh.mqttOptions.SetCleanSession(configs.CleanSession)
-	mh.mqttOptions.SetAutoReconnect(true)
-	mh.mqttOptions.SetConnectionLostHandler(configs.connectionLostHandler)
-	mh.mqttOptions.SetOnConnectHandler(mh.onConnect)
-
-	//create and start a client using the above ClientOptions
-	mh.client = MQTT.NewClient(mh.mqttOptions)
-	mh.pubQos = configs.PubQos
-	mh.subQos = configs.SubQos
-	mh.subs = make(map[string]byte)
-	mh.subChannels = make(map[string]MessageCh)
-	mh.subFilters = make(map[string]FimpFilter)
-	mh.subFilterFuncs = make(map[string]FilterFunc)
-	mh.startFailRetryCount = 10
-	mh.receiveChTimeout = 10
-	mh.syncPublishTimeout = time.Second * 5
-	mh.certDir = configs.CertDir
-	mh.globalTopicPrefix = configs.GlobalTopicPrefix
-	mh.compressor = NewMsgCompressor("", "")
-	if configs.StartFailRetryCount == 0 {
-		mh.startFailRetryCount = 10
+	if cfg.PrivateKeyFileName != "" && cfg.CertFileName != "" {
+		mh = NewMqttTransportTLS(cfg.ServerURI, cfg.ClientID, cfg.Username, cfg.Password, cfg.CleanSession, cfg.SubQos, cfg.PubQos, errHandler,
+			cfg.PrivateKeyFileName, cfg.CertFileName, cfg.CertDir, cfg.IsAws)
 	} else {
-		mh.startFailRetryCount = configs.StartFailRetryCount
-	}
-	if configs.ReceiveChTimeout == 0 {
-		mh.receiveChTimeout = 10
-	} else {
-		mh.receiveChTimeout = configs.ReceiveChTimeout
+		mh = NewMqttTransport(cfg.ServerURI, cfg.ClientID, cfg.Username, cfg.Password, cfg.CleanSession, cfg.SubQos, cfg.PubQos, errHandler)
 	}
 
-	mainQueueSize := defaultMainQueueSize
-	if configs.MainQueueSize > 0 {
-		mainQueueSize = configs.MainQueueSize
+	if mh == nil {
+		return nil
 	}
 
-	mh.mainQueue = make(chan MQTT.Message, mainQueueSize)
+	if cfg.GlobalTopicPrefix != "" {
+		mh.SetGlobalTopicPrefix(cfg.GlobalTopicPrefix)
+	}
 
-	if configs.PrivateKeyFileName != "" && configs.CertFileName != "" {
-		err := mh.ConfigureTls(configs.PrivateKeyFileName, configs.CertFileName, configs.CertDir, configs.IsAws)
-		if err != nil {
-			log.Error("Certificate loading error :", err.Error())
+	if cfg.StartFailRetryCount > 0 {
+		mh.startFailRetryCount = cfg.StartFailRetryCount
+	}
+
+	if cfg.ReceiveChTimeout > 0 {
+		mh.receiveChTimeout.Store(cfg.ReceiveChTimeout)
+	}
+
+	if cfg.MainQueueSize > 0 {
+		mh.mainQueue = make(chan MQTT.Message, cfg.MainQueueSize)
+	}
+
+	return mh
+}
+
+func (mh *MqttTransport) Start(timeout time.Duration) error {
+	mh.connState.Init()
+
+	// try to connect with retries
+	err := func() (ret error) {
+		for i := 1; i <= mh.startFailRetryCount; i++ {
+			if i > 1 {
+				time.Sleep(time.Duration(i*i) * time.Second)
+				log.Warnf("[fimpgo] MQTT connect failed %d/%d err: %v", i, mh.startFailRetryCount, ret)
+			}
+
+			token := mh.client.Connect()
+
+			if !token.WaitTimeout(timeout) {
+				ret = utils.ErrTimeout
+				continue
+			}
+
+			if ret = token.Error(); ret == nil {
+				return nil
+			}
 		}
+
+		return ret
+	}()
+
+	if err != nil {
+		return err
 	}
-	return &mh
+
+	ret := mh.connState.WaitConnected(timeout)
+
+	if ret == nil {
+		mh.incMsgsWg = sync.WaitGroup{}
+		mh.incMsgsWg.Add(1)
+
+		var started sync.WaitGroup
+		started.Add(1)
+
+		go mh.handleIncomingMessages(&started)
+		started.Wait()
+	}
+
+	return ret
+}
+
+func (mh *MqttTransport) IsConnected() bool {
+	return mh.connState.IsConnected()
+}
+
+func (mh *MqttTransport) Stop() {
+	log.Debugf("[fimpgo] Stop connection")
+	mh.connState.OnDone()
+	mh.incMsgsWg.Wait()
+	log.Debugf("[fimpgo] Connection stopped")
+}
+
+// Subscribe - subscribing for topic
+func (mh *MqttTransport) Subscribe(topic string) error {
+	if strings.TrimSpace(topic) == "" {
+		return nil
+	}
+
+	topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix(), topic)
+
+	mh.subscribeLock.Lock()
+	defer mh.subscribeLock.Unlock()
+
+	// subscribe to the topic /go-mqtt/sample and request messages to be delivered
+	// at a maximum qos of zero, wait for the receipt to confirm the subscription
+	token := mh.client.Subscribe(topic, mh.subQos, nil)
+	timeout := !token.WaitTimeout(time.Second * 20)
+
+	if timeout {
+		return utils.ErrTimeout
+	} else if token.Error() != nil {
+		return token.Error()
+	}
+
+	mh.subs[topic] = mh.subQos
+	return nil
+}
+
+// Unsubscribe , unsubscribing from topic
+func (mh *MqttTransport) Unsubscribe(topic string) error {
+	topic = AddGlobalPrefixToTopic(mh.globalTopicPrefix(), topic)
+
+	mh.subscribeLock.Lock()
+	defer mh.subscribeLock.Unlock()
+
+	token := mh.client.Unsubscribe(topic)
+	timeout := !token.WaitTimeout(time.Second * 20)
+
+	if timeout {
+		return utils.ErrTimeout
+	} else if token.Error() != nil {
+		return token.Error()
+	}
+
+	delete(mh.subs, topic)
+	return nil
+}
+
+func (mh *MqttTransport) UnsubscribeAll() error {
+	var topics []string
+
+	mh.subscribeLock.Lock()
+	for i := range mh.subs {
+		topics = append(topics, i)
+	}
+	mh.subscribeLock.Unlock()
+
+	for _, t := range topics {
+		token := mh.client.Unsubscribe(t)
+		timeout := !token.WaitTimeout(time.Second * 20)
+
+		if timeout {
+			return utils.ErrTimeout
+		} else if token.Error() != nil {
+			return token.Error()
+		}
+
+		mh.subscribeLock.Lock()
+		delete(mh.subs, t)
+		mh.subscribeLock.Unlock()
+	}
+
+	return nil
+}
+
+func (mh *MqttTransport) SetOnConnectionLostHandler(handler func(client MQTT.Client, err error)) {
+	mh.connState.Lock()
+	mh.connectionLostCustomHandler = handler
+	mh.connState.Unlock()
 }
 
 func (mh *MqttTransport) SetGlobalTopicPrefix(prefix string) {
-	mh.globalTopicPrefixMux.Lock()
-	mh.globalTopicPrefix = prefix
-	mh.globalTopicPrefixMux.Unlock()
+	mh.globalTopicPrefixLock.Lock()
+	mh._globalTopicPrefix = strings.TrimSpace(prefix)
+	mh.globalTopicPrefixLock.Unlock()
 }
 
-func (mh *MqttTransport) getGlobalTopicPrefix() string {
-	mh.globalTopicPrefixMux.RLock()
-	defer mh.globalTopicPrefixMux.RUnlock()
-	return mh.globalTopicPrefix
+func (mh *MqttTransport) globalTopicPrefix() string {
+	mh.globalTopicPrefixLock.RLock()
+	defer mh.globalTopicPrefixLock.RUnlock()
+	return mh._globalTopicPrefix
 }
 
 // SetDefaultSource safely sets default source name for all outgoing messages.
@@ -258,154 +271,74 @@ func (mh *MqttTransport) SetMessageHandler(msgHandler MessageHandler) {
 // RegisterChannel should be used if new message has to be sent to channel instead of callback.
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannel(channelId string, messageCh MessageCh) {
-	mh.channelRegMux.Lock()
+	mh.channelRegLock.Lock()
 	mh.subChannels[channelId] = messageCh
-	mh.channelRegMux.Unlock()
+	mh.channelRegLock.Unlock()
 }
 
 // UnregisterChannel should be used to unregister channel
 func (mh *MqttTransport) UnregisterChannel(channelId string) {
-	mh.channelRegMux.Lock()
+	mh.channelRegLock.Lock()
 	delete(mh.subChannels, channelId)
 	delete(mh.subFilters, channelId)
 	delete(mh.subFilterFuncs, channelId)
-	mh.channelRegMux.Unlock()
+	mh.channelRegLock.Unlock()
 }
 
 // RegisterChannelWithFilter should be used if new message has to be sent to channel instead of callback.
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannelWithFilter(channelId string, messageCh MessageCh, filter FimpFilter) {
-	mh.channelRegMux.Lock()
+	mh.channelRegLock.Lock()
 	mh.subChannels[channelId] = messageCh
 	mh.subFilters[channelId] = filter
-	mh.channelRegMux.Unlock()
+	mh.channelRegLock.Unlock()
 }
 
 // RegisterChannelWithFilterFunc should be used if new message has to be sent to channel instead of callback.
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannelWithFilterFunc(channelId string, messageCh MessageCh, filterFunc FilterFunc) {
-	mh.channelRegMux.Lock()
+	mh.channelRegLock.Lock()
 	mh.subChannels[channelId] = messageCh
 	mh.subFilterFuncs[channelId] = filterFunc
-	mh.channelRegMux.Unlock()
+	mh.channelRegLock.Unlock()
 }
 
-func (mh *MqttTransport) Client() MQTT.Client {
-	return mh.client
-}
+func (mh *MqttTransport) onConnectionLost(client MQTT.Client, err error) {
+	options := client.OptionsReader()
+	log.Warnf("[fimpgo] Client=%s lost connection with the broker err: %v", options.ClientID(), err)
 
-// Start , starts adapter async.
-func (mh *MqttTransport) Start() error {
-	log.Info("<MqttAd> Connecting to MQTT broker ")
+	// Reset connected state without stopping the transport
+	mh.connState.Lock()
+	mh.connState.connected = make(chan struct{})
+	mh.connState.onceConnected = sync.Once{}
+	handler := mh.connectionLostCustomHandler
+	mh.connState.Unlock()
 
-	var err error
-	var delay time.Duration
-
-	for i := 1; i < mh.startFailRetryCount; i++ {
-		if token := mh.client.Connect(); token.Wait() && token.Error() == nil {
-			break
-		} else {
-			err = token.Error()
-		}
-		delay = time.Duration(i) * time.Duration(i)
-		log.Infof("<MqttAd> Connection failed , retrying after %d sec.... ", delay)
-		time.Sleep(delay * time.Second)
-	}
-
-	if err != nil {
-		return err
-	}
-
-	mh.done = make(chan struct{})
-	mh.wg.Add(1)
-	go mh.handleIncomingMessages()
-
-	return nil
-}
-
-// Stop stops adapter . Adapter can't be started again using Start . In order to start adapter it has to be re-initialized
-func (mh *MqttTransport) Stop() {
-	mh.client.Disconnect(250)
-
-	close(mh.done)
-	mh.wg.Wait()
-	mh.done = nil
-}
-
-// Subscribe - subscribing for topic
-func (mh *MqttTransport) Subscribe(topic string) error {
-	if strings.TrimSpace(topic) == "" {
-		return nil
-	}
-
-	mh.subMutex.Lock()
-	defer mh.subMutex.Unlock()
-
-	//subscribe to the topic /go-mqtt/sample and request messages to be delivered
-	//at a maximum qos of zero, wait for the receipt to confirm the subscription
-	topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
-	log.Debug("<MqttAd> Subscribing to topic:", topic)
-	token := mh.client.Subscribe(topic, mh.subQos, nil)
-	isInTime := token.WaitTimeout(time.Second * 20)
-	if token.Error() != nil {
-		log.Error("<MqttAd> Can't subscribe. Error :", token.Error())
-		return token.Error()
-	} else if !isInTime {
-		log.Error("<MqttAd> Subscribe operation timed out")
-		return errors.New("subscribe timed out")
-	}
-
-	mh.subs[topic] = mh.subQos
-
-	return nil
-}
-
-// Unsubscribe , unsubscribing from topic
-func (mh *MqttTransport) Unsubscribe(topic string) error {
-	mh.subMutex.Lock()
-	defer mh.subMutex.Unlock()
-	topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
-	log.Debug("<MqttAd> Unsubscribing from topic:", topic)
-	token := mh.client.Unsubscribe(topic)
-	isInTime := token.WaitTimeout(time.Second * 20)
-	if token.Error() != nil {
-		return token.Error()
-	} else if !isInTime {
-		log.Error("<MqttAd> Unsubscribe operation timed out")
-		return errors.New("unsubscribe timed out")
-	}
-	delete(mh.subs, topic)
-	return nil
-}
-
-func (mh *MqttTransport) UnsubscribeAll() {
-	var topics []string
-	mh.subMutex.Lock()
-	for i := range mh.subs {
-		topics = append(topics, i)
-	}
-	mh.subMutex.Unlock()
-	for _, t := range topics {
-		if err := mh.Unsubscribe(t); err != nil {
-			log.Error(errors.Wrap(err, "unsubscribing from topic"))
-		}
+	// Call handler outside the lock to prevent deadlock
+	if handler != nil {
+		handler(client, err)
 	}
 }
 
-func (mh *MqttTransport) onConnectionLost(_ MQTT.Client, err error) {
-	log.Errorf("<MqttAd> Connection lost with MQTT broker . Error : %v", err)
+func onConnectionNotifEvt(client MQTT.Client, _type MQTT.ConnectionNotification) {
+	options := client.OptionsReader()
+	log.Debugf("[fimpgo] Client=%s notification %s", options.ClientID(), connectionNotifStr(_type.Type()))
 }
 
-func (mh *MqttTransport) onConnect(_ MQTT.Client) {
-	mh.subMutex.Lock()
-	defer mh.subMutex.Unlock()
+func (mh *MqttTransport) onConnect(client MQTT.Client) {
+	mh.subscribeLock.Lock()
+	defer mh.subscribeLock.Unlock()
 
-	log.Infof("<MqttAd> Connection established with MQTT broker .")
+	options := client.OptionsReader()
+	log.Infof("[fimpgo] '%s' connected to the broker", options.ClientID())
+
 	if len(mh.subs) > 0 {
 		if token := mh.client.SubscribeMultiple(mh.subs, nil); token.Wait() && token.Error() != nil {
-			log.Error("Can't subscribe. Error :", token.Error())
+			log.Error("[fimpgo] Subscribe error:", token.Error())
 		}
 	}
+
+	mh.connState.OnConnect()
 }
 
 // onMessage is a message handler registered with MQTT client.
@@ -414,18 +347,34 @@ func (mh *MqttTransport) onConnect(_ MQTT.Client) {
 func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	select {
 	case mh.mainQueue <- msg:
-		return
+		mh.mainQueueOverflowCnt.Store(0)
 	default:
-		log.Warn("<MqttAd> Main message queue is full")
+		// stop MQTT and inform higher layer when unrecoverable situation occurs
+		if mh.mainQueueOverflowCnt.Add(1) > 20 {
+			if !mh.IsConnected() {
+				return
+			}
+
+			if mh.errorHandler != nil {
+				mh.errorHandler(errors.New("main msg queue stuck"))
+			}
+
+			mh.Stop()
+		} else {
+			log.Error("[fimpgo] Main msg queue overflow")
+		}
 	}
 }
 
-func (mh *MqttTransport) handleIncomingMessages() {
-	defer mh.wg.Done()
+func (mh *MqttTransport) handleIncomingMessages(started *sync.WaitGroup) {
+	defer mh.incMsgsWg.Done()
+
+	started.Done()
 
 	for {
 		select {
-		case <-mh.done:
+		case <-mh.connState.DoneC():
+			mh.client.Disconnect(250)
 			return
 		case msg := <-mh.mainQueue:
 			mh.handleIncomingMessage(msg)
@@ -436,39 +385,44 @@ func (mh *MqttTransport) handleIncomingMessages() {
 func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Error("<MqttAd> onMessage CRASHED with error :", r)
+			log.Errorf("[fimpgo] handleIncomingMessage crash %v", r)
+			log.Info(string(debug.Stack()))
 		}
 	}()
 
-	log.Tracef("<MqttAd> New msg from TOPIC: %s", msg.Topic())
-	var topic string
-	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
+	topic := msg.Topic()
+
+	if mh.globalTopicPrefix() != "" {
 		_, topic = DetachGlobalPrefixFromTopic(msg.Topic())
-	} else {
-		topic = msg.Topic()
 	}
 
 	addr, err := NewAddressFromString(topic)
 	if err != nil {
-		log.Error("<MqttAd> Error processing address :", err)
+		log.Errorf("[fimpgo] Processing topic=%v err:%v", topic, err)
 		return
 	}
+
 	var fimpMsg *FimpMessage
 
 	switch addr.PayloadType {
 	case DefaultPayload:
 		fimpMsg, err = NewMessageFromBytes(msg.Payload())
 	case CompressedJsonPayload:
+		if mh.compressor == nil {
+			log.Warnf("[fimpgo] Compressor is not initialized for topic=%s", topic)
+			return
+		}
+
 		fimpMsg, err = mh.compressor.DecompressFimpMsg(msg.Payload())
 	default:
-		// This means unknown binary payload , for instance compressed message
-		log.Warnf("[fimpgo] Unknown PayloadType=%s topic=%s", addr.PayloadType, topic)
+		// This means unknown binary payload, for instance compressed message
+		log.Warnf("[fimpgo] Unknown payload type=%s topic=%s", addr.PayloadType, topic)
 		return
 	}
 
 	if err != nil {
 		log.Errorf("[fimpgo] Processing payload from topic=%s err: %v", topic, err)
-		log.Tracef("[fimpgo] Payload preview (len=%d): %.100s", len(msg.Payload()), msg.Payload())
+		log.Tracef("[fimpgo] Payload preview len=%d: %.100s", len(msg.Payload()), msg.Payload())
 		return
 	}
 
@@ -476,37 +430,31 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 		mh.msgHandler(topic, addr, fimpMsg, msg.Payload())
 	}
 
-	mh.channelRegMux.Lock()
-	defer mh.channelRegMux.Unlock()
-
-	for i := range mh.subChannels {
-		if !mh.isChannelInterested(i, topic, addr, fimpMsg) {
+	mh.channelRegLock.Lock()
+	for name, c := range mh.subChannels {
+		if !mh.isChannelInterested(name, topic, addr, fimpMsg) {
 			continue
 		}
-		var fmsg Message
-		if addr.PayloadType == DefaultPayload || addr.PayloadType == CompressedJsonPayload {
-			fmsg = Message{Topic: topic, Addr: addr, Payload: fimpMsg}
-		} else {
-			// message receiver should do decompressions
-			fmsg = Message{Topic: topic, Addr: addr, RawPayload: msg.Payload()}
-		}
-		timer := time.NewTimer(time.Second * time.Duration(mh.receiveChTimeout))
-		select {
-		case mh.subChannels[i] <- &fmsg:
-			timer.Stop()
-			// send to channel
-		case <-timer.C:
-			log.Info("<MqttAd> Channel is not read for ", mh.receiveChTimeout)
-		}
-	}
 
+		timer := time.NewTimer(time.Second * time.Duration(mh.receiveChTimeout.Load()))
+
+		select {
+		case c <- &Message{Topic: topic, Addr: addr, Payload: fimpMsg}:
+		case <-timer.C:
+			log.Warnf("[fimpgo] Channel %s not read for %d sec", name, mh.receiveChTimeout.Load())
+		}
+
+		timer.Stop()
+	}
+	mh.channelRegLock.Unlock()
 }
 
 // isChannelInterested validates if channel is interested in message. Filtering is executed against either static filters or filter function
 func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr *Address, msg *FimpMessage) bool {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Error("<MqttAd> Filter CRASHED with error :", r)
+			log.Errorf("[fimpgo] isChannelInterested crash %v", r)
+			log.Info(string(debug.Stack()))
 		}
 	}()
 
@@ -514,11 +462,13 @@ func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr
 	if ok {
 		return filterFunc(topic, addr, msg)
 	}
+
 	filter, ok := mh.subFilters[chanName]
 	if !ok {
 		// no filters has been set
 		return true
 	}
+
 	if msg != nil {
 		if utils.RouteIncludesTopic(filter.Topic, topic) &&
 			(msg.Service == filter.Service || filter.Service == "*") &&
@@ -551,21 +501,21 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 		bytm, err = mh.compressor.CompressFimpMsg(fimpMsg)
 	default:
 		// This means unknown binary payload , for instance compressed message
-		log.Trace("<MqttAd> Publish - unknown binary payload :", addr.PayloadType)
+		log.Warnf("[fimpgo] Publish - unknown binary PayloadType=%v", addr.PayloadType)
 	}
 	if err != nil {
 		return err
 	}
 	topic := addr.Serialize()
-	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
-		topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
+
+	globalPrefix := mh.globalTopicPrefix()
+	if globalPrefix != "" {
+		topic = AddGlobalPrefixToTopic(globalPrefix, topic)
 	}
-	if err == nil {
-		log.Trace("<MqttAd> Publishing msg to topic:", topic)
-		mh.client.Publish(topic, mh.pubQos, false, bytm)
-		return nil
-	}
-	return err
+
+	log.Trace("[fimpgo] Publishing msg to topic:", topic)
+	mh.client.Publish(topic, mh.pubQos, false, bytm)
+	return nil
 }
 
 // PublishToTopic publishes iotMsg to string topic
@@ -586,11 +536,13 @@ func (mh *MqttTransport) PublishToTopic(topic string, fimpMsg *FimpMessage) erro
 		}
 	}
 
-	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
-		topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
+	globalTopicPrefix := mh.globalTopicPrefix()
+
+	if globalTopicPrefix != "" {
+		topic = AddGlobalPrefixToTopic(globalTopicPrefix, topic)
 	}
 
-	log.Trace("<MqttAd> Publishing msg to topic:", topic)
+	log.Trace("[fimpgo] Publishing msg to topic:", topic)
 	return mh.client.Publish(topic, mh.pubQos, false, byteMessage).Error()
 }
 
@@ -607,59 +559,74 @@ func (mh *MqttTransport) PublishSync(addr *Address, fimpMsg *FimpMessage) error 
 
 	var bytm []byte
 	var err error
-	if addr.PayloadType == "" {
-		addr.PayloadType = DefaultPayload
-	}
+
 	switch addr.PayloadType {
 	case DefaultPayload:
 		bytm, err = fimpMsg.SerializeToJson()
 	case CompressedJsonPayload:
 		bytm, err = mh.compressor.CompressFimpMsg(fimpMsg)
+	default:
+		log.Warnf("Unsupported payload type=%s", addr.PayloadType)
+		addr.PayloadType = DefaultPayload
+		bytm, err = fimpMsg.SerializeToJson()
+	}
 
+	if err != nil {
+		return err
 	}
+
 	topic := addr.Serialize()
-	if strings.TrimSpace(mh.globalTopicPrefix) != "" {
-		topic = AddGlobalPrefixToTopic(mh.getGlobalTopicPrefix(), topic)
+
+	globalPrefix := mh.globalTopicPrefix()
+	if globalPrefix != "" {
+		topic = AddGlobalPrefixToTopic(globalPrefix, topic)
 	}
-	if err == nil {
-		log.Trace("<MqttAd> Publishing msg to topic:", topic)
-		token := mh.client.Publish(topic, mh.pubQos, false, bytm)
-		if token.WaitTimeout(mh.syncPublishTimeout) && token.Error() == nil {
-			return nil
-		} else {
-			return token.Error()
-		}
+
+	log.Trace("[fimpgo] Publishing msg to topic=", topic)
+	token := mh.client.Publish(topic, mh.pubQos, false, bytm)
+
+	timeout := !token.WaitTimeout(mh.syncPublishTimeout)
+
+	if timeout {
+		return utils.ErrTimeout
+	} else if token.Error() != nil {
+		return token.Error()
 	}
-	return err
+
+	return nil
 }
 
 func (mh *MqttTransport) PublishRaw(topic string, bytem []byte) {
-	log.Trace("<MqttAd> Publishing msg to topic:", topic)
+	log.Trace("[fimpgo] Publishing msg to topic:", topic)
 	mh.client.Publish(topic, mh.pubQos, false, bytem)
 }
 
 func (mh *MqttTransport) PublishRawSync(topic string, bytem []byte) error {
-	log.Trace("<MqttAd> Publishing msg to topic:", topic)
+	log.Trace("[fimpgo] Publishing msg to topic:", topic)
 	token := mh.client.Publish(topic, mh.pubQos, false, bytem)
-	if token.WaitTimeout(mh.syncPublishTimeout) && token.Error() == nil {
-		return nil
-	} else {
+	timeout := !token.WaitTimeout(mh.syncPublishTimeout)
+
+	if timeout {
+		return utils.ErrTimeout
+	} else if token.Error() != nil {
 		return token.Error()
 	}
 
+	return nil
 }
 
 // AddGlobalPrefixToTopic , adds prefix to topic .
 func AddGlobalPrefixToTopic(domain string, topic string) string {
 	// Check if topic is already prefixed with  "/" if yes then concat without adding "/"
 	// 47 is code of "/"
-	if topic[0] == 47 {
+	if len(topic) > 0 && topic[0] == '/' {
 		return domain + topic
 	}
 
 	if strings.TrimSpace(domain) == "" {
 		return topic
 	}
+
 	return domain + "/" + topic
 }
 
@@ -668,8 +635,9 @@ func DetachGlobalPrefixFromTopic(topic string) (string, string) {
 	spt := strings.Split(topic, "/")
 	var resultTopic, globalPrefix string
 	for i := range spt {
-		if strings.Contains(spt[i], "pt:") {
-			//resultTopic= strings.Replace(topic, spt[0]+"/", "", 1)
+		payloadTypeHdr := "pt:"
+
+		if strings.Contains(spt[i], payloadTypeHdr) {
 			resultTopic = strings.Join(spt[i:], "/")
 			globalPrefix = strings.Join(spt[:i], "/")
 			break
@@ -680,77 +648,59 @@ func DetachGlobalPrefixFromTopic(topic string) (string, string) {
 	return globalPrefix, resultTopic
 }
 
-// ConfigureTls The method should be used to configure mutual TLS , like AwS IoT core is using . Also it configures TLS protocol switch .
-// Cert dir should contains all CA root certificates .
-// IsAws flag controls AWS specific TLS protocol switch.
-func (mh *MqttTransport) ConfigureTls(privateKeyFileName, certFileName, certDir string, isAws bool) error {
+func NewMqttTransportTLS(serverURI, clientID, username, password string, cleanSession bool, subQos byte, pubQos byte, errHandler func(error),
+	privKeyFileName, certFileName, certDir string, isAWS bool) *MqttTransport {
+	mh := &MqttTransport{}
+	clientOptions := defaultClientOptions(serverURI, clientID, username, password, cleanSession, mh.onConnectionLost)
+	clientOptions.SetDefaultPublishHandler(mh.onMessage)
+	clientOptions.SetOnConnectHandler(mh.onConnect)
+
+	mh.pubQos = pubQos
+	mh.subQos = subQos
+	mh.subs = make(map[string]byte)
+	mh.subChannels = make(map[string]MessageCh)
+	mh.subFilters = make(map[string]FimpFilter)
+	mh.subFilterFuncs = make(map[string]FilterFunc)
+	mh.mainQueue = make(chan MQTT.Message, defaultMainQueueSize)
+	mh.startFailRetryCount = 10
+	mh.receiveChTimeout.Store(10)
+	mh.syncPublishTimeout = time.Second * 5
+	mh.compressor = NewMsgCompressor("", "")
+	mh.errorHandler = errHandler
+
 	mh.certDir = certDir
-	privateKeyFileName = filepath.Join(certDir, privateKeyFileName)
-	certFileName = filepath.Join(certDir, certFileName)
-	TLSConfig := &tls.Config{InsecureSkipVerify: false}
-	if isAws {
-		TLSConfig.NextProtos = []string{"x-amzn-mqtt-ca"}
-	}
+	configTLS, err := security.TLSConfig(privKeyFileName, certFileName, certDir, isAWS)
 
-	certPool, err := mh.getCACertPool()
 	if err != nil {
-		return err
+		log.Errorf("[fimpgo] TLS config err: %v", err)
+		return nil
 	}
-	TLSConfig.RootCAs = certPool
 
-	if strings.TrimSpace(certFileName) != "" {
-		certPool, err := mh.getCertPool(certFileName)
-		if err != nil {
-			return err
-		}
-		TLSConfig.ClientAuth = tls.RequireAndVerifyClientCert
-		TLSConfig.ClientCAs = certPool
-	}
-	if privateKeyFileName != "" {
-		if certFileName == "" {
-			return fmt.Errorf("key specified but cert is not specified")
-		}
-		cert, err := tls.LoadX509KeyPair(certFileName, privateKeyFileName)
-		if err != nil {
-			return err
-		}
-		TLSConfig.Certificates = []tls.Certificate{cert}
-	}
-	mh.mqttOptions.SetTLSConfig(TLSConfig)
-	mh.client = MQTT.NewClient(mh.mqttOptions)
-	return nil
+	clientOptions.SetTLSConfig(configTLS)
+	mh.client = MQTT.NewClient(clientOptions)
 
+	return mh
 }
 
-// configuring CA certificate pool
-func (mh *MqttTransport) getCACertPool() (*x509.CertPool, error) {
-	certs := x509.NewCertPool()
-	cafile := filepath.Join(mh.certDir, "root-ca-1.pem")
-	pemData, err := ioutil.ReadFile(cafile)
-	if err != nil {
-		return nil, err
-	}
-	certs.AppendCertsFromPEM(pemData)
-
-	cafile = filepath.Join(mh.certDir, "root-ca-2.pem")
-	pemData, err = ioutil.ReadFile(cafile)
-	certs.AppendCertsFromPEM(pemData)
-
-	cafile = filepath.Join(mh.certDir, "root-ca-3.pem")
-	pemData, err = ioutil.ReadFile(cafile)
-	certs.AppendCertsFromPEM(pemData)
-	log.Infof("CA certificates are loaded.")
-	return certs, nil
+func (mh *MqttTransport) SetReceiveChTimeout(receiveChTimeout uint32) {
+	mh.receiveChTimeout.Store(receiveChTimeout)
 }
 
-// configuring certificate pool
-func (mh *MqttTransport) getCertPool(certFile string) (*x509.CertPool, error) {
-	certs := x509.NewCertPool()
-	pemData, err := ioutil.ReadFile(certFile)
-	if err != nil {
-		return nil, err
-	}
-	certs.AppendCertsFromPEM(pemData)
-	log.Infof("Certificate is loaded.")
-	return certs, nil
+func (mh *MqttTransport) SetCertDir(certDir string) {
+	mh.certDir = certDir
+}
+
+func defaultClientOptions(serverURI, clientID, username, password string, cleanSession bool, connectionLostHandler func(client MQTT.Client, err error)) *MQTT.ClientOptions {
+	clientOptions := MQTT.NewClientOptions().AddBroker(serverURI)
+	clientOptions.SetClientID(clientID)
+	clientOptions.SetUsername(username)
+	clientOptions.SetPassword(password)
+	clientOptions.SetCleanSession(cleanSession)
+	clientOptions.SetAutoReconnect(true)
+	clientOptions.SetConnectRetry(true)
+	clientOptions.SetWriteTimeout(15 * time.Second)
+	clientOptions.SetConnectionLostHandler(connectionLostHandler)
+	clientOptions.SetConnectionNotificationHandler(onConnectionNotifEvt)
+
+	return clientOptions
 }

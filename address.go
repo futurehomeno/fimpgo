@@ -3,8 +3,6 @@ package fimpgo
 import (
 	"fmt"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -32,85 +30,83 @@ type Address struct {
 	ServiceAddress  string
 }
 
-func (adr *Address) Serialize() string {
-	if adr.PayloadType == "" {
-		adr.PayloadType = DefaultPayload
+func (addr *Address) Serialize() string {
+	if addr.PayloadType == "" {
+		addr.PayloadType = DefaultPayload
 	}
 	result := ""
 
-	switch adr.ResourceType {
-
+	switch addr.ResourceType {
 	case ResourceTypeAdapter, ResourceTypeApp, ResourceTypeCloud:
 		result = fmt.Sprintf("%s/%s/%s/%s/%s",
-			adr.prepComp("pt", adr.PayloadType),
-			adr.prepComp("mt", adr.MsgType),
-			adr.prepComp("rt", adr.ResourceType),
-			adr.prepComp("rn", adr.ResourceName),
-			adr.prepComp("ad", adr.ResourceAddress))
+			addr.prepComp("pt", addr.PayloadType),
+			addr.prepComp("mt", addr.MsgType),
+			addr.prepComp("rt", addr.ResourceType),
+			addr.prepComp("rn", addr.ResourceName),
+			addr.prepComp("ad", addr.ResourceAddress))
 	case ResourceTypeDevice:
 		result = fmt.Sprintf("%s/%s/%s/%s/%s/%s/%s",
-			adr.prepComp("pt", adr.PayloadType),
-			adr.prepComp("mt", adr.MsgType),
-			adr.prepComp("rt", adr.ResourceType),
-			adr.prepComp("rn", adr.ResourceName),
-			adr.prepComp("ad", adr.ResourceAddress),
-			adr.prepComp("sv", adr.ServiceName),
-			adr.prepComp("ad", adr.ServiceAddress))
+			addr.prepComp("pt", addr.PayloadType),
+			addr.prepComp("mt", addr.MsgType),
+			addr.prepComp("rt", addr.ResourceType),
+			addr.prepComp("rn", addr.ResourceName),
+			addr.prepComp("ad", addr.ResourceAddress),
+			addr.prepComp("sv", addr.ServiceName),
+			addr.prepComp("ad", addr.ServiceAddress))
 	case ResourceTypeDiscovery:
 		result = fmt.Sprintf("%s/%s/%s",
-			adr.prepComp("pt", adr.PayloadType),
-			adr.prepComp("mt", adr.MsgType),
-			adr.prepComp("rt", adr.ResourceType))
+			addr.prepComp("pt", addr.PayloadType),
+			addr.prepComp("mt", addr.MsgType),
+			addr.prepComp("rt", addr.ResourceType))
 	}
-	if adr.GlobalPrefix != "" {
-		result = adr.GlobalPrefix + "/" + result
+	if addr.GlobalPrefix != "" {
+		result = addr.GlobalPrefix + "/" + result
 	}
 	return result
 }
 
-func (adr *Address) prepComp(prefix string, comp string) string {
+func (addr *Address) prepComp(prefix string, comp string) string {
 	if comp == "+" || comp == "#" {
-		return fmt.Sprintf("%s", comp)
+		return comp
 	} else {
 		return fmt.Sprintf("%s:%s", prefix, comp)
 	}
 }
 
 func NewAddressFromString(address string) (*Address, error) {
-	adr := Address{}
+	addr := Address{}
 	tokens := strings.Split(address, "/")
-	var err error
-	for index, _ := range tokens {
-		keyVal := strings.Split(tokens[index], ":")
+
+	for index, tok := range tokens {
+		keyVal := strings.Split(tok, ":")
 		// detecting global prefix
-		if len(keyVal) == 1 && index == 0 {
-			adr.GlobalPrefix = keyVal[0]
-		} else if len(keyVal) == 2 {
+		switch {
+		case len(keyVal) == 1 && index == 0:
+			addr.GlobalPrefix = keyVal[0]
+		case len(keyVal) == 2:
 			switch keyVal[0] {
 			case "pt":
-				adr.PayloadType = keyVal[1]
+				addr.PayloadType = keyVal[1]
 			case "mt":
-				adr.MsgType = keyVal[1]
+				addr.MsgType = keyVal[1]
 			case "rt":
-				adr.ResourceType = keyVal[1]
+				addr.ResourceType = keyVal[1]
 			case "rn":
-				adr.ResourceName = keyVal[1]
+				addr.ResourceName = keyVal[1]
 			case "ad":
-				if adr.ServiceName == "" {
-					adr.ResourceAddress = keyVal[1]
+				if addr.ServiceName == "" {
+					addr.ResourceAddress = keyVal[1]
 				} else {
-					adr.ServiceAddress = keyVal[1]
+					addr.ServiceAddress = keyVal[1]
 				}
 
 			case "sv":
-				adr.ServiceName = keyVal[1]
-
+				addr.ServiceName = keyVal[1]
 			}
-		} else {
-			return nil, errors.New("Incorrectly formatted address")
+		default:
+			return nil, fmt.Errorf("invalid address format key=%v", keyVal)
 		}
 	}
 
-	return &adr, err
-
+	return &addr, nil
 }

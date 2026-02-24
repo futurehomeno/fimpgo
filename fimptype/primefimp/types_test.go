@@ -2,21 +2,17 @@ package primefimp
 
 import (
 	"encoding/json"
-	"io/ioutil"
-	"strings"
+	"os"
 	"testing"
+	"time"
 
 	"github.com/futurehomeno/fimpgo"
-	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/require"
 )
 
-func clientId() string {
-	return strings.ReplaceAll(uuid.New().String(), "-", "")[0:22]
-}
-
 func TestMode(t *testing.T) {
-	tb, _ := ioutil.ReadFile("testdata/mode.json")
+	tb, _ := os.ReadFile("testdata/mode.json")
 
 	var mode []Mode
 
@@ -31,50 +27,53 @@ func TestMode(t *testing.T) {
 }
 
 func TestTimerWithActions(t *testing.T) {
-	tb, _ := ioutil.ReadFile("testdata/timer_with_actions.json")
+	tb, err := os.ReadFile("testdata/timer_with_actions.json")
+	require.NoError(t, err)
 
 	var timer Timer
+	err = json.Unmarshal(tb, &timer)
+	require.NoError(t, err)
 
-	json.Unmarshal(tb, &timer)
+	device37, ok := timer.Action.Device[37]
+	require.True(t, ok, "Device 37 not found in timer action map=%v", timer.Action.Device)
 
-	device37 := timer.Action.Action.Device[37]
-
-	if device37["power"].(string) != "on" {
-		t.Errorf("Wrong power value for device 37. Expecting: on, Got: %s", device37["power"].(string))
+	if device37["power"].(string) != "on" { //nolint:forcetypeassert
+		t.Errorf("Wrong power value for device 37 exp=on act=%s", device37["power"].(string)) //nolint:forcetypeassert
 	}
 }
 
 func TestTimerWithMode(t *testing.T) {
-	tb, _ := ioutil.ReadFile("testdata/timer_with_mode.json")
+	tb, err := os.ReadFile("testdata/timer_with_mode.json")
+	require.NoError(t, err)
 
 	var timer Timer
+	err = json.Unmarshal(tb, &timer)
+	require.NoError(t, err)
 
-	json.Unmarshal(tb, &timer)
-
-	if timer.Action.Type != "mode" {
-		t.Errorf("Wrong action type. Expection: mode, Got: %s", timer.Action.Mode)
+	if timer.Mode != "vacation" {
+		t.Errorf("Wrong action type exp=mode act=%s", timer.Mode)
 	}
 }
 
 func TestTimerWithShortcut(t *testing.T) {
-	tb, _ := ioutil.ReadFile("testdata/timer_with_shortcut.json")
+	tb, err := os.ReadFile("testdata/timer_with_shortcut.json")
+	require.NoError(t, err)
 
 	var timer Timer
+	err = json.Unmarshal(tb, &timer)
+	require.NoError(t, err)
 
-	json.Unmarshal(tb, &timer)
-
-	if timer.Action.Type != "shortcut" {
-		t.Errorf("Wrong action type. Expection: mode, Got: %s", timer.Action.Mode)
+	if timer.Shortcut != 1 {
+		t.Errorf("Wrong action type exp=shortcut act=%d", timer.Shortcut)
 	}
 }
 
 func TestPrimeFimpSendFimpWithTopicResponse(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, "fimpgotest", brokerUser, brokerPass, true, 1, 1)
-	err := mqtt.Start()
-	t.Log("Connected")
+	t.Skip()
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, "fimpgotest", brokerUser, brokerPass, true, 1, 1, nil)
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
 
 	// Actual test
@@ -82,7 +81,10 @@ func TestPrimeFimpSendFimpWithTopicResponse(t *testing.T) {
 
 	reqAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "vinculum", ResourceAddress: "1"}
 	respAddr := fimpgo.Address{MsgType: fimpgo.MsgTypeRsp, ResourceType: fimpgo.ResourceTypeApp, ResourceName: "fimpgo-test", ResourceAddress: "1"}
-	syncClient.AddSubscription(respAddr.Serialize())
+	if err := syncClient.AddSubscription(respAddr.Serialize()); err != nil {
+		t.Error("Error adding subscription", err)
+		t.Fail()
+	}
 
 	param := RequestParam{Components: []string{"device"}}
 	req := Request{Cmd: "get", Param: &param}
@@ -98,7 +100,6 @@ func TestPrimeFimpSendFimpWithTopicResponse(t *testing.T) {
 	resp := Response{}
 	err = response.GetObjectValue(&resp)
 
-	t.Log(resp.Success)
 	if err != nil {
 		t.Error("Error", err)
 		t.Fail()
@@ -108,17 +109,15 @@ func TestPrimeFimpSendFimpWithTopicResponse(t *testing.T) {
 		t.Error("No rooms")
 		t.Fail()
 	}
-	t.Log("Response test - OK , total number of devices = ", len(resp.GetDevices()))
 }
 
 func TestPrimeFimpClientApiGetDevices(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	t.Skip()
 
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, clientId(), brokerUser, brokerPass, true, 1, 1)
-	err := mqtt.Start()
-	t.Log("Connected")
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, "some_name", brokerUser, brokerPass, true, 1, 1, nil)
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
 
 	client := NewApiClient("test-1", mqtt, false)
@@ -136,17 +135,16 @@ func TestPrimeFimpClientApiGetDevices(t *testing.T) {
 }
 
 func TestPrimeFimpClientApiGetShortcuts(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	t.Skip()
 
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, clientId(), brokerUser, brokerPass, true, 1, 1)
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, "some_name", brokerUser, brokerPass, true, 1, 1, nil)
 	mqtt.SetMessageHandler(func(topic string, addr *fimpgo.Address, iotMsg *fimpgo.FimpMessage, rawPayload []byte) {
 
 	})
 	client := NewApiClient("test-1", mqtt, false)
-	err := mqtt.Start()
-	t.Log("Connected")
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
 	devices, err := client.GetShortcuts(false)
 	if err != nil {
@@ -162,13 +160,12 @@ func TestPrimeFimpClientApiGetShortcuts(t *testing.T) {
 }
 
 func TestPrimeFimpClientApiGetVincServices(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	t.Skip()
 
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, clientId(), brokerUser, brokerPass, true, 1, 1)
-	err := mqtt.Start()
-	t.Log("Connected")
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, "some_name", brokerUser, brokerPass, true, 1, 1, nil)
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
 
 	client := NewApiClient("test-1", mqtt, false)
@@ -185,13 +182,12 @@ func TestPrimeFimpClientApiGetVincServices(t *testing.T) {
 }
 
 func TestPrimeFimpClientApiGetSite(t *testing.T) {
-	log.SetLevel(log.DebugLevel)
+	t.Skip()
 
-	mqtt := fimpgo.NewMqttTransport(brokerUrl, clientId(), brokerUser, brokerPass, true, 1, 1)
-	err := mqtt.Start()
-	t.Log("Connected")
+	mqtt := fimpgo.NewMqttTransport(brokerUrl, "some_name", brokerUser, brokerPass, true, 1, 1, nil)
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
 
 	client := NewApiClient("test-1", mqtt, false)

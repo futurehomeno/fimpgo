@@ -1,4 +1,7 @@
 .idea
 .DS_Store
 .vscode
-fimpcli
+fimpgo
+build/*
+build/
+security/test-key-store.json

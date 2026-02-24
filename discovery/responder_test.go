@@ -1,16 +1,18 @@
 package discovery
 
 import (
+	"testing"
+	"time"
+
 	"github.com/futurehomeno/fimpgo"
 	log "github.com/sirupsen/logrus"
-	"testing"
 )
 
 func SecondResponder() {
-	mqt := fimpgo.NewMqttTransport("tcp://localhost:1883", "fimpgotest-2", "", "", true, 1, 1)
-	err := mqt.Start()
+	mqtt := fimpgo.NewMqttTransport("tcp://127.0.0.1:11883", "fimpgotest-2", "", "", true, 1, 1, nil)
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
-		//t.Error("Error connecting to broker ",err)
+		log.Error("Error connecting to broker ", err)
 	}
 
 	resource := Resource{
@@ -20,10 +22,9 @@ func SecondResponder() {
 		IsInstanceConfigurable: false,
 		InstanceId:             "1",
 		Version:                "1",
-		AppInfo:                AppInfo{},
 	}
 
-	responder := NewServiceDiscoveryResponder(mqt)
+	responder := NewServiceDiscoveryResponder(mqtt)
 	responder.RegisterResource(resource)
 	responder.Start()
 }
@@ -32,11 +33,10 @@ func TestServiceDiscoveryResponder_Start(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	go SecondResponder()
 
-	mqt := fimpgo.NewMqttTransport("tcp://localhost:1883", "fimpgotest-1", "", "", true, 1, 1)
-	err := mqt.Start()
-	t.Log("Connected")
+	mqtt := fimpgo.NewMqttTransport("tcp://127.0.0.1:11883", "fimpgotest-1", "", "", true, 1, 1, nil)
+	err := mqtt.Start(10 * time.Second)
 	if err != nil {
-		t.Error("Error connecting to broker ", err)
+		t.Fatal("Start MQTT err:", err)
 	}
 
 	resource := Resource{
@@ -46,29 +46,21 @@ func TestServiceDiscoveryResponder_Start(t *testing.T) {
 		IsInstanceConfigurable: false,
 		InstanceId:             "1",
 		Version:                "1",
-		AppInfo:                AppInfo{},
 	}
 
-	responder := NewServiceDiscoveryResponder(mqt)
+	responder := NewServiceDiscoveryResponder(mqtt)
 	responder.RegisterResource(resource)
 	responder.Start()
 
-	t.Log("Sending discovery request 1 ")
-	discoveredResource,_ := DiscoverResources(mqt, 2)
-	for _, r := range discoveredResource {
-		t.Log("Discovered resource = " + r.ResourceName)
-	}
+	discoveredResource, _ := DiscoverResources(mqtt, 2)
+
 	if len(discoveredResource) != 2 {
-		t.Fatal("number of discovered resources doesn't match ")
+		t.Fatalf("Number of discovered resources doesn't match act=%d exp=%d", len(discoveredResource), 2)
 	}
 
-	t.Log("Sending discovery request 2 ")
-	discoveredResource,_ = DiscoverResources(mqt, 2)
-	for _, r := range discoveredResource {
-		t.Log("Discovered resource = " + r.ResourceName)
-	}
-	if len(discoveredResource) != 2 {
-		t.Fatal("number of discovered resources doesn't match ")
-	}
+	discoveredResource, _ = DiscoverResources(mqtt, 2)
 
+	if len(discoveredResource) != 2 {
+		t.Fatalf("Number of discovered resources doesn't match act=%d exp=%d", len(discoveredResource), 2)
+	}
 }

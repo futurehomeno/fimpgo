@@ -1,62 +1,66 @@
 package discovery
 
 import (
-	"github.com/futurehomeno/fimpgo"
-	"github.com/sirupsen/logrus"
 	"time"
+
+	"github.com/futurehomeno/fimpgo"
+	log "github.com/sirupsen/logrus"
 )
 
-// DiscoverResources discovers resources around , timeout is set in seconds
-func DiscoverResources(mqt *fimpgo.MqttTransport,timeout int) ([]Resource,error) {
-	msg := fimpgo.NewNullMessage("cmd.discovery.request", "system", nil, nil, nil)
-	adr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeDiscovery}
+// DiscoverResources discovers resources around, timeout is set in seconds
+func DiscoverResources(mqt *fimpgo.MqttTransport, timeout int) ([]Resource, error) {
 	resCh := make(fimpgo.MessageCh)
 	channel := "resource-discovery-client"
-	if err := mqt.Subscribe("pt:j1/mt:evt/rt:discovery");err!= nil {
-		return nil,err
+
+	if err := mqt.Subscribe("pt:j1/mt:evt/rt:discovery"); err != nil {
+		return nil, err
 	}
-	mqt.RegisterChannelWithFilter(channel,resCh, struct {
+	mqt.RegisterChannelWithFilter(channel, resCh, struct {
 		Topic     string
 		Service   string
 		Interface string
-	}{Topic: "pt:j1/mt:evt/rt:discovery",Service:"*",Interface:"*"})
+	}{Topic: "pt:j1/mt:evt/rt:discovery", Service: "*", Interface: "*"})
 
 	defer func() {
-		mqt.Unsubscribe("pt:j1/mt:evt/rt:discovery")
+		if err := mqt.Unsubscribe("pt:j1/mt:evt/rt:discovery"); err != nil {
+			log.Error("[fimpgo] Unsubscribe err:", err)
+		}
 		mqt.UnregisterChannel("resource-discovery-client")
 	}()
 
-	resultsCh := make(chan []Resource,20)
+	msg := fimpgo.NewNullMessage("cmd.discovery.request", "system", nil, nil, nil)
+	addr := fimpgo.Address{MsgType: fimpgo.MsgTypeCmd, ResourceType: fimpgo.ResourceTypeDiscovery}
+	resultsCh := make(chan []Resource, 20)
+
 	// Response aggregator
 	go func() {
-		logrus.Info("Starting listener ")
-		results := make([]Resource,0)
-		stop :=false
-		for {
+		results := make([]Resource, 0)
+		stop := false
+		for !stop {
 			select {
-			case msg :=<- resCh:
-				logrus.Debug("Discovery response from ",msg.Topic)
+			case msg := <-resCh:
 				res := Resource{}
 				err := msg.Payload.GetObjectValue(&res)
 
 				if err == nil {
-					results = append(results,res)
-				}else {
-					logrus.Error("Error parsing object ",err)
+					results = append(results, res)
+				} else {
+					log.Error("[fimpgo] Parsing object err:", err)
 				}
 
-			case <-time.After(time.Duration(timeout)*time.Second):
+			case <-time.After(time.Duration(timeout) * time.Second):
 				stop = true
-				break
-			}
-			if stop {
-				break
 			}
 		}
+
 		resultsCh <- results
 	}()
-	//Sending request
-	mqt.Publish(&adr,msg)
-	result :=<- resultsCh
-	return result,nil
+
+	// Sending request
+	if err := mqt.Publish(&addr, msg); err != nil {
+		return nil, err
+	}
+
+	result := <-resultsCh
+	return result, nil
 }

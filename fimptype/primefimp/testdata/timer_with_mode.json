@@ -1,5 +1,5 @@
 {
-  "action": "vacation",
+  "mode": "vacation",
   "client": {
     "name": "Test Vacation"
   },
