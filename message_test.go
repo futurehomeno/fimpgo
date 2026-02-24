@@ -293,10 +293,10 @@ func TestFimpMessage_GetFloatMapValue(t *testing.T) {
 		t.Error(err)
 	}
 	if val["param2"] != 2.5 {
-		t.Error("Wrong map result param2")
+		t.Error("Wrong param2")
 	}
 	if val["param3"] != 5 {
-		t.Error("Wrong map result param3")
+		t.Error("Wrong param3")
 	}
 }
 

@@ -267,6 +267,7 @@ func (mh *ApiClient) UpdateSite(notif *Notify) error {
 		switch notif.Component {
 		case ComponentRoom:
 		case ComponentHub:
+		case ComponentDevice:
 		default:
 			return fmt.Errorf("unknown component=%s set", notif.Component)
 		}
@@ -315,13 +316,19 @@ func (mh *ApiClient) notifyRouter() {
 			mh.notifChMux.RLock()
 			for cid, nfCh := range mh.notifySubChannels { // check all subfilters
 				nfFilter, ok := mh.subFilters[cid]
+				var send bool
 				if ok {
 					if nfFilter.Cmd == notif.Cmd && nfFilter.Component == notif.Component {
-						select {
-						case nfCh <- *notif: // send notification to corresponding subchannel if there is match
-						default:
-							log.Warnf("[fimpgo] Send channel %s is blocked ", cid)
-						}
+						send = true
+					}
+				} else {
+					send = true
+				}
+				if send {
+					select {
+					case nfCh <- *notif: // send notification to corresponding subchannel if there is match
+					default:
+						log.Warnf("[fimpgo] Send channel %s is blocked ", cid)
 					}
 				}
 			}

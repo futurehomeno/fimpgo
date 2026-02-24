@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 [{"UserId":"alex@mail.com","DeviceId":"t-a-1","Algorithm":"ES256","KeyType":"pub","SerializedKey":"-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAESz923I4upEegO+s1Mw7clSIJ2x7P\nNn+kAYvcabjZ/tuMget45s41CsF8Q6Z898ES+tAJugMkV2+vKFpQVgPbcw==\n-----END PUBLIC KEY-----\n","EcdsaKey":null,"AddedAt":"2026-02-16T15:32:02+01:00"}]
+=======
+[{"UserId":"alex@mail.com","DeviceId":"t-a-1","Algorithm":"ES256","KeyType":"pub","SerializedKey":"-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE92ojn4DWfnNnLFpgx9o8ixQvIGRK\nrOhmJQ9fBsSGF5SSk5tq0S2/E2LIFP728+BhJ/iDXLehHP0cVbCFVrfbnA==\n-----END PUBLIC KEY-----\n","EcdsaKey":null,"AddedAt":"2026-02-24T11:48:28+01:00"}]
+>>>>>>> dev/update_modules

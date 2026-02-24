@@ -25,7 +25,7 @@ func TestSyncClient_Connect(t *testing.T) {
 	mqtt.RegisterChannel("test", inboundChan)
 
 	// Actual test
-	syncClient := NewSyncClientV2(nil, 20, 20)
+	syncClient := NewSyncClientV2(nil)
 	if err := syncClient.Connect("tcp://127.0.0.1:11883", "fimpgotest2", "", "", true, 1, 1, nil); err != nil {
 		t.Fatal("Error connecting sync client to broker ", err)
 	}

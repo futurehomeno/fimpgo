@@ -70,6 +70,10 @@ func NewMqttTransportFromConfigs(cfg MqttConnectionConfigs, errHandler func(erro
 		return nil
 	}
 
+	if cfg.GlobalTopicPrefix != "" {
+		mh.SetGlobalTopicPrefix(cfg.GlobalTopicPrefix)
+	}
+
 	if cfg.StartFailRetryCount > 0 {
 		mh.startFailRetryCount = cfg.StartFailRetryCount
 	}
@@ -346,10 +350,11 @@ func (mh *MqttTransport) onMessage(_ MQTT.Client, msg MQTT.Message) {
 	case mh.mainQueue <- msg:
 		mh.mainQueueOverflowCnt.Store(0)
 	default:
-
+		// stop MQTT and inform higher layer when unrecoverable situation occurs
 		if mh.mainQueueOverflowCnt.Add(1) > 20 {
-			// stop MQTT and inform higher layer when unrecoverable situation occurs
-			mh.Stop()
+			if !mh.IsConnected() {
+				return
+			}
 
 			if mh.errorHandler != nil {
 				mh.errorHandler(errors.New("main msg queue stuck"))
