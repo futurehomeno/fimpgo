@@ -92,7 +92,7 @@ func (sc *SyncClient) RemoveSubscription(topic string) error {
 	return sc.mqttTransport.Unsubscribe(topic)
 }
 
-// SendFimpWithTopicResponse send message over mqtt and awaits response from rspTopic with rspSrv and rspMsgType
+// SendFimpWithTopicResponse send message over mqtt and awaits response from rspTopic with rspSrv and rspIface
 func (sc *SyncClient) sendFimpWithTopicResponse(topic string, fimpMsg *FimpMessage, rspTopic string, rspSrv fimptype.ServiceNameT, rspIface string, timeout int, autoSubscribe bool) (*FimpMessage, error) {
 	var conId int
 	var conn *MqttTransport
