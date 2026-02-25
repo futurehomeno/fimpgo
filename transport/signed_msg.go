@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/futurehomeno/fimpgo"
 	"github.com/futurehomeno/fimpgo/fimptype"
@@ -94,7 +94,8 @@ func SignMessageES256(payload *fimpgo.FimpMessage, requestMsg *fimpgo.FimpMessag
 	if err != nil {
 		return nil, err
 	}
-	signedMsg.Properties["sig"] = signature
+
+	signedMsg.Properties["sig"] = base64.RawURLEncoding.EncodeToString(signature)
 	return signedMsg, nil
 }
 
@@ -102,16 +103,25 @@ func GetVerifiedMessageES256(signedMsg *fimpgo.FimpMessage, key *security.EcdsaK
 	if signedMsg.Interface != "cmd.transport.signed" && signedMsg.Interface != "evt.transport.signed" {
 		return nil, errors.New("incorrect message type")
 	}
-	origMsgBin, ok1 := signedMsg.Value.(string)
-	if !ok1 {
+
+	origMsgBin, ok := signedMsg.Value.(string)
+	if !ok {
 		return nil, errors.New("incorrect encapsulated message format")
 	}
-	sig, ok2 := signedMsg.Properties["sig"]
-	if !ok2 {
+
+	sigStr, ok := signedMsg.Properties["sig"]
+	if !ok {
 		return nil, errors.New("missing signature")
 	}
+
+	sig, err := base64.RawURLEncoding.DecodeString(sigStr)
+	if err != nil {
+		return nil, err
+	}
+
 	signingMethodES256 := &jwt.SigningMethodECDSA{Name: "ES256", Hash: crypto.SHA256, KeySize: 32, CurveBits: 256}
-	err := signingMethodES256.Verify(origMsgBin, sig, key.PublicKey())
+
+	err = signingMethodES256.Verify(origMsgBin, sig, key.PublicKey())
 	if err == nil {
 		decodedPayloadBin, err := base64.StdEncoding.DecodeString(origMsgBin)
 		if err != nil {

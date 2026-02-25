@@ -20,7 +20,7 @@ func NewSystemCheck() *SystemCheck {
 func (sc *SystemCheck) IsNetworkAvailable() bool {
 	netIntfs, err := net.Interfaces()
 	if err != nil {
-		log.Error("<sys-check> Interface check error:", err.Error())
+		log.Error("Interface check err: ", err.Error())
 		return false
 	}
 

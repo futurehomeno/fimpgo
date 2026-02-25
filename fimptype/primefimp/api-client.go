@@ -283,8 +283,8 @@ func (mh *ApiClient) UpdateSite(notif *Notify) error {
 func (mh *ApiClient) notifyRouter() {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Errorf("[fimpgo] isChannelInterested crash %v", r)
-			log.Info(string(debug.Stack()))
+			log.Errorf("[fimpgo] notifyRouter crash %v", r)
+			log.Error(string(debug.Stack()))
 		}
 	}()
 
