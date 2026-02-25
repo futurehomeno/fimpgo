@@ -1,6 +1,7 @@
 package fimpgo
 
 import (
+	"fmt"
 	"runtime/debug"
 	"strings"
 	"sync"
@@ -386,7 +387,7 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Errorf("[fimpgo] handleIncomingMessage crash %v", r)
-			log.Info(string(debug.Stack()))
+			log.Error(string(debug.Stack()))
 		}
 	}()
 
@@ -454,7 +455,7 @@ func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr
 	defer func() {
 		if r := recover(); r != nil {
 			log.Errorf("[fimpgo] isChannelInterested crash %v", r)
-			log.Info(string(debug.Stack()))
+			log.Error(string(debug.Stack()))
 		}
 	}()
 
@@ -501,11 +502,13 @@ func (mh *MqttTransport) Publish(addr *Address, fimpMsg *FimpMessage) error {
 		bytm, err = mh.compressor.CompressFimpMsg(fimpMsg)
 	default:
 		// This means unknown binary payload , for instance compressed message
-		log.Warnf("[fimpgo] Publish - unknown binary PayloadType=%v", addr.PayloadType)
+		return fmt.Errorf("unknown payload type=%v", addr.PayloadType)
 	}
+
 	if err != nil {
 		return err
 	}
+
 	topic := addr.Serialize()
 
 	globalPrefix := mh.globalTopicPrefix()

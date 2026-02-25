@@ -151,6 +151,8 @@ func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
 
 	responseTopic := fmt.Sprintf("pt:j1/mt:rsp/rt:app/rn:%s/ad:1", oac.appName)
 	if err := oac.syncClient.AddSubscription(responseTopic); err != nil {
+		oac.syncClient.Stop()
+		oac.mqt.Stop()
 		return err
 	}
 
