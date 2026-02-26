@@ -3,30 +3,23 @@ package fimpgo
 import (
 	"fmt"
 	"strings"
+
+	"github.com/futurehomeno/fimpgo/fimptype"
 )
 
 const (
 	DefaultPayload        = "j1"
 	CompressedJsonPayload = "j1c1"
-	MsgTypeCmd            = "cmd"
-	MsgTypeEvt            = "evt"
-	MsgTypeRsp            = "rsp"
-	ResourceTypeDevice    = "dev"
-	ResourceTypeApp       = "app"
-	ResourceTypeAdapter   = "ad"
-	ResourceTypeCloud     = "cloud"
-	ResourceTypeDiscovery = "discovery"
-	ResourceTypeLocation  = "loc"
 )
 
 type Address struct {
 	GlobalPrefix    string
 	PayloadType     string
-	MsgType         string
-	ResourceType    string
-	ResourceName    string
+	MsgType         fimptype.MsgTypeT
+	ResourceType    fimptype.ResourceTypeT
+	ResourceName    fimptype.ResourceNameT
 	ResourceAddress string
-	ServiceName     string
+	ServiceName     fimptype.ServiceNameT
 	ServiceAddress  string
 }
 
@@ -37,27 +30,27 @@ func (addr *Address) Serialize() string {
 	result := ""
 
 	switch addr.ResourceType {
-	case ResourceTypeAdapter, ResourceTypeApp, ResourceTypeCloud:
+	case fimptype.ResourceTypeAdapter, fimptype.ResourceTypeApp, fimptype.ResourceTypeCloud:
 		result = fmt.Sprintf("%s/%s/%s/%s/%s",
 			addr.prepComp("pt", addr.PayloadType),
-			addr.prepComp("mt", addr.MsgType),
-			addr.prepComp("rt", addr.ResourceType),
-			addr.prepComp("rn", addr.ResourceName),
+			addr.prepComp("mt", addr.MsgType.Str()),
+			addr.prepComp("rt", addr.ResourceType.Str()),
+			addr.prepComp("rn", addr.ResourceName.Str()),
 			addr.prepComp("ad", addr.ResourceAddress))
-	case ResourceTypeDevice:
+	case fimptype.ResourceTypeDevice:
 		result = fmt.Sprintf("%s/%s/%s/%s/%s/%s/%s",
 			addr.prepComp("pt", addr.PayloadType),
-			addr.prepComp("mt", addr.MsgType),
-			addr.prepComp("rt", addr.ResourceType),
-			addr.prepComp("rn", addr.ResourceName),
+			addr.prepComp("mt", addr.MsgType.Str()),
+			addr.prepComp("rt", addr.ResourceType.Str()),
+			addr.prepComp("rn", addr.ResourceName.Str()),
 			addr.prepComp("ad", addr.ResourceAddress),
-			addr.prepComp("sv", addr.ServiceName),
+			addr.prepComp("sv", addr.ServiceName.Str()),
 			addr.prepComp("ad", addr.ServiceAddress))
-	case ResourceTypeDiscovery:
+	case fimptype.ResourceTypeDiscovery:
 		result = fmt.Sprintf("%s/%s/%s",
 			addr.prepComp("pt", addr.PayloadType),
-			addr.prepComp("mt", addr.MsgType),
-			addr.prepComp("rt", addr.ResourceType))
+			addr.prepComp("mt", addr.MsgType.Str()),
+			addr.prepComp("rt", addr.ResourceType.Str()))
 	}
 	if addr.GlobalPrefix != "" {
 		result = addr.GlobalPrefix + "/" + result
@@ -88,11 +81,11 @@ func NewAddressFromString(address string) (*Address, error) {
 			case "pt":
 				addr.PayloadType = keyVal[1]
 			case "mt":
-				addr.MsgType = keyVal[1]
+				addr.MsgType = fimptype.MsgTypeT(keyVal[1])
 			case "rt":
-				addr.ResourceType = keyVal[1]
+				addr.ResourceType = fimptype.ResourceTypeT(keyVal[1])
 			case "rn":
-				addr.ResourceName = keyVal[1]
+				addr.ResourceName = fimptype.ResourceNameT(keyVal[1])
 			case "ad":
 				if addr.ServiceName == "" {
 					addr.ResourceAddress = keyVal[1]
@@ -101,7 +94,7 @@ func NewAddressFromString(address string) (*Address, error) {
 				}
 
 			case "sv":
-				addr.ServiceName = keyVal[1]
+				addr.ServiceName = fimptype.ServiceNameT(keyVal[1])
 			}
 		default:
 			return nil, fmt.Errorf("invalid address format key=%v", keyVal)

@@ -6,7 +6,7 @@ import (
 
 // Service represents a specification of the service supported by the thing.
 type Service struct {
-	Name             string         `json:"name" storm:"index"`
+	Name             ServiceNameT   `json:"name" storm:"index"`
 	Alias            string         `json:"alias"`
 	Address          string         `json:"address"`
 	Enabled          bool           `json:"enabled"`
@@ -194,8 +194,8 @@ const (
 
 // Interface represents a supported communication interface with the service.
 type Interface struct {
-	Type      string `json:"intf_t"`
-	MsgType   string `json:"msg_t"`
-	ValueType string `json:"val_t"`
-	Version   string `json:"ver"`
+	Type      string     `json:"intf_t"`
+	MsgType   string     `json:"msg_t"`
+	ValueType ValueTypeT `json:"val_t"`
+	Version   string     `json:"ver"`
 }

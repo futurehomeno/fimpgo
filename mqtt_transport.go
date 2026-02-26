@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/futurehomeno/fimpgo/fimptype"
 	"github.com/futurehomeno/fimpgo/security"
 	"github.com/futurehomeno/fimpgo/utils"
 )
@@ -239,7 +240,7 @@ func (mh *MqttTransport) globalTopicPrefix() string {
 
 // SetDefaultSource safely sets default source name for all outgoing messages.
 // Default source is used only if it was not set explicitly before.
-func (mh *MqttTransport) SetDefaultSource(source string) {
+func (mh *MqttTransport) SetDefaultSource(source fimptype.ResourceNameT) {
 	mh.defaultSourceLock.Lock()
 	defer mh.defaultSourceLock.Unlock()
 
@@ -473,7 +474,7 @@ func (mh *MqttTransport) isChannelInterested(chanName string, topic string, addr
 	if msg != nil {
 		if utils.RouteIncludesTopic(filter.Topic, topic) &&
 			(msg.Service == filter.Service || filter.Service == "*") &&
-			(msg.Type == filter.Interface || filter.Interface == "*") {
+			(msg.Interface == filter.Interface || filter.Interface == "*") {
 			return true
 		}
 	} else {

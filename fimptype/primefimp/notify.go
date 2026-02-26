@@ -27,7 +27,7 @@ type ModeChange struct {
 }
 
 func FimpToNotify(msg *fimpgo.Message) (*Notify, error) {
-	if msg.Payload.Type != "evt.pd7.notify" {
+	if msg.Payload.Interface != "evt.pd7.notify" {
 		return nil, errors.New("wrong fimp msg type")
 	}
 	notify := Notify{}

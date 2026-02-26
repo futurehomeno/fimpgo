@@ -17,8 +17,8 @@ type Response struct {
 }
 
 func FimpToResponse(msg *fimpgo.FimpMessage) (*Response, error) {
-	if msg.Type != "evt.pd7.response" {
-		return nil, fmt.Errorf("wrong fimp msg type=%s", msg.Type)
+	if msg.Interface != "evt.pd7.response" {
+		return nil, fmt.Errorf("wrong fimp msg type=%s", msg.Interface)
 	}
 	response := Response{}
 	err := msg.GetObjectValue(&response)
