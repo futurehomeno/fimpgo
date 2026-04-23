@@ -92,25 +92,33 @@ func NewMqttTransportFromConfigs(cfg MqttConnectionConfigs, errHandler func(erro
 
 func (mh *MqttTransport) Start(timeout time.Duration) error {
 	mh.connState.Init()
+	done := mh.connState.DoneC()
 
 	// try to connect with retries
 	err := func() (ret error) {
 		for i := 1; i <= mh.startFailRetryCount; i++ {
 			if i > 1 {
-				time.Sleep(time.Duration(i*i) * time.Second)
-				log.Warnf("[fimpgo] MQTT connect failed %d/%d err: %v", i, mh.startFailRetryCount, ret)
+				select {
+				case <-time.After(time.Duration(i*i) * time.Second):
+				case <-done:
+					return utils.ErrConnectionLost
+				}
 			}
 
 			token := mh.client.Connect()
 
-			if !token.WaitTimeout(timeout) {
+			select {
+			case <-token.Done():
+				if ret = token.Error(); ret == nil {
+					return nil
+				}
+			case <-time.After(timeout):
 				ret = utils.ErrTimeout
-				continue
+			case <-done:
+				return utils.ErrConnectionLost
 			}
 
-			if ret = token.Error(); ret == nil {
-				return nil
-			}
+			log.Warnf("[fimpgo] MQTT connect failed %d/%d err: %v", i, mh.startFailRetryCount, ret)
 		}
 
 		return ret
@@ -143,6 +151,7 @@ func (mh *MqttTransport) IsConnected() bool {
 func (mh *MqttTransport) Stop() {
 	log.Debugf("[fimpgo] Stop connection")
 	mh.connState.OnDone()
+	mh.client.Disconnect(0)
 	mh.incMsgsWg.Wait()
 	log.Debugf("[fimpgo] Connection stopped")
 }
