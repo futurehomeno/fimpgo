@@ -151,7 +151,6 @@ func (mh *MqttTransport) IsConnected() bool {
 func (mh *MqttTransport) Stop() {
 	log.Debugf("[fimpgo] Stop connection")
 	mh.connState.OnDone()
-	mh.client.Disconnect(0)
 	mh.incMsgsWg.Wait()
 	log.Debugf("[fimpgo] Connection stopped")
 }

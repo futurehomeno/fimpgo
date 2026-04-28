@@ -434,7 +434,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	var err error
 
 	if fimpmsg.Interface, err = jsonparser.GetString(msg, "type"); err != nil {
-		log.Warnf("[fimpgo] Parse %s type err: %v", fimpmsg.Interface, err)
+		log.Warnf("[fimpgo] Parse type err: %v", err)
 		return nil, err
 	}
 
