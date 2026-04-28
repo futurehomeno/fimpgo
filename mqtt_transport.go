@@ -151,6 +151,7 @@ func (mh *MqttTransport) IsConnected() bool {
 func (mh *MqttTransport) Stop() {
 	log.Debugf("[fimpgo] Stop connection")
 	mh.connState.OnDone()
+	mh.client.Disconnect(0)
 	mh.incMsgsWg.Wait()
 	log.Debugf("[fimpgo] Connection stopped")
 }
@@ -384,7 +385,6 @@ func (mh *MqttTransport) handleIncomingMessages(started *sync.WaitGroup) {
 	for {
 		select {
 		case <-mh.connState.DoneC():
-			mh.client.Disconnect(250)
 			return
 		case msg := <-mh.mainQueue:
 			mh.handleIncomingMessage(msg)
