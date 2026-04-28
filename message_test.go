@@ -145,7 +145,7 @@ func BenchmarkFimpMessage_Serialize2(b *testing.B) {
 func TestNewMessageFromBytes_CorruptedPayload1(t *testing.T) {
 	msgString := "{123456789-=#$%"
 	_, err := NewMessageFromBytes([]byte(msgString))
-	assert.Equal(t, jsonparser.UnknownValueTypeError, err)
+	assert.Equal(t, jsonparser.KeyPathNotFoundError, err)
 }
 
 func TestNewMessageFromBytes_BoolValue(t *testing.T) {

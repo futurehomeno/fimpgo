@@ -15,7 +15,7 @@ var (
 )
 
 func onMsg(topic string, addr *fimpgo.Address, iotMsg *fimpgo.FimpMessage, rawMessage []byte) {
-	log.Infof("[fimpgo] New msg %s", topic)
+	log.Debugf("[fimpgo] New msg %s", topic)
 }
 
 func onMqttError(err error) {
