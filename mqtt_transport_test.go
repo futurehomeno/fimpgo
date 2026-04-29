@@ -16,7 +16,7 @@ import (
 var msgChan = make(chan int)
 
 func onMsg(topic string, addr *Address, iotMsg *FimpMessage, rawMessage []byte) {
-	log.Infof("New msg %s val=%v", topic, iotMsg.Value)
+	log.Debugf("New msg %s val=%v", topic, iotMsg.Value)
 	if addr.ServiceName == "temp_sensor" && addr.ServiceAddress == "300" {
 		msgChan <- 1
 	} else {

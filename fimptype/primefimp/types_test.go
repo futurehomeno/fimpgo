@@ -8,7 +8,6 @@ import (
 
 	"github.com/futurehomeno/fimpgo"
 	"github.com/futurehomeno/fimpgo/fimptype"
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -131,7 +130,7 @@ func TestPrimeFimpClientApiGetDevices(t *testing.T) {
 	if len(devices) == 0 {
 		t.Error("Site should have more then 0 devices ")
 	}
-	log.Infof("Site contains %d devices", len(devices))
+	t.Logf("Site contains %d devices", len(devices))
 	client.Stop()
 }
 
@@ -156,7 +155,7 @@ func TestPrimeFimpClientApiGetShortcuts(t *testing.T) {
 	if len(devices) == 0 {
 		t.Error("Site should have more then 0 devices ")
 	}
-	log.Infof("Site contains %d shortcuts", len(devices))
+	t.Logf("Site contains %d shortcuts", len(devices))
 	client.Stop()
 }
 
@@ -201,6 +200,6 @@ func TestPrimeFimpClientApiGetSite(t *testing.T) {
 	if len(site.Devices) == 0 {
 		t.Error("Site should have more then 0 devices ")
 	}
-	log.Infof("SIte contains %d devices", len(site.Devices))
+	t.Logf("SIte contains %d devices", len(site.Devices))
 	client.Stop()
 }

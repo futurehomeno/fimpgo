@@ -73,7 +73,7 @@ func TestPrimeFimp_ClientApi_Notify(t *testing.T) {
 
 	for i := range limit {
 		msg := <-notifyCh
-		log.Infof("Check %d/%d: New notify message of cmd=%s comp=%s", i, limit, msg.Cmd, msg.Component)
+		t.Logf("Check %d/%d: New notify message of cmd=%s comp=%s", i, limit, msg.Cmd, msg.Component)
 	}
 
 	client.Stop()
