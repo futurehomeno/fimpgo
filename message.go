@@ -3,6 +3,7 @@ package fimpgo
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"reflect"
@@ -429,6 +430,20 @@ func NewBinaryMessage(iface string, service fimptype.ServiceNameT, value []byte,
 	return NewMessage(iface, service, fimptype.VTypeBinary, valEnc, props, tags, rqMsg)
 }
 
+// optionalString reads an optional string field. A missing key or a null/empty
+// value is normal and silent; only a genuine parse error (malformed JSON, wrong
+// type) is logged.
+func optionalString(msg []byte, iface, label, key string) string {
+	v, err := jsonparser.GetString(msg, key)
+	if err != nil &&
+		!errors.Is(err, jsonparser.KeyPathNotFoundError) &&
+		!errors.Is(err, jsonparser.NullValueError) {
+		log.Errorf("[fimpgo] Parse %s %s err: %v", iface, label, err)
+	}
+
+	return v
+}
+
 func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	fimpmsg := FimpMessage{}
 	var err error
@@ -454,32 +469,15 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 		fimpmsg.ValueType = fimptype.ValueTypeT(valueTypeStr)
 	}
 
-	if fimpmsg.UID, err = jsonparser.GetString(msg, "uid"); err != nil {
-		log.Tracef("[fimpgo] Parse %s uid err: %v", fimpmsg.Interface, err)
-	}
-	if fimpmsg.CorrelationID, err = jsonparser.GetString(msg, "corid"); err != nil {
-		log.Tracef("[fimpgo] Parse %s coreid err: %v", fimpmsg.Interface, err)
-	}
-	if fimpmsg.CreationTime, err = jsonparser.GetString(msg, "ctime"); err != nil {
-		log.Tracef("[fimpgo] Parse %s ctime err: %v", fimpmsg.Interface, err)
-	}
-	// resp_to is optional; a missing key is normal, so it is not logged.
-	fimpmsg.ResponseToTopic, _ = jsonparser.GetString(msg, "resp_to")
-
-	sourceStr, err := jsonparser.GetString(msg, "src")
-
-	if err != nil {
-		log.Tracef("[fimpgo] Parse %s src err: %v", fimpmsg.Interface, err)
-	} else {
-		fimpmsg.Source = fimptype.ResourceNameT(sourceStr)
-	}
-
-	// topic is optional; a missing key is normal, so it is not logged.
-	fimpmsg.Topic, _ = jsonparser.GetString(msg, "topic")
-
-	if fimpmsg.Version, err = jsonparser.GetString(msg, "ver"); err != nil {
-		log.Tracef("[fimpgo] Parse %s ver err: %v", fimpmsg.Interface, err)
-	}
+	// These fields are optional: a missing key is normal and silent, but any other
+	// parse error is logged.
+	fimpmsg.UID = optionalString(msg, fimpmsg.Interface, "uid", "uid")
+	fimpmsg.CorrelationID = optionalString(msg, fimpmsg.Interface, "coreid", "corid")
+	fimpmsg.CreationTime = optionalString(msg, fimpmsg.Interface, "ctime", "ctime")
+	fimpmsg.ResponseToTopic = optionalString(msg, fimpmsg.Interface, "resp_t", "resp_to")
+	fimpmsg.Source = fimptype.ResourceNameT(optionalString(msg, fimpmsg.Interface, "src", "src"))
+	fimpmsg.Topic = optionalString(msg, fimpmsg.Interface, "topic", "topic")
+	fimpmsg.Version = optionalString(msg, fimpmsg.Interface, "ver", "ver")
 
 	err = nil
 
