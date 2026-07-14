@@ -3,6 +3,7 @@ package fimptype
 type ResourceNameT string
 
 const (
+	AdaxRn           ResourceNameT = "adax"
 	BackendServiceRn ResourceNameT = "backend-service"
 	CloudBridgeRn    ResourceNameT = "clbridge"
 	DefaRn           ResourceNameT = "defa"
@@ -13,6 +14,9 @@ const (
 	EssRn            ResourceNameT = "ess"
 	FhButlerRn       ResourceNameT = "fhbutler"
 	GatewayRn        ResourceNameT = "gateway"
+	GlamoxRn         ResourceNameT = "glamox"
+	HoiaxRn          ResourceNameT = "hoiax"
+	HueRn            ResourceNameT = "hue"
 	KindOwlRn        ResourceNameT = "kind_owl"
 	MillRn           ResourceNameT = "mill"
 	NetatmoRn        ResourceNameT = "netatmo"

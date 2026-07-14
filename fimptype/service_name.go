@@ -3,6 +3,7 @@ package fimptype
 type ServiceNameT string
 
 const (
+	AdaxService            ServiceNameT = "adax"
 	BalanceGuardService    ServiceNameT = "balance_guard"
 	CloudBridgeService     ServiceNameT = "clbridge"
 	DefaService            ServiceNameT = "defa"
@@ -13,6 +14,9 @@ const (
 	EssService             ServiceNameT = "ess"
 	FhButlerService        ServiceNameT = "fhbutler"
 	GatewayService         ServiceNameT = "gateway"
+	GlamoxService          ServiceNameT = "glamox"
+	HoiaxService           ServiceNameT = "hoiax"
+	HueService             ServiceNameT = "hue"
 	KindOwlService         ServiceNameT = "kind_owl"
 	MaxGuardService        ServiceNameT = "max_guard"
 	MillService            ServiceNameT = "mill"
