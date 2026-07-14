@@ -463,9 +463,8 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	if fimpmsg.CreationTime, err = jsonparser.GetString(msg, "ctime"); err != nil {
 		log.Tracef("[fimpgo] Parse %s ctime err: %v", fimpmsg.Interface, err)
 	}
-	if fimpmsg.ResponseToTopic, err = jsonparser.GetString(msg, "resp_to"); err != nil {
-		log.Tracef("[fimpgo] Parse %s resp_t err: %v", fimpmsg.Interface, err)
-	}
+	// resp_to is optional; a missing key is normal, so it is not logged.
+	fimpmsg.ResponseToTopic, _ = jsonparser.GetString(msg, "resp_to")
 
 	sourceStr, err := jsonparser.GetString(msg, "src")
 
@@ -475,9 +474,8 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 		fimpmsg.Source = fimptype.ResourceNameT(sourceStr)
 	}
 
-	if fimpmsg.Topic, err = jsonparser.GetString(msg, "topic"); err != nil {
-		log.Tracef("[fimpgo] Parse %s topic err: %v", fimpmsg.Interface, err)
-	}
+	// topic is optional; a missing key is normal, so it is not logged.
+	fimpmsg.Topic, _ = jsonparser.GetString(msg, "topic")
 
 	if fimpmsg.Version, err = jsonparser.GetString(msg, "ver"); err != nil {
 		log.Tracef("[fimpgo] Parse %s ver err: %v", fimpmsg.Interface, err)
