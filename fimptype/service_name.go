@@ -28,3 +28,8 @@ const (
 func (s ServiceNameT) Str() string {
 	return string(s)
 }
+
+// ServiceName converts a plain string to a typed FIMP service name.
+func ServiceName(s string) ServiceNameT {
+	return ServiceNameT(s)
+}
