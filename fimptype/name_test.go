@@ -113,7 +113,7 @@ func TestNameWireValues(t *testing.T) {
 		{CloudAdapterRn.Str(), "cloud_adapter"},
 		{HubObserverRn.Str(), "hub_observer"},
 		{ModbusTCPRn.Str(), "modbus-tcp"},
-		{OcppServerRn.Str(), "ocpp_server"},
+		{OCPPServerRn.Str(), "ocpp_server"},
 		{RemoteClientRn.Str(), "remote-client"},
 		{RobinRn.Str(), "robin"},
 		{SimRn.Str(), "sim"},
