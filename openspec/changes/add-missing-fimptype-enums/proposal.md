@@ -21,6 +21,8 @@ inline as topic strings in each consumer.
 
 `fimptype/service_name.go`, `fimptype/device_service_name.go`, `fimptype/resource_name.go`, new spec
 `fimptype`. No consumer change is required; zigbee-ad, fimpee, telemetry-collector, kind-owl,
-core-energy-guard and CloudBridge can drop their local copies in follow-ups. zigbee-ad publishes
+core-energy-guard and CloudBridge can drop their local copies in follow-ups. zigbee-ad and fimpee
+must keep their `unknown` service and their `alarm_water_valv` wire value (the spec spells it
+`alarm_water_valve`) local: swapping in `AlarmWaterValveService` changes the wire name. zigbee-ad publishes
 `alarm_water_valv`, not the spec's `alarm_water_valve`, so it must keep its own value for that
 service or migrate paired devices first.
