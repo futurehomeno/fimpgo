@@ -26,7 +26,7 @@ const (
 	MillRn           ResourceNameT = "mill"
 	ModbusTCPRn      ResourceNameT = "modbus-tcp"
 	NetatmoRn        ResourceNameT = "netatmo"
-	OcppServerRn     ResourceNameT = "ocpp_server"
+	OCPPServerRn     ResourceNameT = "ocpp_server"
 	RemoteClientRn   ResourceNameT = "remote-client"
 	RobinRn          ResourceNameT = "robin"
 	ScheduleRn       ResourceNameT = "schedule"
