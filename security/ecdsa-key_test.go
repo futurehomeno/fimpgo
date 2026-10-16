@@ -1,0 +1,34 @@
+package security
+
+import "testing"
+
+func TestEcdsaKey_JsonRoundTrip(t *testing.T) {
+	key := NewEcdsaKey()
+	if err := key.Generate(); err != nil {
+		t.Fatal("Generate err:", err)
+	}
+	priv, pub, err := key.ExportJsonEncodedKeys()
+	if err != nil {
+		t.Fatal("Export err:", err)
+	}
+
+	signer := NewEcdsaKey()
+	if err := signer.ImportJsonPrivateKey(priv); err != nil {
+		t.Fatal("Import private err:", err)
+	}
+	verifier := NewEcdsaKey()
+	if err := verifier.ImportJsonPublicKey(pub); err != nil {
+		t.Fatal("Import public err:", err)
+	}
+
+	sig, err := SignStringES256("msg", signer)
+	if err != nil {
+		t.Fatal("Signing err:", err)
+	}
+	if !VerifyStringES256("msg", sig, verifier) {
+		t.Fatal("Verification failed")
+	}
+	if err := verifier.ImportJsonPublicKey(JsonEcKey{X: "01", Y: "02"}); err == nil {
+		t.Fatal("expected error for point off the curve")
+	}
+}
