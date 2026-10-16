@@ -2,7 +2,11 @@ schema: spec-driven
 
 context: |
   fimpgo (module `github.com/futurehomeno/fimpgo`) is the shared Go library every
-  Futurehome hub app uses to exchange FIMP messages over MQTT (eclipse/paho).
+  Futurehome hub app uses to exchange FIMP messages over MQTT (eclipse/paho): message
+  model, topic addresses, MQTT transport and sync client, and the `fimptype` enums
+  (resource types/names, service names, value and message types). Consumers are
+  cliffhanger, the edge adapters and the hub/cloud apps, so exported identifiers are
+  API: add freely, never rename or remove without a deprecation.
 
   Commands
   - Test:  `make test` (`go test ./...`); transport tests need the test broker on
