@@ -109,6 +109,9 @@ func (mh *MqttTransport) Start(timeout time.Duration) error {
 				select {
 				case <-time.After(time.Duration(i*i) * time.Second):
 				case <-pending:
+					if token.Error() != nil {
+						token = nil
+					}
 				case <-done:
 					return utils.ErrConnectionLost
 				}

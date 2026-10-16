@@ -6,9 +6,11 @@ import (
 	"io"
 	"net"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
+	MQTT "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
 	logtest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -90,6 +92,39 @@ func TestMqttTransport_StartReturnsWhenPendingConnectSucceedsDuringBackoff(t *te
 
 	require.NoError(t, mqtt.Start(300*time.Millisecond))
 	assert.Less(t, time.Since(start), 2*time.Second)
+}
+
+func TestMqttTransport_StartReconnectsWhenPendingConnectFailsDuringBackoff(t *testing.T) {
+	ctx := t.Context()
+
+	var lc net.ListenConfig
+
+	ln, err := lc.Listen(ctx, "tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+
+	context.AfterFunc(ctx, func() { _ = ln.Close() })
+
+	var accepts atomic.Int32
+
+	// Never answering CONNACK makes each attempt fail after paho's connect timeout, inside the backoff wait.
+	go func() {
+		for {
+			c, err := ln.Accept()
+			if err != nil {
+				return
+			}
+
+			accepts.Add(1)
+			context.AfterFunc(ctx, func() { _ = c.Close() })
+		}
+	}()
+
+	opts := MQTT.NewClientOptions().AddBroker("tcp://" + ln.Addr().String()).SetConnectTimeout(time.Second).SetProtocolVersion(4)
+	mqtt := NewMqttTransportFromConnection(MQTT.NewClient(opts), 1, 1)
+	mqtt.SetStartAutoRetryCount(2)
+
+	assert.ErrorIs(t, mqtt.Start(300*time.Millisecond), utils.ErrTimeout)
+	assert.EqualValues(t, 2, accepts.Load())
 }
 
 func TestMqttTransport_LogsKeysOfUnparsablePayload(t *testing.T) {
