@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/buger/jsonparser"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -96,22 +97,35 @@ func (mh *MqttTransport) Start(timeout time.Duration) error {
 
 	// try to connect with retries
 	err := func() (ret error) {
+		var token MQTT.Token
+
 		for i := 1; i <= mh.startFailRetryCount; i++ {
 			if i > 1 {
+				var pending <-chan struct{}
+				if token != nil {
+					pending = token.Done()
+				}
+
 				select {
 				case <-time.After(time.Duration(i*i) * time.Second):
+				case <-pending:
 				case <-done:
 					return utils.ErrConnectionLost
 				}
 			}
 
-			token := mh.client.Connect()
+			// With connect retry enabled paho keeps a timed-out attempt running and rejects a second Connect.
+			if token == nil {
+				token = mh.client.Connect()
+			}
 
 			select {
 			case <-token.Done():
 				if ret = token.Error(); ret == nil {
 					return nil
 				}
+
+				token = nil
 			case <-time.After(timeout):
 				ret = utils.ErrTimeout
 			case <-done:
@@ -119,6 +133,10 @@ func (mh *MqttTransport) Start(timeout time.Duration) error {
 			}
 
 			log.Warnf("[fimpgo] MQTT connect failed %d/%d err: %v", i, mh.startFailRetryCount, ret)
+		}
+
+		if token != nil {
+			mh.client.Disconnect(0)
 		}
 
 		return ret
@@ -414,16 +432,20 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 
 	var fimpMsg *FimpMessage
 
+	payload := msg.Payload()
+
 	switch addr.PayloadType {
 	case DefaultPayload:
-		fimpMsg, err = NewMessageFromBytes(msg.Payload())
+		fimpMsg, err = NewMessageFromBytes(payload)
 	case CompressedJsonPayload:
 		if mh.compressor == nil {
 			log.Warnf("[fimpgo] Compressor is not initialized for topic=%s", topic)
 			return
 		}
 
-		fimpMsg, err = mh.compressor.DecompressFimpMsg(msg.Payload())
+		if payload, err = mh.compressor.DecompressBinMsg(payload); err == nil {
+			fimpMsg, err = NewMessageFromBytes(payload)
+		}
 	default:
 		// This means unknown binary payload, for instance compressed message
 		log.Warnf("[fimpgo] Unknown payload type=%s topic=%s", addr.PayloadType, topic)
@@ -431,7 +453,7 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 	}
 
 	if err != nil {
-		log.Errorf("[fimpgo] Processing payload from topic=%s err: %v", topic, err)
+		log.Errorf("[fimpgo] Processing payload from topic=%s len=%d keys=%.64q err: %v", topic, len(msg.Payload()), payloadKeys(payload), err)
 		log.Tracef("[fimpgo] Payload preview len=%d: %.100s", len(msg.Payload()), msg.Payload())
 		return
 	}
@@ -457,6 +479,27 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 		timer.Stop()
 	}
 	mh.channelRegLock.Unlock()
+}
+
+// payloadKeys lists the top-level JSON keys, which identifies a malformed producer without logging values.
+func payloadKeys(payload []byte) []string {
+	const maxKeys = 16
+
+	var keys []string
+
+	_ = jsonparser.ObjectEach(payload, func(key []byte, _ []byte, _ jsonparser.ValueType, _ int) error {
+		if len(keys) == maxKeys {
+			keys = append(keys, "...")
+
+			return errors.New("too many keys")
+		}
+
+		keys = append(keys, string(key))
+
+		return nil
+	})
+
+	return keys
 }
 
 // isChannelInterested validates if channel is interested in message. Filtering is executed against either static filters or filter function
