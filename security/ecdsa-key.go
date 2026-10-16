@@ -132,34 +132,34 @@ func (kp *EcdsaKey) ImportX509PrivateKey(pemEncoded string) error {
 	return err
 }
 
-func p256Bytes(hexStr string) ([]byte, bool) {
-	n, ok := new(big.Int).SetString(hexStr, 16)
-	if !ok || n.Sign() < 0 || n.BitLen() > 256 {
-		return nil, false
-	}
-	return n.FillBytes(make([]byte, 32)), true
-}
-
 func (kp *EcdsaKey) ImportJsonPublicKey(jkey JsonEcKey) error {
-	x, xok := p256Bytes(jkey.X)
-	y, yok := p256Bytes(jkey.Y)
+	x, xok := hexToFixed(jkey.X)
+	y, yok := hexToFixed(jkey.Y)
 	if !xok || !yok {
 		return errors.New("json key parse error")
 	}
 	var err error
-	kp.publicKey, err = ecdsa.ParseUncompressedPublicKey(elliptic.P256(), append(append([]byte{4}, x...), y...))
+	kp.publicKey, err = ecdsa.ParseUncompressedPublicKey(elliptic.P256(), append(append([]byte{0x04}, x...), y...))
 	return err
 }
 
-// X and Y are derived from D.
 func (kp *EcdsaKey) ImportJsonPrivateKey(jkey JsonEcKey) error {
-	d, ok := p256Bytes(jkey.D)
+	d, ok := hexToFixed(jkey.D)
 	if !ok {
 		return errors.New("json key parse error")
 	}
 	var err error
 	kp.privateKey, err = ecdsa.ParseRawPrivateKey(elliptic.P256(), d)
 	return err
+}
+
+// hexToFixed left-pads to the P-256 coordinate size, since keys exported via big.Int dropped leading zeros.
+func hexToFixed(s string) ([]byte, bool) {
+	n, ok := big.NewInt(0).SetString(s, 16)
+	if !ok || n.BitLen() > 256 {
+		return nil, false
+	}
+	return n.FillBytes(make([]byte, 32)), true
 }
 
 // SignStringES256 signs string and returns as result .

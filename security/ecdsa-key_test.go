@@ -1,28 +1,34 @@
 package security
 
-import (
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-)
+import "testing"
 
 func TestEcdsaKey_JsonRoundTrip(t *testing.T) {
-	orig := NewEcdsaKey()
-	require.NoError(t, orig.Generate())
-	priv, pub, err := orig.ExportJsonEncodedKeys()
-	require.NoError(t, err)
+	key := NewEcdsaKey()
+	if err := key.Generate(); err != nil {
+		t.Fatal("Generate err:", err)
+	}
+	priv, pub, err := key.ExportJsonEncodedKeys()
+	if err != nil {
+		t.Fatal("Export err:", err)
+	}
 
 	signer := NewEcdsaKey()
-	require.NoError(t, signer.ImportJsonPrivateKey(priv))
+	if err := signer.ImportJsonPrivateKey(priv); err != nil {
+		t.Fatal("Import private err:", err)
+	}
 	verifier := NewEcdsaKey()
-	require.NoError(t, verifier.ImportJsonPublicKey(pub))
+	if err := verifier.ImportJsonPublicKey(pub); err != nil {
+		t.Fatal("Import public err:", err)
+	}
 
-	assert.True(t, orig.PrivateKey().Equal(signer.PrivateKey()))
-	assert.True(t, orig.PublicKey().Equal(verifier.PublicKey()))
-}
-
-func TestEcdsaKey_ImportJsonPublicKey_RejectsOffCurvePoint(t *testing.T) {
-	err := NewEcdsaKey().ImportJsonPublicKey(JsonEcKey{X: "01", Y: "01"})
-	assert.Error(t, err)
+	sig, err := SignStringES256("msg", signer)
+	if err != nil {
+		t.Fatal("Signing err:", err)
+	}
+	if !VerifyStringES256("msg", sig, verifier) {
+		t.Fatal("Verification failed")
+	}
+	if err := verifier.ImportJsonPublicKey(JsonEcKey{X: "01", Y: "02"}); err == nil {
+		t.Fatal("expected error for point off the curve")
+	}
 }
