@@ -1,5 +1,6 @@
 package fimptype
 
+// Mirrors the fimp-api service list at commit 9e69cfe (fimpee fimp-services.data.ts).
 const (
 	AlarmApplianceService       ServiceNameT = "alarm_appliance"
 	AlarmBurglarService         ServiceNameT = "alarm_burglar"
