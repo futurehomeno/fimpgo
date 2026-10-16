@@ -7,8 +7,24 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/futurehomeno/fimpgo/fimptype"
+	logtest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestNewMessageFromBytes_OptionalFieldErrorNamesKey(t *testing.T) {
+	for _, key := range []string{"corid", "resp_to"} {
+		t.Run(key, func(t *testing.T) {
+			hook := logtest.NewGlobal()
+			defer hook.Reset()
+
+			_, err := NewMessageFromBytes([]byte(`{"type":"cmd.a.b","serv":"s","val_t":"null","` + key + `":1}`))
+			require.NoError(t, err)
+			require.NotNil(t, hook.LastEntry())
+			assert.Contains(t, hook.LastEntry().Message, " "+key+" ")
+		})
+	}
+}
 
 func TestFimpMessage_SerializeToJson(t *testing.T) {
 	tcs := []struct {
