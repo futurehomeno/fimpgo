@@ -132,36 +132,34 @@ func (kp *EcdsaKey) ImportX509PrivateKey(pemEncoded string) error {
 	return err
 }
 
+func p256Bytes(hexStr string) ([]byte, bool) {
+	n, ok := new(big.Int).SetString(hexStr, 16)
+	if !ok || n.Sign() < 0 || n.BitLen() > 256 {
+		return nil, false
+	}
+	return n.FillBytes(make([]byte, 32)), true
+}
+
 func (kp *EcdsaKey) ImportJsonPublicKey(jkey JsonEcKey) error {
-	x, xok := big.NewInt(0).SetString(jkey.X, 16)
-	y, yok := big.NewInt(0).SetString(jkey.Y, 16)
+	x, xok := p256Bytes(jkey.X)
+	y, yok := p256Bytes(jkey.Y)
 	if !xok || !yok {
 		return errors.New("json key parse error")
 	}
-	kp.publicKey = &ecdsa.PublicKey{
-		Curve: elliptic.P256(),
-		X:     x,
-		Y:     y,
-	}
-	return nil
+	var err error
+	kp.publicKey, err = ecdsa.ParseUncompressedPublicKey(elliptic.P256(), append(append([]byte{4}, x...), y...))
+	return err
 }
 
+// X and Y are derived from D.
 func (kp *EcdsaKey) ImportJsonPrivateKey(jkey JsonEcKey) error {
-	x, xok := big.NewInt(0).SetString(jkey.X, 16)
-	y, yok := big.NewInt(0).SetString(jkey.Y, 16)
-	d, dok := big.NewInt(0).SetString(jkey.D, 16)
-	if !xok || !yok || !dok {
+	d, ok := p256Bytes(jkey.D)
+	if !ok {
 		return errors.New("json key parse error")
 	}
-	kp.privateKey = &ecdsa.PrivateKey{
-		PublicKey: ecdsa.PublicKey{
-			Curve: elliptic.P256(),
-			X:     x,
-			Y:     y,
-		},
-		D: d,
-	}
-	return nil
+	var err error
+	kp.privateKey, err = ecdsa.ParseRawPrivateKey(elliptic.P256(), d)
+	return err
 }
 
 // SignStringES256 signs string and returns as result .
