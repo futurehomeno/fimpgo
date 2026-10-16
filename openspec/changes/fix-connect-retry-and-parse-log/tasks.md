@@ -9,3 +9,5 @@
 
 - [x] 2.1 Failing test: an unparsable payload logs its length and top-level keys
 - [x] 2.2 Add length and keys to the error line
+- [x] 2.3 Failing test: compressed payloads log their keys; hostile keys are quoted and bounded
+- [x] 2.4 Read keys from the decompressed payload; quote and bound them

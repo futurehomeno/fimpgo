@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"testing"
 	"time"
 
-	MQTT "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
 	logtest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -55,33 +55,21 @@ func TestMqttTransport_StartReturnsWhenPendingConnectSucceedsDuringBackoff(t *te
 	ln, err := lc.Listen(ctx, "tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 
-	addr := ln.Addr().String()
-	require.NoError(t, ln.Close())
+	context.AfterFunc(ctx, func() { _ = ln.Close() })
 
-	mqtt := NewMqttTransport("tcp://"+addr, "test_backoff_connect", "", "", true, 1, 1, nil)
-	opts := defaultClientOptions("tcp://"+addr, "test_backoff_connect", "", "", true, mqtt.onConnectionLost)
-	opts.SetDefaultPublishHandler(mqtt.onMessage)
-	opts.SetOnConnectHandler(mqtt.onConnect)
-	opts.SetConnectRetryInterval(100 * time.Millisecond)
-	mqtt.client = MQTT.NewClient(opts)
+	mqtt := NewMqttTransport("tcp://"+ln.Addr().String(), "test_backoff_connect", "", "", true, 1, 1, nil)
 	mqtt.SetStartAutoRetryCount(3)
 
 	defer mqtt.Stop()
 
+	// The kernel completes the TCP handshake, so the first attempt stays pending until the proxy starts accepting.
 	go func() {
 		time.Sleep(600 * time.Millisecond)
-
-		proxy, err := lc.Listen(ctx, "tcp", addr)
-		if err != nil {
-			return
-		}
-
-		context.AfterFunc(ctx, func() { _ = proxy.Close() })
 
 		var d net.Dialer
 
 		for {
-			c, err := proxy.Accept()
+			c, err := ln.Accept()
 			if err != nil {
 				return
 			}
@@ -105,25 +93,53 @@ func TestMqttTransport_StartReturnsWhenPendingConnectSucceedsDuringBackoff(t *te
 }
 
 func TestMqttTransport_LogsKeysOfUnparsablePayload(t *testing.T) {
-	hook := logtest.NewGlobal()
-	defer hook.Reset()
-
-	topic := "pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:meter_elec/ad:6_0"
 	payload := []byte(`{"serv":"meter_elec","type":"evt.meter.report","val":12.5}`)
 
-	mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "test_unparsable", "", "", true, 1, 1, nil)
-	mqtt.handleIncomingMessage(fakeMessage{topic: topic, payload: payload})
+	compressed, err := NewMsgCompressor("", "").CompressBinMsg(payload)
+	require.NoError(t, err)
 
-	var msg string
-
-	for _, e := range hook.AllEntries() {
-		if e.Level == log.ErrorLevel {
-			msg = e.Message
-		}
+	bounded := `{"a\nb":0,"` + strings.Repeat("k", 100) + `":0`
+	for i := 2; i < 20; i++ {
+		bounded += fmt.Sprintf(`,"k%d":0`, i)
 	}
 
-	require.NotEmpty(t, msg)
-	assert.Contains(t, msg, "topic="+topic)
-	assert.Contains(t, msg, fmt.Sprintf("len=%d", len(payload)))
-	assert.Contains(t, msg, "keys=[serv type val]")
+	boundedKeys := `"a\nb" "` + strings.Repeat("k", 64) + `"`
+	for i := 2; i < 16; i++ {
+		boundedKeys += fmt.Sprintf(` "k%d"`, i)
+	}
+
+	tcs := []struct {
+		name    string
+		topic   string
+		payload []byte
+		keys    string
+	}{
+		{"plain", "pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:meter_elec/ad:6_0", payload, `keys=["serv" "type" "val"]`},
+		{"compressed", "pt:j1c1/mt:evt/rt:dev/rn:zw/ad:1/sv:meter_elec/ad:6_0", compressed, `keys=["serv" "type" "val"]`},
+		{"escaped and bounded", "pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:meter_elec/ad:6_0", []byte(bounded + "}"), "keys=[" + boundedKeys + ` "..."]`},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			hook := logtest.NewGlobal()
+			defer hook.Reset()
+
+			mqtt := NewMqttTransport("tcp://127.0.0.1:11883", "test_unparsable", "", "", true, 1, 1, nil)
+			mqtt.handleIncomingMessage(fakeMessage{topic: tc.topic, payload: tc.payload})
+
+			var msg string
+
+			for _, e := range hook.AllEntries() {
+				if e.Level == log.ErrorLevel {
+					msg = e.Message
+				}
+			}
+
+			require.NotEmpty(t, msg)
+			assert.Contains(t, msg, "topic="+tc.topic)
+			assert.Contains(t, msg, fmt.Sprintf("len=%d", len(tc.payload)))
+			assert.Contains(t, msg, tc.keys)
+			assert.NotContains(t, msg, "\n")
+		})
+	}
 }

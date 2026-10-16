@@ -19,13 +19,23 @@ While a connect attempt is still in progress, the transport SHALL keep waiting o
 
 - **WHEN** all connect attempts time out
 - **THEN** `Start` returns a timeout error
-- **AND** the client is no longer connecting, so a later `Start` begins a fresh attempt
+- **AND** the pending attempt is cancelled without waiting for it to wind down
 
 ### Requirement: Unparsable payloads are diagnosable
 
-When an incoming payload cannot be decoded as a FIMP message, the transport SHALL log the topic, the payload length and the payload's top-level JSON keys, without logging any values.
+When an incoming payload cannot be decoded as a FIMP message, the transport SHALL log the topic, the payload length and the payload's top-level JSON keys, without logging any values. Keys SHALL be read from the decompressed payload, logged quoted, and bounded to 16 keys of at most 64 characters each.
 
 #### Scenario: Payload without a value type
 
 - **WHEN** a message arrives whose JSON has `serv`, `type` and `val` but no `val_t`
 - **THEN** the error log line names the topic, the payload length and the keys `serv`, `type` and `val`
+
+#### Scenario: Compressed payload without a value type
+
+- **WHEN** the same message arrives gzip-compressed on a `j1c1` topic
+- **THEN** the error log line names the keys `serv`, `type` and `val`
+
+#### Scenario: Hostile keys
+
+- **WHEN** a payload has a key containing a newline, a key longer than 64 characters, and more than 16 keys
+- **THEN** the error log line is a single line, the long key is cut to 64 characters, and the key list ends with `...` after 16 keys

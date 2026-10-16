@@ -432,16 +432,20 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 
 	var fimpMsg *FimpMessage
 
+	payload := msg.Payload()
+
 	switch addr.PayloadType {
 	case DefaultPayload:
-		fimpMsg, err = NewMessageFromBytes(msg.Payload())
+		fimpMsg, err = NewMessageFromBytes(payload)
 	case CompressedJsonPayload:
 		if mh.compressor == nil {
 			log.Warnf("[fimpgo] Compressor is not initialized for topic=%s", topic)
 			return
 		}
 
-		fimpMsg, err = mh.compressor.DecompressFimpMsg(msg.Payload())
+		if payload, err = mh.compressor.DecompressBinMsg(payload); err == nil {
+			fimpMsg, err = NewMessageFromBytes(payload)
+		}
 	default:
 		// This means unknown binary payload, for instance compressed message
 		log.Warnf("[fimpgo] Unknown payload type=%s topic=%s", addr.PayloadType, topic)
@@ -449,7 +453,7 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 	}
 
 	if err != nil {
-		log.Errorf("[fimpgo] Processing payload from topic=%s len=%d keys=%v err: %v", topic, len(msg.Payload()), payloadKeys(msg.Payload()), err)
+		log.Errorf("[fimpgo] Processing payload from topic=%s len=%d keys=%.64q err: %v", topic, len(msg.Payload()), payloadKeys(payload), err)
 		log.Tracef("[fimpgo] Payload preview len=%d: %.100s", len(msg.Payload()), msg.Payload())
 		return
 	}
@@ -479,9 +483,17 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 
 // payloadKeys lists the top-level JSON keys, which identifies a malformed producer without logging values.
 func payloadKeys(payload []byte) []string {
+	const maxKeys = 16
+
 	var keys []string
 
 	_ = jsonparser.ObjectEach(payload, func(key []byte, _ []byte, _ jsonparser.ValueType, _ int) error {
+		if len(keys) == maxKeys {
+			keys = append(keys, "...")
+
+			return errors.New("too many keys")
+		}
+
 		keys = append(keys, string(key))
 
 		return nil
