@@ -433,12 +433,12 @@ func NewBinaryMessage(iface string, service fimptype.ServiceNameT, value []byte,
 // optionalString reads an optional string field. A missing key or a null/empty
 // value is normal and silent; only a genuine parse error (malformed JSON, wrong
 // type) is logged.
-func optionalString(msg []byte, iface, label, key string) string {
+func optionalString(msg []byte, iface, key string) string {
 	v, err := jsonparser.GetString(msg, key)
 	if err != nil &&
 		!errors.Is(err, jsonparser.KeyPathNotFoundError) &&
 		!errors.Is(err, jsonparser.NullValueError) {
-		log.Errorf("[fimpgo] Parse %s %s err: %v", iface, label, err)
+		log.Errorf("[fimpgo] Parse %s %s err: %v", iface, key, err)
 	}
 
 	return v
@@ -471,13 +471,13 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 
 	// These fields are optional: a missing key is normal and silent, but any other
 	// parse error is logged.
-	fimpmsg.UID = optionalString(msg, fimpmsg.Interface, "uid", "uid")
-	fimpmsg.CorrelationID = optionalString(msg, fimpmsg.Interface, "coreid", "corid")
-	fimpmsg.CreationTime = optionalString(msg, fimpmsg.Interface, "ctime", "ctime")
-	fimpmsg.ResponseToTopic = optionalString(msg, fimpmsg.Interface, "resp_t", "resp_to")
-	fimpmsg.Source = fimptype.ResourceNameT(optionalString(msg, fimpmsg.Interface, "src", "src"))
-	fimpmsg.Topic = optionalString(msg, fimpmsg.Interface, "topic", "topic")
-	fimpmsg.Version = optionalString(msg, fimpmsg.Interface, "ver", "ver")
+	fimpmsg.UID = optionalString(msg, fimpmsg.Interface, "uid")
+	fimpmsg.CorrelationID = optionalString(msg, fimpmsg.Interface, "corid")
+	fimpmsg.CreationTime = optionalString(msg, fimpmsg.Interface, "ctime")
+	fimpmsg.ResponseToTopic = optionalString(msg, fimpmsg.Interface, "resp_to")
+	fimpmsg.Source = fimptype.ResourceNameT(optionalString(msg, fimpmsg.Interface, "src"))
+	fimpmsg.Topic = optionalString(msg, fimpmsg.Interface, "topic")
+	fimpmsg.Version = optionalString(msg, fimpmsg.Interface, "ver")
 
 	err = nil
 
