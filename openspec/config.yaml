@@ -1,0 +1,15 @@
+schema: spec-driven
+
+context: |
+  fimpgo (module `github.com/futurehomeno/fimpgo`) is the shared Go library every
+  Futurehome hub app uses to exchange FIMP messages over MQTT (eclipse/paho).
+
+  Commands
+  - Test:  `make test` (`go test ./...`); transport tests need the test broker on
+    127.0.0.1:11883
+  - Lint:  `go vet ./...` and `golangci-lint run` (config: `.golangci.yaml`)
+
+  Conventions
+  - Specs describe observable behaviour (connection lifecycle, delivery, logs),
+    never Go type or function names.
+  - Log lines are prefixed `[fimpgo]`.
