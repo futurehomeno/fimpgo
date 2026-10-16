@@ -2,6 +2,8 @@
 
 - [x] 1.1 Failing test: an unreachable broker leaves no "status can only transition" warning, and Start returns a timeout with the client disconnected
 - [x] 1.2 Start reuses the pending connect attempt and disconnects it when giving up
+- [x] 1.3 Failing test: the pending attempt connecting during the backoff wait makes Start return at once
+- [x] 1.4 The backoff wait also watches the pending attempt
 
 ## 2. Parse error log
 

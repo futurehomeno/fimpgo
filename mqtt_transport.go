@@ -101,8 +101,14 @@ func (mh *MqttTransport) Start(timeout time.Duration) error {
 
 		for i := 1; i <= mh.startFailRetryCount; i++ {
 			if i > 1 {
+				var pending <-chan struct{}
+				if token != nil {
+					pending = token.Done()
+				}
+
 				select {
 				case <-time.After(time.Duration(i*i) * time.Second):
+				case <-pending:
 				case <-done:
 					return utils.ErrConnectionLost
 				}

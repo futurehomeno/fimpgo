@@ -10,6 +10,11 @@ While a connect attempt is still in progress, the transport SHALL keep waiting o
 - **THEN** later attempts wait on that same connection attempt
 - **AND** no `status can only transition to connecting from disconnected` warning is logged
 
+#### Scenario: Pending attempt connects during the backoff wait
+
+- **WHEN** the pending connect attempt succeeds while `Start` waits between attempts
+- **THEN** `Start` returns without waiting for the rest of the backoff
+
 #### Scenario: Broker unreachable for every attempt
 
 - **WHEN** all connect attempts time out
