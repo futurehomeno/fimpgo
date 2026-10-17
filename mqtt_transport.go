@@ -283,7 +283,8 @@ func (mh *MqttTransport) ensureDefaultSource(message *FimpMessage) {
 	message.Source = mh.defaultSource
 }
 
-// SetStartAutoRetryCount Set number of retries transport will attempt on startup . Default value is 10
+// SetStartAutoRetryCount sizes the Start budget: count times the Start timeout plus the backoffs between count attempts.
+// Start connects again whenever an attempt fails within that budget. Default value is 10.
 func (mh *MqttTransport) SetStartAutoRetryCount(count int) {
 	mh.startFailRetryCount = count
 }

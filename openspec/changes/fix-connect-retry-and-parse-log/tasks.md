@@ -19,6 +19,7 @@
 - [x] 1.17 The failed attempt's error is still logged and the backoff still elapses before the next Connect
 - [x] 1.18 Failing test: a connect callback of a failed Start that completes after the next Start began leaves the transport disconnected
 - [x] 1.19 OnConnect takes the done channel of the Start its connection belongs to
+- [x] 1.20 SetStartAutoRetryCount documents that the count sizes the Start budget (no test: doc only)
 
 ## 2. Parse error log
 
