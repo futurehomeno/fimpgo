@@ -78,8 +78,9 @@ type MqttTransport struct {
 	subFilters     map[string]FimpFilter
 	subFilterFuncs map[string]FilterFunc
 
-	connState ConnStateT
-	incMsgsWg sync.WaitGroup // WaitGroup for incoming message handler
+	connState   ConnStateT
+	incMsgsWg   sync.WaitGroup // WaitGroup for incoming message handler
+	lifecycleMu sync.Mutex     // serializes Start and Stop
 
 	mainQueue                   chan MQTT.Message
 	mainQueueOverflowCnt        atomic.Uint32

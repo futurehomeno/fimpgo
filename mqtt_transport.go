@@ -92,6 +92,9 @@ func NewMqttTransportFromConfigs(cfg MqttConnectionConfigs, errHandler func(erro
 }
 
 func (mh *MqttTransport) Start(timeout time.Duration) error {
+	mh.lifecycleMu.Lock()
+	defer mh.lifecycleMu.Unlock()
+
 	if done := mh.connState.DoneC(); done != nil {
 		select {
 		case <-done:
@@ -101,6 +104,8 @@ func (mh *MqttTransport) Start(timeout time.Duration) error {
 		}
 	}
 
+	// A Stop that closed done but waits for this lock leaves its reader running, which would pick up the new done.
+	mh.incMsgsWg.Wait()
 	mh.connState.Init()
 
 	err := mh.connect(timeout)
@@ -110,12 +115,11 @@ func (mh *MqttTransport) Start(timeout time.Duration) error {
 
 	if err != nil {
 		// Stop also cancels a still pending paho attempt, which would otherwise connect with nobody reading messages.
-		mh.Stop()
+		mh.stop()
 
 		return err
 	}
 
-	mh.incMsgsWg = sync.WaitGroup{}
 	mh.incMsgsWg.Add(1)
 
 	var started sync.WaitGroup
@@ -174,9 +178,20 @@ func (mh *MqttTransport) IsConnected() bool {
 }
 
 func (mh *MqttTransport) Stop() {
+	// Closing done before taking the lock makes a Start that is still connecting give up at once.
+	mh.connState.OnDone()
+
+	mh.lifecycleMu.Lock()
+	defer mh.lifecycleMu.Unlock()
+
+	mh.stop()
+}
+
+func (mh *MqttTransport) stop() {
 	log.Debugf("[fimpgo] Stop connection")
 	mh.connState.OnDone()
-	mh.client.Disconnect(0)
+	// With quiesce 0 paho returns before it has disconnected, and a Start right after gets a status error.
+	mh.client.Disconnect(250)
 	mh.incMsgsWg.Wait()
 	log.Debugf("[fimpgo] Connection stopped")
 }
