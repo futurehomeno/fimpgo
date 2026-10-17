@@ -218,11 +218,6 @@ func (oac *FhOAuth2Client) ExchangeRefreshToken(refreshToken string) (*OAuth2Tok
 }
 
 func (oac *FhOAuth2Client) postMsg(req any, url string) (*OAuth2TokenResponse, error) {
-	hubToken, err := oac.loadedHubToken()
-	if err != nil {
-		return nil, errors.New("empty hub token.operation aborted")
-	}
-
 	reqB, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
@@ -233,6 +228,11 @@ func (oac *FhOAuth2Client) postMsg(req any, url string) (*OAuth2TokenResponse, e
 	var lastErr error
 
 	for range oac.refreshRetry {
+		hubToken, err := oac.loadedHubToken()
+		if err != nil {
+			return nil, errors.New("empty hub token.operation aborted")
+		}
+
 		r, err := http.NewRequestWithContext(context.Background(), "POST", url, bytes.NewBuffer(reqB))
 		if err != nil {
 			return nil, err
