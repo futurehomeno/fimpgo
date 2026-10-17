@@ -455,7 +455,7 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 	}
 
 	if err != nil {
-		log.Errorf("[fimpgo] Processing payload from topic=%s len=%d keys=%.64q err: %v", topic, len(msg.Payload()), payloadKeys(payload), err)
+		log.Errorf("[fimpgo] Processing payload from topic=%s len=%d keys=%q err: %v", topic, len(msg.Payload()), payloadKeys(payload), err)
 		log.Tracef("[fimpgo] Payload preview len=%d: %.100s", len(msg.Payload()), msg.Payload())
 		return
 	}
@@ -496,7 +496,7 @@ func payloadKeys(payload []byte) []string {
 			return errors.New("too many keys")
 		}
 
-		keys = append(keys, string(key))
+		keys = append(keys, string(key[:min(len(key), 64)]))
 
 		return nil
 	})

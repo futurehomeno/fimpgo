@@ -300,3 +300,9 @@ func TestMqttTransport_LogsKeysOfUnparsablePayload(t *testing.T) {
 		})
 	}
 }
+
+func TestPayloadKeys_CutsLongKeyBeforeCopy(t *testing.T) {
+	keys := payloadKeys([]byte(`{"` + strings.Repeat("k", 100) + `":0}`))
+
+	assert.Equal(t, []string{strings.Repeat("k", 64)}, keys)
+}
