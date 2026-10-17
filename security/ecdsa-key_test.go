@@ -117,6 +117,18 @@ func TestEcdsaKey_X509RoundTripAndAccessors(t *testing.T) {
 	third.SetPrivateKey(key.PrivateKey())
 	assert.Equal(t, key.PrivateKey(), third.PrivateKey())
 
+	fromPem := NewEcdsaKey()
+	require.NoError(t, fromPem.ImportX509PrivateKey(priv))
+	for _, signer := range []*EcdsaKey{third, fromPem} {
+		sig, err := SignStringES256("msg", signer)
+		require.NoError(t, err)
+		assert.True(t, VerifyStringES256("msg", sig, signer))
+		_, signerPub := signer.ExportX509EncodedKeys()
+		assert.Equal(t, pub, signerPub)
+		_, _, err = signer.ExportJsonEncodedKeys()
+		assert.NoError(t, err)
+	}
+
 	assert.Error(t, other.ImportX509PublicKey("junk"))
 	assert.Error(t, other.ImportX509PublicKey(string(pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: []byte{1}}))))
 }

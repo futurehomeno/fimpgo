@@ -1,11 +1,12 @@
 ## ADDED Requirements
 
-### Requirement: JSON private key import sets the public key
+### Requirement: A private key provides its public key
 
-`EcdsaKey.ImportJsonPrivateKey` SHALL set the public key derived from the imported private key.
+`EcdsaKey.PublicKey()` SHALL return the public key of the private key when no public key was set, whether the private key came from `ImportJsonPrivateKey`, `ImportX509PrivateKey` or `SetPrivateKey`.
 
 #### Scenario: Verify with an imported private key
 
-- **WHEN** a private key is imported with `ImportJsonPrivateKey`
+- **WHEN** only a private key is loaded into an `EcdsaKey`
 - **THEN** `PublicKey()` returns its public key
 - **AND** a payload signed with the key verifies with the same key
+- **AND** the X509 and JSON exports contain its public key

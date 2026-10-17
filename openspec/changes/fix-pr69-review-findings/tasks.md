@@ -2,13 +2,15 @@
 
 - [x] 1.1 Failing test: a second `LoadHubTokenFromCB` after one without a CloudBridge answer times out waiting for the answer instead of failing to subscribe
 - [x] 1.2 Drop the stopped transport and sync client in `LoadHubTokenFromCB`
+- [x] 1.3 Failing test: a failed subscribe also releases the transport
+- [x] 1.4 Release the transport on every return
 
 ## 2. Start with retry count 0
 
 - [x] 2.1 Failing test: `Start` with retry count 0 connects to a reachable broker
 - [x] 2.2 Treat a retry count below 1 as 1
 
-## 3. JSON private key import
+## 3. Private key import
 
-- [x] 3.1 Failing test: after `ImportJsonPrivateKey` the key verifies its own signature
-- [x] 3.2 Set the public key from the parsed private key
+- [x] 3.1 Failing test: after `ImportJsonPrivateKey`, `ImportX509PrivateKey` or `SetPrivateKey` the key verifies its own signature and exports its public key
+- [x] 3.2 `PublicKey()` falls back to the private key's public key

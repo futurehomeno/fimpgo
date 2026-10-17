@@ -33,3 +33,12 @@ func TestFhOAuth2Client_LoadHubTokenFromCBAgain(t *testing.T) {
 	assert.ErrorIs(t, client.LoadHubTokenFromCB(), utils.ErrTimeout)
 	assert.ErrorIs(t, client.LoadHubTokenFromCB(), utils.ErrTimeout)
 }
+
+func TestFhOAuth2Client_LoadHubTokenFromCBReleasesOnSubscribeError(t *testing.T) {
+	client := NewFhOAuth2Client("p", "x/#", "")
+	client.SetParameters("tcp://127.0.0.1:11883", "", "", 0, 0, 1, time.Second)
+
+	assert.Error(t, client.LoadHubTokenFromCB())
+	assert.Nil(t, client.mqt)
+	assert.Nil(t, client.syncClient)
+}

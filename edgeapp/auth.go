@@ -149,6 +149,10 @@ func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
 			return fmt.Errorf("[edgeapp] Configure FIMP sync client err: %w", err)
 		}
 	}
+	defer func() {
+		oac.mqt.Stop()
+		oac.mqt, oac.syncClient = nil, nil
+	}()
 
 	rspTopic := fmt.Sprintf("pt:j1/mt:rsp/rt:app/rn:%s/ad:1", oac.appName)
 	if err := oac.syncClient.AddSubscription(rspTopic); err != nil {
@@ -167,9 +171,6 @@ func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
 		log.Errorf("[edgeapp] No rsp from Cb err=%v", err)
 	}
 
-	oac.syncClient.Stop()
-	oac.mqt.Stop()
-	oac.mqt, oac.syncClient = nil, nil
 	if err != nil {
 		return err
 	}

@@ -33,6 +33,9 @@ func (kp *EcdsaKey) SetPrivateKey(privateKey *ecdsa.PrivateKey) {
 }
 
 func (kp *EcdsaKey) PublicKey() *ecdsa.PublicKey {
+	if kp.publicKey == nil && kp.privateKey != nil {
+		return &kp.privateKey.PublicKey
+	}
 	return kp.publicKey
 }
 
@@ -61,8 +64,8 @@ func (kp *EcdsaKey) ExportX509EncodedKeys() (string, string) {
 		pemEncoded := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: x509Encoded})
 		pemEncodedStr = string(pemEncoded)
 	}
-	if kp.publicKey != nil {
-		x509EncodedPub, _ := x509.MarshalPKIXPublicKey(kp.publicKey)
+	if pub := kp.PublicKey(); pub != nil {
+		x509EncodedPub, _ := x509.MarshalPKIXPublicKey(pub)
 		pemEncodedPub := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: x509EncodedPub})
 		pemEncodedPubStr = string(pemEncodedPub)
 	}
@@ -82,7 +85,7 @@ func (kp *EcdsaKey) ExportJsonEncodedKeys() (privKey JsonEcKey, pubKey JsonEcKey
 	}
 
 	// ----- PUBLIC KEY -----
-	pubBytes, err := kp.publicKey.Bytes()
+	pubBytes, err := kp.PublicKey().Bytes()
 	if err != nil {
 		return privKey, pubKey, err
 	}
@@ -161,7 +164,6 @@ func (kp *EcdsaKey) ImportJsonPrivateKey(jkey JsonEcKey) error {
 		return err
 	}
 	kp.privateKey = priv
-	kp.publicKey = &priv.PublicKey
 	return nil
 }
 
