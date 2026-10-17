@@ -141,3 +141,24 @@ func TestFhOAuth2Client_SetHubTokenDuringExchange(t *testing.T) {
 	}
 	<-done
 }
+
+func TestFhOAuth2Client_RetryUsesNewHubToken(t *testing.T) {
+	var c *FhOAuth2Client
+	auths := make(chan string, 3)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		auths <- r.Header.Get("Authorization")
+		if len(auths) == 1 {
+			c.SetHubToken("new-token")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		_, _ = w.Write([]byte(`{"access_token":"at"}`))
+	}))
+	defer srv.Close()
+	c = newTestClient(srv.URL)
+
+	_, err := c.ExchangeRefreshToken("rt")
+	require.NoError(t, err)
+	assert.Equal(t, "Bearer hub-token", <-auths)
+	assert.Equal(t, "Bearer new-token", <-auths)
+}
