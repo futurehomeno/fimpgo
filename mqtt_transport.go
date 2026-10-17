@@ -93,22 +93,30 @@ func NewMqttTransportFromConfigs(cfg MqttConnectionConfigs, errHandler func(erro
 
 func (mh *MqttTransport) Start(timeout time.Duration) error {
 	mh.lifecycleMu.Lock()
-	defer mh.lifecycleMu.Unlock()
 
 	if done := mh.connState.DoneC(); done != nil {
 		select {
 		case <-done:
 		default:
 			// Already started: Init would replace the done channel the running reader waits on.
+			mh.lifecycleMu.Unlock()
+
 			return mh.connState.WaitConnected(timeout)
 		}
 	}
+
+	defer mh.lifecycleMu.Unlock()
 
 	// A Stop that closed done but waits for this lock leaves its reader running, which would pick up the new done.
 	mh.incMsgsWg.Wait()
 	mh.connState.Init()
 
-	err := mh.connect(timeout)
+	// A Stop that arrived before Init closed only the old done, so it would wait out the whole connect budget.
+	err := utils.ErrConnectionLost
+	if mh.pendingStops.Load() == 0 {
+		err = mh.connect(timeout)
+	}
+
 	if err == nil {
 		err = mh.connState.WaitConnected(timeout)
 	}
@@ -178,6 +186,7 @@ func (mh *MqttTransport) IsConnected() bool {
 }
 
 func (mh *MqttTransport) Stop() {
+	mh.pendingStops.Add(1)
 	// Closing done before taking the lock makes a Start that is still connecting give up at once.
 	mh.connState.OnDone()
 
@@ -185,6 +194,7 @@ func (mh *MqttTransport) Stop() {
 	defer mh.lifecycleMu.Unlock()
 
 	mh.stop()
+	mh.pendingStops.Add(-1)
 }
 
 func (mh *MqttTransport) stop() {

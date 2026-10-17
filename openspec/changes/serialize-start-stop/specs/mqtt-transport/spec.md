@@ -16,9 +16,27 @@ Concurrent `Start` and `Stop` calls on one transport SHALL take effect one after
 - **THEN** `Stop` returns once the handler finishes
 - **AND** a later `Stop` returns
 
-### Requirement: Stop returns once disconnected
+#### Scenario: Stop while Start waits for the old reader
 
-`Stop` SHALL return only after the MQTT client has left the connected state, so a `Start` right after it connects again.
+- **WHEN** `Stop` is called while a `Start` waits for the reader of a stopped session and the broker is down
+- **THEN** that `Start` returns a connection-lost error and `Stop` returns once the handler finishes
+
+#### Scenario: Concurrent Start while reconnecting
+
+- **WHEN** several goroutines call `Start` on a started transport that lost its connection
+- **THEN** they wait for the connection in parallel, each for at most its own timeout
+
+## MODIFIED Requirements
+
+### Requirement: Stop ends delivery
+
+Stop SHALL disconnect immediately and return only after the MQTT client has left the connected state and the
+receive loop has exited, so no handler runs after Stop returns. A stopped transport SHALL be startable again.
+
+#### Scenario: Restart
+
+- **WHEN** a transport is stopped and started again
+- **THEN** it connects and delivers messages on its remembered subscriptions
 
 #### Scenario: Start right after Stop
 

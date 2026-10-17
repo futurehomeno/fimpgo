@@ -2,6 +2,7 @@ package fimpgo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -305,6 +306,91 @@ func TestMqttTransport_StartWhileStopWaitsForReader(t *testing.T) {
 	requireReturns(t, func() { err = <-started }, "Start")
 	require.NoError(t, err)
 	requireReturns(t, mqtt.Stop, "second Stop")
+}
+
+func TestMqttTransport_StopWhileStartWaitsForReader(t *testing.T) {
+	ln := listen(t, "127.0.0.1:0")
+
+	go serveBroker(ln, 0)
+
+	mqtt := NewMqttTransport("tcp://"+ln.Addr().String(), "test_stop_during_start", "", "", true, 1, 1, nil)
+	mqtt.SetStartAutoRetryCount(10)
+
+	handling, release := make(chan struct{}), make(chan struct{})
+	mqtt.SetMessageHandler(func(string, *Address, *FimpMessage, []byte) {
+		close(handling)
+		<-release
+	})
+
+	require.NoError(t, mqtt.Start(time.Second))
+
+	mqtt.mainQueue <- fakeMessage{topic: "pt:j1/mt:evt/rt:app/rn:test/ad:1", payload: []byte(`{"serv":"test","type":"evt.test.report","val_t":"null"}`)}
+	<-handling
+
+	stopped := make(chan struct{})
+	go func() {
+		mqtt.Stop()
+		close(stopped)
+	}()
+
+	require.Eventually(t, func() bool {
+		select {
+		case <-mqtt.connState.DoneC():
+			return true
+		default:
+			return false
+		}
+	}, time.Second, 10*time.Millisecond)
+
+	started := make(chan error, 1)
+	go func() { started <- mqtt.Start(time.Second) }()
+
+	time.Sleep(100 * time.Millisecond)
+	require.NoError(t, ln.Close())
+
+	stoppedAgain := make(chan struct{})
+	go func() {
+		mqtt.Stop()
+		close(stoppedAgain)
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+	close(release)
+
+	requireReturns(t, func() { <-stopped }, "Stop")
+	requireReturns(t, func() { <-stoppedAgain }, "second Stop")
+	var err error
+	requireReturns(t, func() { err = <-started }, "Start")
+	require.ErrorIs(t, err, utils.ErrConnectionLost)
+}
+
+func TestMqttTransport_ConcurrentStartWhileReconnecting(t *testing.T) {
+	ln := listen(t, "127.0.0.1:0")
+
+	go serveBroker(ln, 0)
+
+	mqtt := NewMqttTransport("tcp://"+ln.Addr().String(), "test_concurrent_start_reconnecting", "", "", true, 1, 1, nil)
+	mqtt.SetStartAutoRetryCount(1)
+
+	require.NoError(t, mqtt.Start(time.Second))
+	defer mqtt.Stop()
+
+	mqtt.onConnectionLost(mqtt.client, errors.New("lost"))
+
+	const timeout = 300 * time.Millisecond
+
+	errs := make(chan error, 3)
+	begin := time.Now()
+
+	for range cap(errs) {
+		go func() { errs <- mqtt.Start(timeout) }()
+	}
+
+	for range cap(errs) {
+		require.ErrorIs(t, <-errs, utils.ErrTimeout)
+	}
+
+	require.Less(t, time.Since(begin), 2*timeout)
 }
 
 func TestMqttTransport_StartRightAfterStop(t *testing.T) {
