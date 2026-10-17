@@ -2,7 +2,9 @@ package edgeapp
 
 import (
 	"sync"
+	"time"
 
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -85,6 +87,9 @@ func NewAppLifecycle() *Lifecycle {
 }
 
 func (al *Lifecycle) GetAllStates() *AppStates {
+	al.busMux.Lock()
+	defer al.busMux.Unlock()
+
 	appStates := AppStates{
 		App:           string(al.appState),
 		Connection:    string(al.connectionState),
@@ -97,10 +102,16 @@ func (al *Lifecycle) GetAllStates() *AppStates {
 }
 
 func (al *Lifecycle) ConfigState() State {
+	al.busMux.Lock()
+	defer al.busMux.Unlock()
+
 	return al.configState
 }
 
 func (al *Lifecycle) SetConfigState(configState State) {
+	al.busMux.Lock()
+	defer al.busMux.Unlock()
+
 	log.Debug("[edgeapp] New CONFIG state=", configState)
 	al.configState = configState
 	for i := range al.systemEventBus {
@@ -113,10 +124,16 @@ func (al *Lifecycle) SetConfigState(configState State) {
 }
 
 func (al *Lifecycle) AuthState() State {
+	al.busMux.Lock()
+	defer al.busMux.Unlock()
+
 	return al.authState
 }
 
 func (al *Lifecycle) SetAuthState(authState State) {
+	al.busMux.Lock()
+	defer al.busMux.Unlock()
+
 	log.Debug("[edgeapp] New AUTH state=", authState)
 	al.authState = authState
 
@@ -130,10 +147,16 @@ func (al *Lifecycle) SetAuthState(authState State) {
 }
 
 func (al *Lifecycle) ConnectionState() State {
+	al.busMux.Lock()
+	defer al.busMux.Unlock()
+
 	return al.connectionState
 }
 
 func (al *Lifecycle) SetConnectionState(connectivityState State) {
+	al.busMux.Lock()
+	defer al.busMux.Unlock()
+
 	log.Debug("[edgeapp] New connection ", connectivityState)
 	al.connectionState = connectivityState
 	for i := range al.systemEventBus {
@@ -146,6 +169,9 @@ func (al *Lifecycle) SetConnectionState(connectivityState State) {
 }
 
 func (al *Lifecycle) AppState() State {
+	al.busMux.Lock()
+	defer al.busMux.Unlock()
+
 	return al.appState
 }
 
@@ -181,7 +207,7 @@ func (al *Lifecycle) PublishSystemEvent(name, src string, params map[string]stri
 func (al *Lifecycle) Publish(event SystemEvent, src string, params map[string]string) {
 	al.busMux.Lock()
 	event.Type = SystemEventTypeEvent
-	event.State = al.AppState()
+	event.State = al.appState
 	event.Params = params
 	for i := range al.systemEventBus {
 		select {
@@ -211,18 +237,50 @@ func (al *Lifecycle) Unsubscribe(subId string) {
 
 // WaitForState blocks until target state is reached
 func (al *Lifecycle) WaitForState(subId string, stateType string, targetState State) {
-	log.Debugf("[edgeapp] Waiting for state=%s current state=%s", targetState, al.AppState())
-	if al.AppState() == targetState && stateType == SystemEventTypeState ||
-		al.ConfigState() == targetState && stateType == SystemEventTypeConfigState ||
-		al.AuthState() == targetState && stateType == SystemEventTypeAuthState ||
-		al.ConnectionState() == targetState && stateType == SystemEventTypeConnectionState {
+	// A unique id, so the wait never replaces or removes a subscriber using subId.
+	waitId := subId + "-wait-" + uuid.NewString()
+
+	// Subscribing first, so a change after the check below still arrives as an event.
+	ch := al.Subscribe(waitId, 5)
+	defer al.Unsubscribe(waitId)
+
+	current := al.state(stateType)
+	log.Debugf("[edgeapp] Waiting for %s=%s current=%s", stateType, targetState, current)
+	if current == targetState {
 		return
 	}
-	ch := al.Subscribe(subId, 5)
-	for evt := range ch {
-		if evt.Type == stateType && evt.State == targetState {
-			al.Unsubscribe(subId)
-			return
+
+	// Events to a busy listener are dropped, so the state is rechecked as well.
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case evt := <-ch:
+			if evt.Type == stateType && evt.State == targetState {
+				return
+			}
+		case <-ticker.C:
+			if al.state(stateType) == targetState {
+				return
+			}
 		}
 	}
+}
+
+func (al *Lifecycle) state(stateType string) State {
+	al.busMux.Lock()
+	defer al.busMux.Unlock()
+
+	switch stateType {
+	case SystemEventTypeState:
+		return al.appState
+	case SystemEventTypeConfigState:
+		return al.configState
+	case SystemEventTypeAuthState:
+		return al.authState
+	case SystemEventTypeConnectionState:
+		return al.connectionState
+	}
+	return ""
 }
