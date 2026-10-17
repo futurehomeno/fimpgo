@@ -1,6 +1,7 @@
 package security
 
 import (
+	"path/filepath"
 	"testing"
 )
 
@@ -8,7 +9,8 @@ func TestKeyStore_GetEcdsaKey(t *testing.T) {
 	user := "alex@mail.com"
 	devId := "t-a-1"
 	textToSign := "super important test message"
-	store := NewKeyStore("test-key-store.json", false)
+	path := filepath.Join(t.TempDir(), "key-store.json")
+	store := NewKeyStore(path, false)
 	ecKey := NewEcdsaKey()
 	err := ecKey.Generate()
 	if err != nil {
@@ -26,7 +28,7 @@ func TestKeyStore_GetEcdsaKey(t *testing.T) {
 		t.Fatal("Upserting err:", err)
 	}
 
-	store2 := NewKeyStore("test-key-store.json", false)
+	store2 := NewKeyStore(path, false)
 	if err := store2.LoadFromDisk(); err != nil {
 		t.Fatal("LoadFromDisk err:", err)
 	}
