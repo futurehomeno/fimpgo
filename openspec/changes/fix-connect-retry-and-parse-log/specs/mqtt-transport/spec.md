@@ -19,6 +19,7 @@ While a connect attempt is still in progress, the transport SHALL keep waiting o
 
 - **WHEN** a connect attempt of a client without connect retry finishes with an error
 - **THEN** `Start` starts a new connect attempt after the backoff
+- **AND** the error of the failed attempt is logged
 
 #### Scenario: Broker unreachable for the whole budget
 

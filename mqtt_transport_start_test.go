@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -110,6 +111,9 @@ func TestMqttTransport_StartReturnsWhenPendingConnectSucceeds(t *testing.T) {
 }
 
 func TestMqttTransport_StartReconnectsWithoutConnectRetry(t *testing.T) {
+	hook := logtest.NewGlobal()
+	defer hook.Reset()
+
 	ctx := t.Context()
 	ln := listen(t, "127.0.0.1:0")
 
@@ -134,6 +138,9 @@ func TestMqttTransport_StartReconnectsWithoutConnectRetry(t *testing.T) {
 
 	assert.ErrorIs(t, mqtt.Start(300*time.Millisecond), os.ErrDeadlineExceeded)
 	assert.EqualValues(t, 2, accepts.Load())
+	assert.True(t, slices.ContainsFunc(hook.AllEntries(), func(e *log.Entry) bool {
+		return strings.Contains(e.Message, "connect attempt 1 failed")
+	}))
 }
 
 func TestMqttTransport_StartReturnsLastConnectError(t *testing.T) {

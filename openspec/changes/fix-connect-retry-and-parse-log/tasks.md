@@ -6,12 +6,17 @@
 - [x] 1.4 The backoff wait also watches the pending attempt
 - [x] 1.5 Failing test: the pending attempt failing during the backoff wait still leads to a fresh connect attempt
 - [x] 1.6 Drop a failed pending attempt in the backoff wait so the round connects again
-- [x] 1.7 Failing tests: a second Start right after a failed one connects once the broker is back; a connection completing after a failed Start leaves the transport disconnected
-- [x] 1.8 Replace the round loop with one overall budget: Connect again only after a finished attempt, and Stop the transport on any Start failure
-- [x] 1.9 Ignore OnConnect once the transport is stopped
-- [x] 1.10 Failing test: a broker refusing with `not Authorized` makes Start return that error, not a timeout
-- [x] 1.11 Return the last attempt's error when the budget runs out during the backoff
-- [x] 1.12 SyncClient.Connect and ConfigureFimpSyncClient drop the transport of a failed Start (no test: Start's budget is fixed at minutes there)
+- [x] 1.7 Failing test: the failed pending attempt's error is logged
+- [x] 1.8 Check for a failed pending attempt before reusing it, whichever wait branch fired, and log its error
+- [x] 1.9 Failing test: a failed pending attempt does not cut the backoff short
+- [x] 1.10 Keep waiting out the backoff after the pending attempt fails
+- [x] 1.11 Failing tests: a second Start right after a failed one connects once the broker is back; a connection completing after a failed Start leaves the transport disconnected
+- [x] 1.12 Replace the round loop with one overall budget: Connect again only after a finished attempt, and Stop the transport on any Start failure
+- [x] 1.13 Ignore OnConnect once the transport is stopped
+- [x] 1.14 Failing test: a broker refusing with `not Authorized` makes Start return that error, not a timeout
+- [x] 1.15 Return the last attempt's error when the budget runs out during the backoff
+- [x] 1.16 SyncClient.Connect and ConfigureFimpSyncClient drop the transport of a failed Start (no test: Start's budget is fixed at minutes there)
+- [x] 1.17 The failed attempt's error is still logged and the backoff still elapses before the next Connect
 
 ## 2. Parse error log
 
