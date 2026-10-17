@@ -5,7 +5,11 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/pem"
+	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestEcdsaKey_JsonRoundTrip(t *testing.T) {
@@ -90,4 +94,47 @@ func TestEcdsaKey_FailedX509ImportKeepsKey(t *testing.T) {
 	if !VerifyStringES256("msg", sig, key) {
 		t.Fatal("Verification failed")
 	}
+}
+
+func TestEcdsaKey_X509RoundTripAndAccessors(t *testing.T) {
+	key := NewEcdsaKey()
+	priv, pub := key.ExportX509EncodedKeys()
+	assert.Empty(t, priv)
+	assert.Empty(t, pub)
+	require.NoError(t, key.Generate())
+	priv, pub = key.ExportX509EncodedKeys()
+
+	other := NewEcdsaKey()
+	require.NoError(t, other.ImportX509PrivateKey(priv))
+	require.NoError(t, other.ImportX509PublicKey(pub))
+	assert.True(t, key.PrivateKey().Equal(other.PrivateKey()))
+	assert.True(t, key.PublicKey().Equal(other.PublicKey()))
+
+	third := NewEcdsaKey()
+	third.SetPrivateKey(key.PrivateKey())
+	assert.Equal(t, key.PrivateKey(), third.PrivateKey())
+
+	assert.Error(t, other.ImportX509PublicKey("junk"))
+	assert.Error(t, other.ImportX509PublicKey(string(pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: []byte{1}}))))
+}
+
+func TestEcdsaKey_JsonImportErrors(t *testing.T) {
+	k := NewEcdsaKey()
+	assert.Error(t, k.ImportJsonPublicKey(JsonEcKey{X: "zz", Y: "01"}))
+	assert.Error(t, k.ImportJsonPublicKey(JsonEcKey{X: "01", Y: "zz"}))
+	assert.Error(t, k.ImportJsonPrivateKey(JsonEcKey{D: "zz"}))
+	assert.Error(t, k.ImportJsonPrivateKey(JsonEcKey{D: "0"}))
+	assert.Error(t, k.ImportJsonPrivateKey(JsonEcKey{D: "1" + strings.Repeat("0", 64)}))
+}
+
+func TestVerifyStringES256_Negative(t *testing.T) {
+	key := NewEcdsaKey()
+	require.NoError(t, key.Generate())
+	other := NewEcdsaKey()
+	require.NoError(t, other.Generate())
+	sig, err := SignStringES256("msg", key)
+	require.NoError(t, err)
+	assert.False(t, VerifyStringES256("tampered", sig, key))
+	assert.False(t, VerifyStringES256("msg", sig, other))
+	assert.False(t, VerifyStringES256("msg", sig[:10], key))
 }
