@@ -119,3 +119,25 @@ func TestFhOAuth2Client_postMsg_ConnectionError(t *testing.T) {
 	_, err = newTestClient("://bad url").ExchangeRefreshToken("rt")
 	require.Error(t, err)
 }
+
+func TestFhOAuth2Client_SetHubTokenDuringExchange(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"access_token":"at"}`))
+	}))
+	defer srv.Close()
+	c := newTestClient(srv.URL)
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for range 100 {
+			c.SetHubToken("hub-token")
+		}
+	}()
+
+	for range 10 {
+		_, err := c.ExchangeRefreshToken("rt")
+		require.NoError(t, err)
+	}
+	<-done
+}

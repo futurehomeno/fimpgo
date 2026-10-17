@@ -176,10 +176,16 @@ func (al *Lifecycle) AppState() State {
 }
 
 func (al *Lifecycle) LastError() string {
+	al.busMux.Lock()
+	defer al.busMux.Unlock()
+
 	return al.lastError
 }
 
 func (al *Lifecycle) SetLastError(lastError string) {
+	al.busMux.Lock()
+	defer al.busMux.Unlock()
+
 	al.lastError = lastError
 }
 

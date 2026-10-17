@@ -54,10 +54,13 @@ type FhOAuth2Client struct {
 	retryDelay         time.Duration
 	cbRetry            int
 	cbRetryDelay       time.Duration
-	hubTokenLoad       sync.Mutex
+	hubTokenMux        sync.Mutex
 }
 
 func (oac *FhOAuth2Client) SetHubToken(hubToken string) {
+	oac.hubTokenMux.Lock()
+	defer oac.hubTokenMux.Unlock()
+
 	oac.hubToken = hubToken
 }
 
@@ -146,9 +149,25 @@ func (oac *FhOAuth2Client) ConfigureFimpSyncClient() error {
 
 // LoadHubTokenFromCB - requests hub token from CloudBridge
 func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
-	oac.hubTokenLoad.Lock()
-	defer oac.hubTokenLoad.Unlock()
+	oac.hubTokenMux.Lock()
+	defer oac.hubTokenMux.Unlock()
 
+	return oac.loadHubTokenFromCB()
+}
+
+func (oac *FhOAuth2Client) loadedHubToken() (string, error) {
+	oac.hubTokenMux.Lock()
+	defer oac.hubTokenMux.Unlock()
+
+	if oac.hubToken == "" {
+		if err := oac.loadHubTokenFromCB(); err != nil {
+			return "", err
+		}
+	}
+	return oac.hubToken, nil
+}
+
+func (oac *FhOAuth2Client) loadHubTokenFromCB() error {
 	if oac.mqt == nil || oac.syncClient == nil {
 		if err := oac.ConfigureFimpSyncClient(); err != nil {
 			return fmt.Errorf("[edgeapp] Configure FIMP sync client err: %w", err)
@@ -199,11 +218,9 @@ func (oac *FhOAuth2Client) ExchangeRefreshToken(refreshToken string) (*OAuth2Tok
 }
 
 func (oac *FhOAuth2Client) postMsg(req any, url string) (*OAuth2TokenResponse, error) {
-	if oac.hubToken == "" {
-		err := oac.LoadHubTokenFromCB()
-		if err != nil {
-			return nil, errors.New("empty hub token.operation aborted")
-		}
+	hubToken, err := oac.loadedHubToken()
+	if err != nil {
+		return nil, errors.New("empty hub token.operation aborted")
 	}
 
 	reqB, err := json.Marshal(req)
@@ -221,7 +238,7 @@ func (oac *FhOAuth2Client) postMsg(req any, url string) (*OAuth2TokenResponse, e
 			return nil, err
 		}
 		r.Header.Add("Content-Type", "application/json")
-		r.Header.Add("Authorization", "Bearer "+oac.hubToken)
+		r.Header.Add("Authorization", "Bearer "+hubToken)
 
 		resp, lastErr = client.Do(r)
 		if lastErr != nil {
