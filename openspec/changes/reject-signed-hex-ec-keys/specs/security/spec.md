@@ -6,7 +6,7 @@ JSON EC key import SHALL accept only unsigned hexadecimal values for `x`, `y` an
 
 #### Scenario: Signed private scalar
 
-- **WHEN** a JSON private key with `d` set to `-1` is imported
+- **WHEN** a JSON private key with `d` set to `-1` or `+1` is imported
 - **THEN** the import returns an error
 
 #### Scenario: Signed public coordinate

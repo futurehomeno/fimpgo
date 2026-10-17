@@ -37,4 +37,7 @@ func TestEcdsaKey_JsonRoundTrip(t *testing.T) {
 	if err := signer.ImportJsonPrivateKey(JsonEcKey{D: "-1"}); err == nil {
 		t.Fatal("expected error for signed scalar")
 	}
+	if err := signer.ImportJsonPrivateKey(JsonEcKey{D: "+1"}); err == nil {
+		t.Fatal("expected error for plus-signed scalar")
+	}
 }
