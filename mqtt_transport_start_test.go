@@ -262,38 +262,7 @@ func TestMqttTransport_ConcurrentStart(t *testing.T) {
 }
 
 func TestMqttTransport_StartWhileStopWaitsForReader(t *testing.T) {
-	ln := listen(t, "127.0.0.1:0")
-
-	go serveBroker(ln, 0)
-
-	mqtt := NewMqttTransport("tcp://"+ln.Addr().String(), "test_start_during_stop", "", "", true, 1, 1, nil)
-	mqtt.SetStartAutoRetryCount(1)
-
-	handling, release := make(chan struct{}), make(chan struct{})
-	mqtt.SetMessageHandler(func(string, *Address, *FimpMessage, []byte) {
-		close(handling)
-		<-release
-	})
-
-	require.NoError(t, mqtt.Start(time.Second))
-
-	mqtt.mainQueue <- fakeMessage{topic: "pt:j1/mt:evt/rt:app/rn:test/ad:1", payload: []byte(`{"serv":"test","type":"evt.test.report","val_t":"null"}`)}
-	<-handling
-
-	stopped := make(chan struct{})
-	go func() {
-		mqtt.Stop()
-		close(stopped)
-	}()
-
-	require.Eventually(t, func() bool {
-		select {
-		case <-mqtt.connState.DoneC():
-			return true
-		default:
-			return false
-		}
-	}, time.Second, 10*time.Millisecond)
+	mqtt, _, release, stopped := stopWithBlockedReader(t, "test_start_during_stop", 1)
 
 	started := make(chan error, 1)
 	go func() { started <- mqtt.Start(time.Second) }()
@@ -309,38 +278,7 @@ func TestMqttTransport_StartWhileStopWaitsForReader(t *testing.T) {
 }
 
 func TestMqttTransport_StopWhileStartWaitsForReader(t *testing.T) {
-	ln := listen(t, "127.0.0.1:0")
-
-	go serveBroker(ln, 0)
-
-	mqtt := NewMqttTransport("tcp://"+ln.Addr().String(), "test_stop_during_start", "", "", true, 1, 1, nil)
-	mqtt.SetStartAutoRetryCount(10)
-
-	handling, release := make(chan struct{}), make(chan struct{})
-	mqtt.SetMessageHandler(func(string, *Address, *FimpMessage, []byte) {
-		close(handling)
-		<-release
-	})
-
-	require.NoError(t, mqtt.Start(time.Second))
-
-	mqtt.mainQueue <- fakeMessage{topic: "pt:j1/mt:evt/rt:app/rn:test/ad:1", payload: []byte(`{"serv":"test","type":"evt.test.report","val_t":"null"}`)}
-	<-handling
-
-	stopped := make(chan struct{})
-	go func() {
-		mqtt.Stop()
-		close(stopped)
-	}()
-
-	require.Eventually(t, func() bool {
-		select {
-		case <-mqtt.connState.DoneC():
-			return true
-		default:
-			return false
-		}
-	}, time.Second, 10*time.Millisecond)
+	mqtt, ln, release, stopped := stopWithBlockedReader(t, "test_stop_during_start", 10)
 
 	started := make(chan error, 1)
 	go func() { started <- mqtt.Start(time.Second) }()
@@ -362,6 +300,47 @@ func TestMqttTransport_StopWhileStartWaitsForReader(t *testing.T) {
 	var err error
 	requireReturns(t, func() { err = <-started }, "Start")
 	require.ErrorIs(t, err, utils.ErrConnectionLost)
+}
+
+// stopWithBlockedReader blocks the reader of a started transport until release is closed and returns once a
+// background Stop has closed done; stopped closes when that Stop returns.
+func stopWithBlockedReader(t *testing.T, clientID string, retryCount int) (*MqttTransport, net.Listener, chan struct{}, chan struct{}) {
+	t.Helper()
+
+	ln := listen(t, "127.0.0.1:0")
+
+	go serveBroker(ln, 0)
+
+	mqtt := NewMqttTransport("tcp://"+ln.Addr().String(), clientID, "", "", true, 1, 1, nil)
+	mqtt.SetStartAutoRetryCount(retryCount)
+
+	handling, release := make(chan struct{}), make(chan struct{})
+	mqtt.SetMessageHandler(func(string, *Address, *FimpMessage, []byte) {
+		close(handling)
+		<-release
+	})
+
+	require.NoError(t, mqtt.Start(time.Second))
+
+	mqtt.mainQueue <- fakeMessage{topic: "pt:j1/mt:evt/rt:app/rn:test/ad:1", payload: []byte(`{"serv":"test","type":"evt.test.report","val_t":"null"}`)}
+	<-handling
+
+	stopped := make(chan struct{})
+	go func() {
+		mqtt.Stop()
+		close(stopped)
+	}()
+
+	require.Eventually(t, func() bool {
+		select {
+		case <-mqtt.connState.DoneC():
+			return true
+		default:
+			return false
+		}
+	}, time.Second, 10*time.Millisecond)
+
+	return mqtt, ln, release, stopped
 }
 
 func TestMqttTransport_ConcurrentStartWhileReconnecting(t *testing.T) {
