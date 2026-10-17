@@ -1,8 +1,8 @@
 # security Specification
 
 ## Purpose
-ECDSA P-256 keys, their storage, and signed FIMP messages, so a hub app can verify that a command
-comes from a known user device.
+ECDSA P-256 keys, their storage, and signed FIMP messages, so a hub app can verify that a message was
+signed with a known user device's key.
 
 ## Requirements
 ### Requirement: Keys import and export in PEM and JSON form
@@ -28,7 +28,8 @@ Signing SHALL serialize the original message, carry it base64-encoded as a `bin`
 `cmd.transport.signed` message for a command or an `evt.transport.signed` message otherwise, keep
 the original service, and add the ES256 signature over the encoded value as base64url property `sig`
 to the given properties, or to `user_id` alone when none are given. Verifying SHALL accept only those two interfaces, require `sig`, check it with
-the given public key, and return the original message.
+the given public key, and return the original message. The signature covers only the wrapped
+message, not the properties, and carries no freshness check, so a replayed signed message verifies.
 
 #### Scenario: Valid signature
 

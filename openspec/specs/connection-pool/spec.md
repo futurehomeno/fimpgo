@@ -23,7 +23,8 @@ its maximum (20 by default) or the new connection cannot connect.
 
 ### Requirement: Returning a connection clears its subscriptions
 
-Returning a connection SHALL unsubscribe it from every topic and mark it idle.
+Returning a connection SHALL unsubscribe it from every topic, stopping at the first failure with a
+warning, and mark it idle.
 
 #### Scenario: Returned connection
 

@@ -87,13 +87,14 @@ function SHALL be logged and count as no match.
 ### Requirement: A stuck receive queue is reported
 
 Received messages SHALL be queued (100 by default) so the MQTT client is never blocked. A message
-arriving at a full queue SHALL be dropped with an error log. When more than 20 messages in a row are
-dropped while connected, the transport SHALL report `main msg queue stuck` to the error handler.
+arriving at a full queue SHALL be dropped, the first 20 in a row with an error log. When more than
+20 messages in a row are dropped while connected, the transport SHALL report `main msg queue stuck`
+to the error handler and disconnect.
 
 #### Scenario: Consumer deadlocked
 
 - **WHEN** the message handler blocks and 21 more messages arrive after the queue filled
-- **THEN** the error handler gets `main msg queue stuck`
+- **THEN** the error handler gets `main msg queue stuck` and the client disconnects
 
 ### Requirement: Stop ends delivery
 

@@ -24,7 +24,7 @@ stream. The buffer SHALL be emptied after each flush, also when serialization fa
 ### Requirement: Flushed batches are compact JSON
 
 Each buffered message SHALL record its topic without the `pt:j1/mt:evt` or `pt:j1/mt:cmd` prefix,
-object values SHALL be unpacked inline, and the batch SHALL be one JSON array, gzip-compressed when
+object values received from the wire SHALL be unpacked inline, and the batch SHALL be one JSON array, gzip-compressed when
 the stream compresses. A file sink SHALL write `<prefix>_<RFC 3339 time>.json` (`.gz` when
 compressed); a channel sink SHALL receive the bytes.
 

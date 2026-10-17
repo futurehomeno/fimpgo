@@ -42,8 +42,8 @@ received from the wire and not unpacked SHALL be re-encoded unchanged.
 Decoding SHALL read `val` as the type named by `val_t`: `string`, `int`, `float`, `bool`, their
 `_array` and `_map` forms, `bin`, `object` (kept raw until the consumer unpacks it) and `null`. It
 SHALL fail when `type` is missing, when `val_t` is missing or names none of those types, or when
-`val` does not match `val_t`. An array element of the wrong type SHALL be skipped with a warning,
-while a map entry of the wrong type SHALL fail decoding. A missing `serv` SHALL be logged as a
+`val` does not match `val_t`. An int, float or bool array element of the wrong type SHALL be skipped
+with a warning, while an int, float or bool map entry of the wrong type SHALL fail decoding. A missing `serv` SHALL be logged as a
 warning. Missing optional fields (`uid`, `corid`, `ctime`, `resp_to`, `src`, `topic`, `ver`) SHALL
 be silent; only a malformed one is logged.
 
