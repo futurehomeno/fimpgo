@@ -303,7 +303,7 @@ func TestMqttTransport_StopWhileStartWaitsForReader(t *testing.T) {
 }
 
 // stopWithBlockedReader blocks the reader of a started transport until release is closed and returns once a
-// background Stop has closed done; stopped closes when that Stop returns.
+// background Stop holds the lifecycle lock; stopped closes when that Stop returns.
 func stopWithBlockedReader(t *testing.T, clientID string, retryCount int) (*MqttTransport, net.Listener, chan struct{}, chan struct{}) {
 	t.Helper()
 
@@ -331,13 +331,15 @@ func stopWithBlockedReader(t *testing.T, clientID string, retryCount int) (*Mqtt
 		close(stopped)
 	}()
 
+	// Stop closes done before it takes the lock; a Start in between would see the Stop pending and give up.
 	require.Eventually(t, func() bool {
-		select {
-		case <-mqtt.connState.DoneC():
-			return true
-		default:
+		if mqtt.lifecycleMu.TryLock() {
+			mqtt.lifecycleMu.Unlock()
+
 			return false
 		}
+
+		return true
 	}, time.Second, 10*time.Millisecond)
 
 	return mqtt, ln, release, stopped
