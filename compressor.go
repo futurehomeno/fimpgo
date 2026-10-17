@@ -45,7 +45,8 @@ func (c *MsgCompressor) CompressBinMsg(msg []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	cp := c.compressionBuffer.Bytes()
+	// A copy, as the buffer is reused while paho may still be sending the returned payload.
+	cp := bytes.Clone(c.compressionBuffer.Bytes())
 	c.compressionBuffer.Reset()
 	return cp, nil
 }
