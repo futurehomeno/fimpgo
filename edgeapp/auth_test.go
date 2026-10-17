@@ -42,3 +42,16 @@ func TestFhOAuth2Client_LoadHubTokenFromCBReleasesOnSubscribeError(t *testing.T)
 	assert.Nil(t, client.mqt)
 	assert.Nil(t, client.syncClient)
 }
+
+func TestFhOAuth2Client_LoadHubTokenFromCBConcurrent(t *testing.T) {
+	client := NewFhOAuth2Client("p", "auth_concurrent_test", "")
+	client.SetParameters("tcp://127.0.0.1:11883", "", "", 0, 0, 1, time.Second)
+
+	errs := make(chan error, 2)
+	for range 2 {
+		go func() { errs <- client.LoadHubTokenFromCB() }()
+	}
+
+	assert.ErrorIs(t, <-errs, utils.ErrTimeout)
+	assert.ErrorIs(t, <-errs, utils.ErrTimeout)
+}

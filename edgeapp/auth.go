@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/futurehomeno/fimpgo"
@@ -53,6 +54,7 @@ type FhOAuth2Client struct {
 	retryDelay         time.Duration
 	cbRetry            int
 	cbRetryDelay       time.Duration
+	hubTokenLoad       sync.Mutex
 }
 
 func (oac *FhOAuth2Client) SetHubToken(hubToken string) {
@@ -144,6 +146,9 @@ func (oac *FhOAuth2Client) ConfigureFimpSyncClient() error {
 
 // LoadHubTokenFromCB - requests hub token from CloudBridge
 func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
+	oac.hubTokenLoad.Lock()
+	defer oac.hubTokenLoad.Unlock()
+
 	if oac.mqt == nil || oac.syncClient == nil {
 		if err := oac.ConfigureFimpSyncClient(); err != nil {
 			return fmt.Errorf("[edgeapp] Configure FIMP sync client err: %w", err)

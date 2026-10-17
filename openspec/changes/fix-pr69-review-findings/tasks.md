@@ -4,6 +4,8 @@
 - [x] 1.2 Drop the stopped transport and sync client in `LoadHubTokenFromCB`
 - [x] 1.3 Failing test: a failed subscribe also releases the transport
 - [x] 1.4 Release the transport on every return
+- [x] 1.5 Failing test: two concurrent `LoadHubTokenFromCB` calls both time out without a race or panic
+- [x] 1.6 Serialize `LoadHubTokenFromCB` with a mutex
 
 ## 2. Start with retry count 0
 
