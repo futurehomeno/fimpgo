@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -95,6 +96,9 @@ func TestMqttTransport_StartReturnsWhenPendingConnectSucceedsDuringBackoff(t *te
 }
 
 func TestMqttTransport_StartReconnectsWhenPendingConnectFailsDuringBackoff(t *testing.T) {
+	hook := logtest.NewGlobal()
+	defer hook.Reset()
+
 	ctx := t.Context()
 
 	var lc net.ListenConfig
@@ -125,6 +129,9 @@ func TestMqttTransport_StartReconnectsWhenPendingConnectFailsDuringBackoff(t *te
 
 	assert.ErrorIs(t, mqtt.Start(300*time.Millisecond), utils.ErrTimeout)
 	assert.EqualValues(t, 2, accepts.Load())
+	assert.True(t, slices.ContainsFunc(hook.AllEntries(), func(e *log.Entry) bool {
+		return strings.Contains(e.Message, "pending connect failed")
+	}))
 }
 
 func TestMqttTransport_LogsKeysOfUnparsablePayload(t *testing.T) {
