@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -160,7 +161,7 @@ func (kp *EcdsaKey) ImportJsonPrivateKey(jkey JsonEcKey) error {
 // hexToFixed left-pads to the P-256 coordinate size, since keys exported via big.Int dropped leading zeros.
 func hexToFixed(s string) ([]byte, bool) {
 	n, ok := big.NewInt(0).SetString(s, 16)
-	if !ok || n.BitLen() > 256 {
+	if !ok || strings.ContainsAny(s, "+-") || n.BitLen() > 256 {
 		return nil, false
 	}
 	return n.FillBytes(make([]byte, 32)), true

@@ -15,6 +15,12 @@ While a connect attempt is still in progress, the transport SHALL keep waiting o
 - **WHEN** the pending connect attempt succeeds while `Start` waits between attempts
 - **THEN** `Start` returns without waiting for the rest of the backoff
 
+#### Scenario: Pending attempt fails during the backoff wait
+
+- **WHEN** the pending connect attempt finishes with an error while `Start` waits between attempts
+- **THEN** `Start` waits out the rest of the backoff and then starts a new connect attempt for that round instead of counting the finished one again
+- **AND** the error of the failed pending attempt is logged
+
 #### Scenario: Broker unreachable for every attempt
 
 - **WHEN** all connect attempts time out
