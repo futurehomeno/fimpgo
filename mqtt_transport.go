@@ -124,7 +124,7 @@ func (mh *MqttTransport) connect(timeout time.Duration) error {
 	done := mh.connState.DoneC()
 	budget := time.Duration(mh.startFailRetryCount) * timeout
 
-	for i := 2; i <= mh.startFailRetryCount; i++ {
+	for i := 1; i < mh.startFailRetryCount; i++ {
 		budget += time.Duration(i*i) * time.Second
 	}
 

@@ -136,14 +136,14 @@ func TestMqttTransport_StartReconnectsWithoutConnectRetry(t *testing.T) {
 	mqtt := NewMqttTransportFromConnection(MQTT.NewClient(opts), 1, 1)
 	mqtt.SetStartAutoRetryCount(2)
 
-	assert.ErrorIs(t, mqtt.Start(300*time.Millisecond), os.ErrDeadlineExceeded)
+	assert.ErrorIs(t, mqtt.Start(1500*time.Millisecond), os.ErrDeadlineExceeded)
 	assert.EqualValues(t, 2, accepts.Load())
 	assert.True(t, slices.ContainsFunc(hook.AllEntries(), func(e *log.Entry) bool {
 		return strings.Contains(e.Message, "connect attempt 1 failed")
 	}))
 }
 
-func TestMqttTransport_StartReturnsLastConnectError(t *testing.T) {
+func TestMqttTransport_StartReturnsLastConnectErrorWithinBudget(t *testing.T) {
 	ln := listen(t, "127.0.0.1:0")
 
 	go func() {
@@ -164,9 +164,13 @@ func TestMqttTransport_StartReturnsLastConnectError(t *testing.T) {
 
 	opts := MQTT.NewClientOptions().AddBroker("tcp://" + ln.Addr().String()).SetProtocolVersion(4)
 	mqtt := NewMqttTransportFromConnection(MQTT.NewClient(opts), 1, 1)
-	mqtt.SetStartAutoRetryCount(1)
+	mqtt.SetStartAutoRetryCount(2)
 
+	start := time.Now()
+
+	// The budget is 2*300ms plus the 1s backoff between the two attempts.
 	assert.ErrorIs(t, mqtt.Start(300*time.Millisecond), packets.ErrorRefusedNotAuthorised)
+	assert.Less(t, time.Since(start), 3*time.Second)
 }
 
 func TestMqttTransport_StartConnectsAfterFailedStart(t *testing.T) {
