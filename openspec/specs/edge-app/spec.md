@@ -39,7 +39,7 @@ The OAuth client SHALL get the hub token from Cloud Bridge with `cmd.clbridge.ge
 (answered by `evt.clbridge.auth_token_report`), retrying 7 times with 30 s timeouts by default, and
 SHALL send token exchanges to the partner proxy for the prod or beta environment with that token as
 bearer. A request SHALL be retried 5 times, 60 s apart by default, on a transport error or a status of
-400 or above, and SHALL fail with the last error or status when every attempt fails.
+400 or above, and SHALL fail when every attempt fails.
 
 #### Scenario: Refresh token
 
@@ -49,7 +49,7 @@ bearer. A request SHALL be retried 5 times, 60 s apart by default, on a transpor
 #### Scenario: Proxy down
 
 - **WHEN** every attempt returns status 502
-- **THEN** the exchange fails with `server status code=502`
+- **THEN** the exchange fails after 5 attempts
 
 ### Requirement: Network readiness can be awaited
 

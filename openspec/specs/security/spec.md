@@ -48,8 +48,8 @@ the given public key, and return the original message.
 ### Requirement: The key store persists keys per user and device
 
 The key store SHALL hold serialized keys per user, device, key type and algorithm, add or replace
-them, and write the whole store to disk on each change, with mode 0600 for a private store and 0664
-otherwise. Looking up an ES256 key SHALL parse it from PEM once and reuse the parsed key.
+them, and write the whole store to disk on each change, creating the file with mode 0600 for a
+private store and 0664 otherwise.
 
 #### Scenario: Upsert
 
@@ -58,5 +58,5 @@ otherwise. Looking up an ES256 key SHALL parse it from PEM once and reuse the pa
 
 #### Scenario: Private store
 
-- **WHEN** a private store is saved
+- **WHEN** a private store is saved for the first time
 - **THEN** its file is readable only by its owner

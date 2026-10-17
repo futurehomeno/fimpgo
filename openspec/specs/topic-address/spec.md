@@ -67,12 +67,12 @@ prefix and FIMP topic.
 
 ### Requirement: Route matching follows MQTT wildcards
 
-A route SHALL match a topic segment by segment, `+` matching exactly one segment and `#` matching the
-rest of the topic, including nothing.
+A route SHALL match a topic segment by segment, a bare `+` matching exactly one segment and a bare
+`#` matching the rest of the topic, including nothing. Any other segment SHALL match only itself.
 
 #### Scenario: Single-level wildcard
 
-- **WHEN** route `pt:j1/mt:evt/rt:dev/rn:zigbee/ad:1/sv:+/ad:+` is matched against a zigbee device event
+- **WHEN** route `pt:j1/mt:evt/rt:dev/rn:zigbee/ad:1/+/+` is matched against a zigbee device event
 - **THEN** it matches
 
 #### Scenario: Different length

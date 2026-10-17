@@ -42,7 +42,8 @@ topic SHALL be ignored. Unsubscribe SHALL forget the topic.
 
 Publishing to an address SHALL encode the message as JSON for `j1` and as gzip-compressed JSON for
 `j1c1`, SHALL set the transport's default source when the message has none, and SHALL apply the
-global prefix. Publishing to an address with any other payload type SHALL fail. Publishing to a topic
+global prefix. Publishing to an address with any other payload type SHALL fail, except a synchronous
+publish, which SHALL warn and send JSON as `j1`. Publishing to a topic
 string SHALL compress when the topic's payload type is `j1c1`. A synchronous publish SHALL wait up to
 5 s for the broker and return a timeout error otherwise. Responding to a request SHALL publish to the
 request's response topic and fail when it has none.
@@ -66,16 +67,16 @@ request's response topic and fail when it has none.
 
 Each received message SHALL have its global prefix removed, its topic parsed and its payload decoded
 (decompressed for `j1c1`), then SHALL go to the message handler and to every registered channel whose
-filter accepts it. A channel filter SHALL match on topic route, service and interface, `*` matching
-any value; a filter function SHALL take precedence over it, and a channel without a filter SHALL get
-every message. A channel not read within the receive timeout (10 s by default) SHALL miss that
-message with a warning. A message with an unknown payload type or an unparsable topic or payload
-SHALL be dropped with a log line, and a panic while dispatching SHALL be logged and not stop
-delivery.
+filter accepts it. A channel filter SHALL match its topic as an MQTT route and its service and interface
+exactly, `*` matching any service or interface; a filter function SHALL take precedence over it,
+and a channel without a filter SHALL get every message. A channel not read within the receive
+timeout (10 s by default) SHALL miss that message with a warning. A message with an unknown payload
+type or an unparsable topic or payload SHALL be dropped with a log line, and a panic in a filter
+function SHALL be logged and count as no match.
 
 #### Scenario: Filtered channel
 
-- **WHEN** a channel filters on service `out_bin_switch` and interface `*`
+- **WHEN** a channel filters on topic `#`, service `out_bin_switch` and interface `*`
 - **THEN** it gets switch events and commands but not meter reports
 
 #### Scenario: Stuck consumer
@@ -83,17 +84,16 @@ delivery.
 - **WHEN** a registered channel is not read for longer than the receive timeout
 - **THEN** that message is skipped for it, a warning names the channel, and delivery continues
 
-### Requirement: A stuck receive queue stops the transport
+### Requirement: A stuck receive queue is reported
 
 Received messages SHALL be queued (100 by default) so the MQTT client is never blocked. A message
 arriving at a full queue SHALL be dropped with an error log. When more than 20 messages in a row are
-dropped while connected, the transport SHALL report `main msg queue stuck` to the error handler and
-stop.
+dropped while connected, the transport SHALL report `main msg queue stuck` to the error handler.
 
 #### Scenario: Consumer deadlocked
 
 - **WHEN** the message handler blocks and 21 more messages arrive after the queue filled
-- **THEN** the error handler gets `main msg queue stuck` and the transport stops
+- **THEN** the error handler gets `main msg queue stuck`
 
 ### Requirement: Stop ends delivery
 

@@ -25,14 +25,15 @@ global prefix SHALL address that site.
 
 ### Requirement: The site cache loads on demand
 
-A cached read SHALL serve from the cache, reloading it once when it holds no devices, things, rooms
-or areas, and SHALL return an empty-cache error when it is still empty. Loading the site SHALL fetch
-things, devices, rooms and areas, plus shortcuts, house, modes and services when app sync is enabled,
-retrying with a delay of 5 s × attempt.
+While the cache is enabled, a cached read SHALL serve from the cache, reloading it once when it holds
+no devices, things, rooms or areas, and SHALL return an empty-cache error when it is still empty.
+Loading the site SHALL fetch things, devices, rooms and areas, plus shortcuts, house, modes and
+services when app sync is enabled, retrying with a delay of 5 s × attempt. A successful load SHALL
+enable the cache and a failed one SHALL disable it.
 
 #### Scenario: Cold cache
 
-- **WHEN** a cached device list is asked before the site was loaded
+- **WHEN** the cache is enabled but empty and a cached device list is asked
 - **THEN** the site is loaded once and its devices are returned
 
 ### Requirement: Notifications keep the cache current

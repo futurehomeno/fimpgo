@@ -7,7 +7,7 @@ connections and shedding surplus ones.
 ## Requirements
 ### Requirement: Borrowing reuses an idle connection or opens one
 
-Borrowing SHALL hand out an idle, connected connection when there is one, and otherwise open a new
+Borrowing SHALL hand out the first idle connection it finds when that one is connected, and otherwise open a new
 connection from the template with client ID `<prefix>_<n>`. It SHALL fail when the pool already holds
 its maximum (20 by default) or the new connection cannot connect.
 

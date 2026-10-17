@@ -41,9 +41,11 @@ received from the wire and not unpacked SHALL be re-encoded unchanged.
 
 Decoding SHALL read `val` as the type named by `val_t`: `string`, `int`, `float`, `bool`, their
 `_array` and `_map` forms, `bin`, `object` (kept raw until the consumer unpacks it) and `null`. It
-SHALL fail when `type` is missing, when `val_t` names no known type, or when `val` does not match
-`val_t`. Missing `serv` or `val_t` SHALL be logged as a warning. Missing optional fields (`uid`,
-`corid`, `ctime`, `resp_to`, `src`, `topic`, `ver`) SHALL be silent; only a malformed one is logged.
+SHALL fail when `type` is missing, when `val_t` is missing or names none of those types, or when
+`val` does not match `val_t`. An array element of the wrong type SHALL be skipped with a warning,
+while a map entry of the wrong type SHALL fail decoding. A missing `serv` SHALL be logged as a
+warning. Missing optional fields (`uid`, `corid`, `ctime`, `resp_to`, `src`, `topic`, `ver`) SHALL
+be silent; only a malformed one is logged.
 
 #### Scenario: Int map
 
@@ -52,8 +54,13 @@ SHALL fail when `type` is missing, when `val_t` names no known type, or when `va
 
 #### Scenario: Unknown value type
 
-- **WHEN** a message with `val_t` `decimal` is decoded
+- **WHEN** a message with `val_t` `decimal`, or without `val_t`, is decoded
 - **THEN** decoding fails
+
+#### Scenario: Array with a stray element
+
+- **WHEN** a message with `val_t` `int_array` and `val` `["a", 1]` is decoded
+- **THEN** its value is `[1]`
 
 #### Scenario: Value does not match its type
 
@@ -84,8 +91,8 @@ float, bool or timestamp, reporting separately whether the key exists and whethe
 ### Requirement: Timestamps accept common RFC 3339 variants
 
 Parsing a creation time or a timestamp property SHALL accept RFC 3339 with or without fractional
-seconds, a zone offset with or without a colon, and a space instead of `T`. An unparsable timestamp
-SHALL yield the zero time.
+seconds and a zone offset with or without a colon, and the form with a space instead of `T` and a
+space before the zone offset. An unparsable timestamp SHALL yield the zero time.
 
 #### Scenario: Offset without colon
 
@@ -99,8 +106,7 @@ SHALL yield the zero time.
 
 ### Requirement: Compressed payloads round-trip
 
-A message SHALL compress to gzip and decompress back to an equal message, and concurrent
-compressions SHALL NOT corrupt each other.
+A message SHALL compress to gzip and decompress back to an equal message.
 
 #### Scenario: Round trip
 
