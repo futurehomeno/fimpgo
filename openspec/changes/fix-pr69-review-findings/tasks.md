@@ -12,5 +12,5 @@
 
 ## 3. Private key import
 
-- [x] 3.1 Failing test: after `ImportJsonPrivateKey`, `ImportX509PrivateKey` or `SetPrivateKey` the key verifies its own signature and exports its public key
-- [x] 3.2 `PublicKey()` falls back to the private key's public key
+- [x] 3.1 Failing test: after `ImportJsonPrivateKey`, `ImportX509PrivateKey` or `SetPrivateKey`, also over a generated key, the key verifies its own signature and exports its public key
+- [x] 3.2 Loading a private key clears the stored public key; `PublicKey()` falls back to the private key's public key

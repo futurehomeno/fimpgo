@@ -23,6 +23,9 @@ func TestEcdsaKey_JsonRoundTrip(t *testing.T) {
 	}
 
 	signer := NewEcdsaKey()
+	if err := signer.Generate(); err != nil {
+		t.Fatal("Generate err:", err)
+	}
 	if err := signer.ImportJsonPrivateKey(priv); err != nil {
 		t.Fatal("Import private err:", err)
 	}
@@ -118,6 +121,7 @@ func TestEcdsaKey_X509RoundTripAndAccessors(t *testing.T) {
 	assert.Equal(t, key.PrivateKey(), third.PrivateKey())
 
 	fromPem := NewEcdsaKey()
+	require.NoError(t, fromPem.Generate())
 	require.NoError(t, fromPem.ImportX509PrivateKey(priv))
 	for _, signer := range []*EcdsaKey{third, fromPem} {
 		sig, err := SignStringES256("msg", signer)

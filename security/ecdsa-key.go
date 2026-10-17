@@ -29,7 +29,7 @@ type EcdsaKey struct {
 }
 
 func (kp *EcdsaKey) SetPrivateKey(privateKey *ecdsa.PrivateKey) {
-	kp.privateKey = privateKey
+	kp.privateKey, kp.publicKey = privateKey, nil
 }
 
 func (kp *EcdsaKey) PublicKey() *ecdsa.PublicKey {
@@ -53,7 +53,7 @@ func (kp *EcdsaKey) Generate() error {
 	if err != nil {
 		return err
 	}
-	kp.publicKey = &kp.privateKey.PublicKey
+	kp.publicKey = nil
 	return nil
 }
 
@@ -136,7 +136,7 @@ func (kp *EcdsaKey) ImportX509PrivateKey(pemEncoded string) error {
 	if err != nil {
 		return err
 	}
-	kp.privateKey = privateKey
+	kp.privateKey, kp.publicKey = privateKey, nil
 	return nil
 }
 
@@ -163,7 +163,7 @@ func (kp *EcdsaKey) ImportJsonPrivateKey(jkey JsonEcKey) error {
 	if err != nil {
 		return err
 	}
-	kp.privateKey = priv
+	kp.privateKey, kp.publicKey = priv, nil
 	return nil
 }
 
