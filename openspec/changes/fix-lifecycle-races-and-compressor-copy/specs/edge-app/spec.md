@@ -17,3 +17,13 @@ Waiting for a state SHALL return once the state holds, including when it changes
 
 - **WHEN** the app state becomes `RUNNING` after a wait for `RUNNING` has read the old state but before it has subscribed
 - **THEN** the wait returns
+
+#### Scenario: State event dropped for a busy wait
+
+- **WHEN** the state reaches `RUNNING` but its event is dropped because the wait's buffer is full
+- **THEN** the wait still returns, after rechecking the state
+
+#### Scenario: Wait shares an id with a subscriber
+
+- **WHEN** a wait uses the same id as an existing subscriber
+- **THEN** that subscriber keeps receiving events after the wait returns

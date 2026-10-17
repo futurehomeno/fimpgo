@@ -58,6 +58,43 @@ func TestLifecycle_WaitForStateChangedWhileStarting(t *testing.T) {
 	}
 }
 
+func TestLifecycle_WaitForStateRechecksDroppedEvent(t *testing.T) {
+	lf := NewAppLifecycle()
+	returned := make(chan struct{})
+
+	go func() {
+		lf.WaitForState("test-1", SystemEventTypeState, AppStateRunning)
+		close(returned)
+	}()
+
+	require.Eventually(t, func() bool {
+		lf.busMux.Lock()
+		defer lf.busMux.Unlock()
+		return len(lf.systemEventBus) == 1
+	}, time.Second, time.Millisecond)
+
+	// Changes the state without an event, as when the wait's buffer was full.
+	lf.busMux.Lock()
+	lf.appState = AppStateRunning
+	lf.busMux.Unlock()
+
+	select {
+	case <-returned:
+	case <-time.After(3 * time.Second):
+		t.Fatal("wait missed the state change")
+	}
+}
+
+func TestLifecycle_WaitForStateKeepsSubscriber(t *testing.T) {
+	lf := NewAppLifecycle()
+	ch := lf.Subscribe("s", 1)
+
+	lf.WaitForState("s", SystemEventTypeState, AppStateStarting)
+	lf.SetConfigState(ConfigStateConfigured)
+
+	assert.Len(t, ch, 1)
+}
+
 func TestLifecycle_WaitForState(t *testing.T) {
 	lf := NewAppLifecycle()
 	lf.SetAppState(AppStateRunning, nil)

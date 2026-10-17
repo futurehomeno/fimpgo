@@ -2,7 +2,9 @@ package edgeapp
 
 import (
 	"sync"
+	"time"
 
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -235,22 +237,50 @@ func (al *Lifecycle) Unsubscribe(subId string) {
 
 // WaitForState blocks until target state is reached
 func (al *Lifecycle) WaitForState(subId string, stateType string, targetState State) {
-	log.Debugf("[edgeapp] Waiting for state=%s current state=%s", targetState, al.AppState())
+	// A unique id, so the wait never replaces or removes a subscriber using subId.
+	waitId := subId + "-wait-" + uuid.NewString()
 
 	// Subscribing first, so a change after the check below still arrives as an event.
-	ch := al.Subscribe(subId, 5)
-	defer al.Unsubscribe(subId)
+	ch := al.Subscribe(waitId, 5)
+	defer al.Unsubscribe(waitId)
 
-	if al.AppState() == targetState && stateType == SystemEventTypeState ||
-		al.ConfigState() == targetState && stateType == SystemEventTypeConfigState ||
-		al.AuthState() == targetState && stateType == SystemEventTypeAuthState ||
-		al.ConnectionState() == targetState && stateType == SystemEventTypeConnectionState {
+	current := al.state(stateType)
+	log.Debugf("[edgeapp] Waiting for %s=%s current=%s", stateType, targetState, current)
+	if current == targetState {
 		return
 	}
 
-	for evt := range ch {
-		if evt.Type == stateType && evt.State == targetState {
-			return
+	// Events to a busy listener are dropped, so the state is rechecked as well.
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case evt := <-ch:
+			if evt.Type == stateType && evt.State == targetState {
+				return
+			}
+		case <-ticker.C:
+			if al.state(stateType) == targetState {
+				return
+			}
 		}
 	}
+}
+
+func (al *Lifecycle) state(stateType string) State {
+	al.busMux.Lock()
+	defer al.busMux.Unlock()
+
+	switch stateType {
+	case SystemEventTypeState:
+		return al.appState
+	case SystemEventTypeConfigState:
+		return al.configState
+	case SystemEventTypeAuthState:
+		return al.authState
+	case SystemEventTypeConnectionState:
+		return al.connectionState
+	}
+	return ""
 }
