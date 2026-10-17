@@ -92,6 +92,15 @@ func NewMqttTransportFromConfigs(cfg MqttConnectionConfigs, errHandler func(erro
 }
 
 func (mh *MqttTransport) Start(timeout time.Duration) error {
+	if done := mh.connState.DoneC(); done != nil {
+		select {
+		case <-done:
+		default:
+			// Already started: Init would replace the done channel the running reader waits on.
+			return mh.connState.WaitConnected(timeout)
+		}
+	}
+
 	mh.connState.Init()
 
 	err := mh.connect(timeout)

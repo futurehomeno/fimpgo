@@ -209,6 +209,29 @@ func TestMqttTransport_StartConnectsAfterFailedStart(t *testing.T) {
 	require.NoError(t, mqtt.Start(2*time.Second))
 }
 
+func TestMqttTransport_StartWhileStarted(t *testing.T) {
+	ln := listen(t, "127.0.0.1:0")
+
+	go serveBroker(ln, 0)
+
+	mqtt := NewMqttTransport("tcp://"+ln.Addr().String(), "test_start_twice", "", "", true, 1, 1, nil)
+	mqtt.SetStartAutoRetryCount(1)
+
+	defer mqtt.Stop()
+
+	require.NoError(t, mqtt.Start(time.Second))
+
+	returned := make(chan error, 1)
+	go func() { returned <- mqtt.Start(time.Second) }()
+
+	select {
+	case err := <-returned:
+		require.NoError(t, err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("second Start hung")
+	}
+}
+
 func TestMqttTransport_FailedStartStaysDisconnected(t *testing.T) {
 	ln := listen(t, "127.0.0.1:0")
 
