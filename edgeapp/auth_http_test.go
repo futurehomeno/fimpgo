@@ -70,13 +70,17 @@ func TestFhOAuth2Client_ExchangeRefreshToken_Success(t *testing.T) {
 
 func TestFhOAuth2Client_ExchangeCodeForTokens(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/auth-code", r.URL.Path)
+		var req OAuth2AuthCodeProxyRequest
+		assert.NoError(t, json.NewDecoder(r.Body).Decode(&req))
+		assert.Equal(t, OAuth2AuthCodeProxyRequest{AuthCode: "code", PartnerCode: "partner"}, req)
 		_, _ = w.Write([]byte(`{"access_token":"at"}`))
 	}))
 	defer srv.Close()
 
 	c := newTestClient(srv.URL)
-	c.SetAuthCodeApiUrl(srv.URL)
-	c.SetRefreshTokenApiUrl(srv.URL)
+	c.SetAuthCodeApiUrl(srv.URL + "/auth-code")
+	c.SetRefreshTokenApiUrl(srv.URL + "/refresh")
 	resp, err := c.ExchangeCodeForTokens("code")
 	require.NoError(t, err)
 	assert.Equal(t, "at", resp.AccessToken)

@@ -208,7 +208,7 @@ func (oac *FhOAuth2Client) loadHubTokenFromCB() error {
 // ExchangeCodeForTokens - exchanging code for access token
 func (oac *FhOAuth2Client) ExchangeCodeForTokens(code string) (*OAuth2TokenResponse, error) {
 	req := OAuth2AuthCodeProxyRequest{AuthCode: code, PartnerCode: oac.partnerName}
-	return oac.postMsg(req, oac.refreshTokenApiUrl)
+	return oac.postMsg(req, oac.authCodeApiUrl)
 }
 
 // ExchangeRefreshToken - exchange refresh token for new access
