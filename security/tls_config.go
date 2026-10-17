@@ -46,7 +46,7 @@ func certPool(certFile string) (*x509.CertPool, error) {
 // Cert dir should contains all CA root certificates .
 // IsAws flag controls AWS specific TLS protocol switch.
 func TLSConfig(privateKeyFileName, certFileName, certDir string, isAWS bool) (*tls.Config, error) {
-	config := &tls.Config{InsecureSkipVerify: false} //nolint:gosec
+	config := &tls.Config{MinVersion: tls.VersionTLS12}
 
 	if isAWS {
 		config.NextProtos = []string{"x-amzn-mqtt-ca"}
