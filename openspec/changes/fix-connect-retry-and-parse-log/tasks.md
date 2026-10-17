@@ -23,6 +23,8 @@
 - [x] 1.21 Failing test: two attempts refused with `not Authorized` end Start within count times the timeout plus the one backoff between them
 - [x] 1.22 Sum the backoffs between the attempts (1² to (count-1)²) into the budget
 - [x] 1.23 Document that Start waits up to one more timeout for the subscriptions after connecting within the budget (no new test: behaviour unchanged, covered by TestMqttTransport_FailedStartStaysDisconnected)
+- [x] 1.24 Failing test: Start with a retry count of 100000 connects to a reachable broker instead of timing out on an overflowed budget
+- [x] 1.25 Cap the retry count at 1000 when sizing the budget
 
 ## 2. Parse error log
 

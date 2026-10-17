@@ -2,7 +2,7 @@
 
 ### Requirement: Start waits on a pending connect attempt
 
-While a connect attempt is still in progress, the transport SHALL keep waiting on it rather than starting another one; with paho's connect retry on, that single attempt does the retrying. It SHALL start a new attempt, after a growing backoff, only once the previous attempt has finished with an error. `Start` SHALL give up connecting after an overall budget of the start retry count times the timeout plus the backoffs between those attempts; once connected, it SHALL wait up to one more timeout for the subscriptions to be restored. When `Start` fails, it SHALL stop the transport: the pending attempt is cancelled and the transport reports disconnected even if that attempt completes afterwards.
+While a connect attempt is still in progress, the transport SHALL keep waiting on it rather than starting another one; with paho's connect retry on, that single attempt does the retrying. It SHALL start a new attempt, after a growing backoff, only once the previous attempt has finished with an error. `Start` SHALL give up connecting after an overall budget of the start retry count times the timeout plus the backoffs between those attempts, with the count capped at 1000; once connected, it SHALL wait up to one more timeout for the subscriptions to be restored. When `Start` fails, it SHALL stop the transport: the pending attempt is cancelled and the transport reports disconnected even if that attempt completes afterwards.
 
 #### Scenario: Broker unreachable for longer than one timeout
 
@@ -31,6 +31,11 @@ While a connect attempt is still in progress, the transport SHALL keep waiting o
 
 - **WHEN** the budget runs out during the backoff after an attempt failed, e.g. with `not Authorized`
 - **THEN** `Start` returns that attempt's error rather than a timeout error
+
+#### Scenario: Very large retry count
+
+- **WHEN** the start retry count is far above 1000, e.g. 100000, and the broker is reachable
+- **THEN** `Start` connects without error rather than failing on an overflowed budget
 
 #### Scenario: Subscriptions not restored in time
 

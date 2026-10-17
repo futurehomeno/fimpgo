@@ -173,6 +173,19 @@ func TestMqttTransport_StartReturnsLastConnectErrorWithinBudget(t *testing.T) {
 	assert.Less(t, time.Since(start), 3*time.Second)
 }
 
+func TestMqttTransport_StartWithHugeRetryCount(t *testing.T) {
+	ln := listen(t, "127.0.0.1:0")
+
+	go serveBroker(ln, 0)
+
+	mqtt := NewMqttTransport("tcp://"+ln.Addr().String(), "test_huge_retry_count", "", "", true, 1, 1, nil)
+	mqtt.SetStartAutoRetryCount(100000)
+
+	defer mqtt.Stop()
+
+	require.NoError(t, mqtt.Start(time.Second))
+}
+
 func TestMqttTransport_StartConnectsAfterFailedStart(t *testing.T) {
 	ln := listen(t, "127.0.0.1:0")
 	addr := ln.Addr().String()

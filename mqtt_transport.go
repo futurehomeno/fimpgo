@@ -122,9 +122,11 @@ func (mh *MqttTransport) Start(timeout time.Duration) error {
 // (with connect retry it keeps a single attempt pending until it succeeds).
 func (mh *MqttTransport) connect(timeout time.Duration) error {
 	done := mh.connState.DoneC()
-	budget := time.Duration(mh.startFailRetryCount) * timeout
+	// Beyond ~3000 the backoff sum overflows time.Duration; 1000 already gives a budget of years.
+	count := min(mh.startFailRetryCount, 1000)
+	budget := time.Duration(count) * timeout
 
-	for i := 1; i < mh.startFailRetryCount; i++ {
+	for i := 1; i < count; i++ {
 		budget += time.Duration(i*i) * time.Second
 	}
 
@@ -285,7 +287,7 @@ func (mh *MqttTransport) ensureDefaultSource(message *FimpMessage) {
 
 // SetStartAutoRetryCount sizes the Start budget: count times the Start timeout plus the backoffs between count attempts.
 // Start connects again whenever an attempt fails within that budget, then waits up to one more timeout for the
-// subscriptions to be restored. Default value is 10.
+// subscriptions to be restored. Default value is 10, counts above 1000 count as 1000.
 func (mh *MqttTransport) SetStartAutoRetryCount(count int) {
 	mh.startFailRetryCount = count
 }
