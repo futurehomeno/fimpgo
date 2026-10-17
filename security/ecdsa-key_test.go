@@ -23,6 +23,9 @@ func TestEcdsaKey_JsonRoundTrip(t *testing.T) {
 	}
 
 	signer := NewEcdsaKey()
+	if err := signer.Generate(); err != nil {
+		t.Fatal("Generate err:", err)
+	}
 	if err := signer.ImportJsonPrivateKey(priv); err != nil {
 		t.Fatal("Import private err:", err)
 	}
@@ -37,6 +40,9 @@ func TestEcdsaKey_JsonRoundTrip(t *testing.T) {
 	}
 	if !VerifyStringES256("msg", sig, verifier) {
 		t.Fatal("Verification failed")
+	}
+	if !VerifyStringES256("msg", sig, signer) {
+		t.Fatal("Verification with the imported private key failed")
 	}
 	if err := verifier.ImportJsonPublicKey(JsonEcKey{X: "01", Y: "02"}); err == nil {
 		t.Fatal("expected error for point off the curve")
@@ -113,6 +119,19 @@ func TestEcdsaKey_X509RoundTripAndAccessors(t *testing.T) {
 	third := NewEcdsaKey()
 	third.SetPrivateKey(key.PrivateKey())
 	assert.Equal(t, key.PrivateKey(), third.PrivateKey())
+
+	fromPem := NewEcdsaKey()
+	require.NoError(t, fromPem.Generate())
+	require.NoError(t, fromPem.ImportX509PrivateKey(priv))
+	for _, signer := range []*EcdsaKey{third, fromPem} {
+		sig, err := SignStringES256("msg", signer)
+		require.NoError(t, err)
+		assert.True(t, VerifyStringES256("msg", sig, signer))
+		_, signerPub := signer.ExportX509EncodedKeys()
+		assert.Equal(t, pub, signerPub)
+		_, _, err = signer.ExportJsonEncodedKeys()
+		assert.NoError(t, err)
+	}
 
 	assert.Error(t, other.ImportX509PublicKey("junk"))
 	assert.Error(t, other.ImportX509PublicKey(string(pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: []byte{1}}))))
