@@ -93,88 +93,71 @@ func NewMqttTransportFromConfigs(cfg MqttConnectionConfigs, errHandler func(erro
 
 func (mh *MqttTransport) Start(timeout time.Duration) error {
 	mh.connState.Init()
-	done := mh.connState.DoneC()
 
-	// try to connect with retries
-	err := func() (ret error) {
-		var token MQTT.Token
-
-		for i := 1; i <= mh.startFailRetryCount; i++ {
-			if i > 1 {
-				var pending <-chan struct{}
-				if token != nil {
-					pending = token.Done()
-				}
-
-				backoff := time.After(time.Duration(i*i) * time.Second)
-
-				select {
-				case <-backoff:
-				case <-pending:
-					// paho fails the token before resetting its status, so an immediate Connect would be rejected.
-					if token.Error() != nil {
-						select {
-						case <-backoff:
-						case <-done:
-							return utils.ErrConnectionLost
-						}
-					}
-				case <-done:
-					return utils.ErrConnectionLost
-				}
-			}
-
-			if token != nil && token.Error() != nil {
-				log.Warnf("[fimpgo] MQTT pending connect failed err: %v", token.Error())
-				token = nil
-			}
-
-			// With connect retry enabled paho keeps a timed-out attempt running and rejects a second Connect.
-			if token == nil {
-				token = mh.client.Connect()
-			}
-
-			select {
-			case <-token.Done():
-				if ret = token.Error(); ret == nil {
-					return nil
-				}
-
-				token = nil
-			case <-time.After(timeout):
-				ret = utils.ErrTimeout
-			case <-done:
-				return utils.ErrConnectionLost
-			}
-
-			log.Warnf("[fimpgo] MQTT connect failed %d/%d err: %v", i, mh.startFailRetryCount, ret)
-		}
-
-		if token != nil {
-			mh.client.Disconnect(0)
-		}
-
-		return ret
-	}()
+	err := mh.connect(timeout)
+	if err == nil {
+		err = mh.connState.WaitConnected(timeout)
+	}
 
 	if err != nil {
+		// Stop also cancels a still pending paho attempt, which would otherwise connect with nobody reading messages.
+		mh.Stop()
+
 		return err
 	}
 
-	ret := mh.connState.WaitConnected(timeout)
+	mh.incMsgsWg = sync.WaitGroup{}
+	mh.incMsgsWg.Add(1)
 
-	if ret == nil {
-		mh.incMsgsWg = sync.WaitGroup{}
-		mh.incMsgsWg.Add(1)
+	var started sync.WaitGroup
+	started.Add(1)
 
-		var started sync.WaitGroup
-		started.Add(1)
+	go mh.handleIncomingMessages(&started)
+	started.Wait()
 
-		go mh.handleIncomingMessages(&started)
-		started.Wait()
+	return nil
+}
+
+// connect re-connects only after an attempt has finished, as paho rejects Connect while one is pending
+// (with connect retry it keeps a single attempt pending until it succeeds).
+func (mh *MqttTransport) connect(timeout time.Duration) error {
+	done := mh.connState.DoneC()
+	// Beyond ~3000 the backoff sum overflows time.Duration; 1000 already gives a budget of years.
+	count := min(mh.startFailRetryCount, 1000)
+	budget := time.Duration(count) * timeout
+
+	for i := 1; i < count; i++ {
+		budget += time.Duration(i*i) * time.Second
 	}
 
-	return ret
+	deadline := time.After(budget)
+
+	for i := 1; ; i++ {
+		token := mh.client.Connect()
+
+		select {
+		case <-token.Done():
+		case <-deadline:
+			return utils.ErrTimeout
+		case <-done:
+			return utils.ErrConnectionLost
+		}
+
+		err := token.Error()
+		if err == nil {
+			return nil
+		}
+
+		log.Warnf("[fimpgo] MQTT connect attempt %d failed err: %v", i, err)
+
+		select {
+		case <-time.After(time.Duration(i*i) * time.Second):
+		case <-deadline:
+			return err
+		case <-done:
+			return utils.ErrConnectionLost
+		}
+	}
 }
 
 func (mh *MqttTransport) IsConnected() bool {
@@ -302,7 +285,9 @@ func (mh *MqttTransport) ensureDefaultSource(message *FimpMessage) {
 	message.Source = mh.defaultSource
 }
 
-// SetStartAutoRetryCount Set number of retries transport will attempt on startup . Default value is 10
+// SetStartAutoRetryCount sizes the Start budget: count times the Start timeout plus the backoffs between count attempts.
+// Start connects again whenever an attempt fails within that budget, then waits up to one more timeout for the
+// subscriptions to be restored. Default value is 10, counts above 1000 count as 1000.
 func (mh *MqttTransport) SetStartAutoRetryCount(count int) {
 	mh.startFailRetryCount = count
 }
@@ -370,6 +355,8 @@ func onConnectionNotifEvt(client MQTT.Client, _type MQTT.ConnectionNotification)
 }
 
 func (mh *MqttTransport) onConnect(client MQTT.Client) {
+	done := mh.connState.DoneC()
+
 	mh.subscribeLock.Lock()
 	defer mh.subscribeLock.Unlock()
 
@@ -382,7 +369,7 @@ func (mh *MqttTransport) onConnect(client MQTT.Client) {
 		}
 	}
 
-	mh.connState.OnConnect()
+	mh.connState.OnConnect(done)
 }
 
 // onMessage is a message handler registered with MQTT client.

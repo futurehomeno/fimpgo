@@ -125,7 +125,7 @@ func TestMqttTransport_OfflineSubscribeErrors(t *testing.T) {
 func TestMqttTransport_ConnectionLostHandler(t *testing.T) {
 	mqtt := NewMqttTransport(covBroker, "cov_lost", "", "", true, 1, 1, nil)
 	mqtt.connState.Init()
-	mqtt.connState.OnConnect()
+	mqtt.connState.OnConnect(mqtt.connState.DoneC())
 	require.True(t, mqtt.IsConnected())
 
 	mqtt.onConnectionLost(mqtt.client, errors.New("boom"))
@@ -154,7 +154,7 @@ func TestMqttTransport_QueueOverflowStopsTransport(t *testing.T) {
 
 	assert.NoError(t, reported)
 
-	mqtt.connState.OnConnect()
+	mqtt.connState.OnConnect(mqtt.connState.DoneC())
 	mqtt.onMessage(nil, msg)
 
 	assert.EqualError(t, reported, "main msg queue stuck")

@@ -7,9 +7,11 @@ Two transport problems show up in hub logs:
 
 ## What Changes
 
-- `Start` keeps waiting on a connect attempt that is still pending, and starts a new one only after the previous attempt has finished with an error. When all attempts are used up, it abandons the pending attempt, so the next `Start` begins clean.
+- `Start` keeps waiting on a connect attempt that is still pending, and starts a new one only after the previous attempt has finished with an error. When its budget runs out, or it fails for any other reason, it stops the transport, cancelling the pending attempt, so a late connection is not reported as up.
 - A payload that fails to parse is logged with its length and its top-level JSON keys (no values).
+- Field parse errors drop the value jsonparser appends (`Value is not a number: <val>`); wrong-typed optional fields log at Debug.
 
 ## Impact
 
 - `mqtt_transport.go`: `Start`, incoming-payload error log.
+- `message.go`: `NewMessageFromBytes` field parse errors and logs.

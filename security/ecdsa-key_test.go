@@ -50,6 +50,17 @@ func TestEcdsaKey_JsonRoundTrip(t *testing.T) {
 	if err := signer.ImportJsonPrivateKey(JsonEcKey{D: "+1"}); err == nil {
 		t.Fatal("expected error for plus-signed scalar")
 	}
+	if err := signer.ImportJsonPrivateKey(JsonEcKey{D: "0"}); err == nil {
+		t.Fatal("expected error for zero scalar")
+	}
+
+	sig, err = SignStringES256("msg", signer)
+	if err != nil {
+		t.Fatal("Signing after failed import err:", err)
+	}
+	if !VerifyStringES256("msg", sig, verifier) {
+		t.Fatal("Verification after failed import failed")
+	}
 }
 
 func TestEcdsaKey_FailedX509ImportKeepsKey(t *testing.T) {

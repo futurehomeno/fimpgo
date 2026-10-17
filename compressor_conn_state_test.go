@@ -42,7 +42,7 @@ func TestConnStateT(t *testing.T) {
 	c.Init()
 	assert.ErrorIs(t, c.WaitConnected(time.Millisecond), utils.ErrTimeout)
 
-	c.OnConnect()
+	c.OnConnect(c.DoneC())
 	assert.True(t, c.IsConnected())
 	assert.NoError(t, c.WaitConnected(time.Second))
 
