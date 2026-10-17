@@ -34,3 +34,10 @@
 - [x] 2.4 Read keys from the decompressed payload; quote and bound them
 - [x] 2.5 Failing test: a wrong-typed value appears neither in the transport error line nor in NewMessageFromBytes errors and logs; wrong-typed optional fields log at Debug
 - [x] 2.6 Strip jsonparser's appended value from field parse errors; log optional-field errors at Debug
+- [x] 2.7 Failing test: payloadKeys returns a 100-byte key cut to 64 bytes
+- [x] 2.8 Cut each key before copying it, not only in the log format
+
+## 3. Spec
+
+- [x] 3.1 Modify the baseline Start retry requirement instead of adding a second one that contradicts it (no test: spec only)
+- [x] 3.2 State which error Start returns when the budget runs out during a backoff and while an attempt is pending (no test: spec only, matches `connect`)

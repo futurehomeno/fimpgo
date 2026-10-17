@@ -1,8 +1,18 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
-### Requirement: Start waits on a pending connect attempt
+### Requirement: Start retries the connection with growing backoff
 
-While a connect attempt is still in progress, the transport SHALL keep waiting on it rather than starting another one; with paho's connect retry on, that single attempt does the retrying. It SHALL start a new attempt, after a growing backoff, only once the previous attempt has finished with an error. `Start` SHALL give up connecting after an overall budget of the start retry count times the timeout plus the backoffs between those attempts, with the count capped at 1000; once connected, it SHALL wait up to one more timeout for the subscriptions to be restored. When `Start` fails, it SHALL stop the transport: the pending attempt is cancelled and the transport reports disconnected even if that attempt completes afterwards.
+While a connect attempt is still in progress, the transport SHALL keep waiting on it rather than starting another one; with paho's connect retry on, that single attempt does the retrying. It SHALL start a new attempt only once the previous attempt `n` has finished with an error, after a backoff of `n²` seconds. `Start` SHALL give up connecting after an overall budget of the start retry count (10 by default, capped at 1000) times the timeout plus the backoffs between those attempts, so the count sizes the budget rather than limiting the number of attempts; once connected, it SHALL wait up to one more timeout for the subscriptions to be restored. When the budget runs out during the backoff after a failed attempt it SHALL return that attempt's error, and while an attempt is pending a timeout error, and when the transport is stopped meanwhile it SHALL return a connection-lost error. When `Start` fails, it SHALL stop the transport: the pending attempt is cancelled and the transport reports disconnected even if that attempt completes afterwards. Once connected the client SHALL reconnect by itself after a lost connection.
+
+#### Scenario: Broker comes up late
+
+- **WHEN** the broker accepts connections only from the second attempt
+- **THEN** Start returns without error, at most 4 s of backoff later
+
+#### Scenario: Stopped while connecting
+
+- **WHEN** the transport is stopped while Start waits between attempts
+- **THEN** Start returns a connection-lost error
 
 #### Scenario: Broker unreachable for longer than one timeout
 
@@ -62,9 +72,11 @@ While a connect attempt is still in progress, the transport SHALL keep waiting o
 - **WHEN** `Start` is called again while paho is still winding down the attempt cancelled by a failed `Start`
 - **THEN** `Start` retries after the backoff and connects once the broker is reachable
 
+## ADDED Requirements
+
 ### Requirement: Unparsable payloads are diagnosable
 
-When an incoming payload cannot be decoded as a FIMP message, the transport SHALL log the topic, the payload length and the payload's top-level JSON keys, without logging any values, also not inside the error text. Keys SHALL be read from the decompressed payload, logged quoted, and bounded to 16 keys of at most 64 characters each.
+When an incoming payload cannot be decoded as a FIMP message, the transport SHALL log the topic, the payload length and the payload's top-level JSON keys, without logging any values, also not inside the error text. Keys SHALL be read from the decompressed payload, logged quoted, and bounded to 16 keys of at most 64 bytes each, cut before they are copied.
 
 #### Scenario: Payload without a value type
 
