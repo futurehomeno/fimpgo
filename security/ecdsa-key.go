@@ -161,6 +161,7 @@ func (kp *EcdsaKey) ImportJsonPrivateKey(jkey JsonEcKey) error {
 		return err
 	}
 	kp.privateKey = priv
+	kp.publicKey = &priv.PublicKey
 	return nil
 }
 

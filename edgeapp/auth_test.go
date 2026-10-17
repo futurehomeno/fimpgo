@@ -1,6 +1,13 @@
 package edgeapp
 
-import "testing"
+import (
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/futurehomeno/fimpgo/utils"
+)
 
 // TODO: these tests require a running FH broker on cube.local address
 func TestFhOAuth2Client_ExchangeRefreshToken(t *testing.T) {
@@ -17,4 +24,12 @@ func TestFhOAuth2Client_ExchangeRefreshToken(t *testing.T) {
 		t.Error("Can't fetch token", err)
 		t.FailNow()
 	}
+}
+
+func TestFhOAuth2Client_LoadHubTokenFromCBAgain(t *testing.T) {
+	client := NewFhOAuth2Client("p", "auth_reload_test", "")
+	client.SetParameters("tcp://127.0.0.1:11883", "", "", 0, 0, 1, time.Second)
+
+	assert.ErrorIs(t, client.LoadHubTokenFromCB(), utils.ErrTimeout)
+	assert.ErrorIs(t, client.LoadHubTokenFromCB(), utils.ErrTimeout)
 }

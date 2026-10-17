@@ -169,6 +169,7 @@ func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
 
 	oac.syncClient.Stop()
 	oac.mqt.Stop()
+	oac.mqt, oac.syncClient = nil, nil
 	if err != nil {
 		return err
 	}

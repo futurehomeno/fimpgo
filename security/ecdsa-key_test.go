@@ -38,6 +38,9 @@ func TestEcdsaKey_JsonRoundTrip(t *testing.T) {
 	if !VerifyStringES256("msg", sig, verifier) {
 		t.Fatal("Verification failed")
 	}
+	if !VerifyStringES256("msg", sig, signer) {
+		t.Fatal("Verification with the imported private key failed")
+	}
 	if err := verifier.ImportJsonPublicKey(JsonEcKey{X: "01", Y: "02"}); err == nil {
 		t.Fatal("expected error for point off the curve")
 	}
