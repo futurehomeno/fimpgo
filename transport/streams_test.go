@@ -20,6 +20,17 @@ func decodeBatch(t *testing.T, b []byte) []fimpgo.FimpMessage {
 	return msgs
 }
 
+func recvBatch(t *testing.T, sink chan []byte) []fimpgo.FimpMessage {
+	t.Helper()
+	select {
+	case b := <-sink:
+		return decodeBatch(t, b)
+	case <-time.After(2 * time.Second):
+		t.Fatal("no batch flushed")
+		return nil
+	}
+}
+
 func TestNewBufferedStream_InvalidArgs(t *testing.T) {
 	assert.Nil(t, NewBufferedStream(0, time.Second, false))
 	assert.Nil(t, NewBufferedStream(1, 0, false))
@@ -48,12 +59,7 @@ func TestBufferedStream_FlushOnInterval(t *testing.T) {
 	sink := su.ConfigureChanelSink(1)
 	su.EnqueueMessage("t", fimpgo.NewStringMessage("evt.a.b", "s", "v", nil, nil, nil))
 
-	select {
-	case b := <-sink:
-		assert.Len(t, decodeBatch(t, b), 1)
-	case <-time.After(2 * time.Second):
-		t.Fatal("interval flush did not happen")
-	}
+	assert.Len(t, recvBatch(t, sink), 1)
 }
 
 func TestBufferedStream_FileSink(t *testing.T) {
@@ -105,7 +111,7 @@ func TestBufferedStream_ObjectValueAndSource(t *testing.T) {
 	src <- &fimpgo.Message{Topic: "pt:j1/mt:evt/x", Payload: obj}
 	close(src)
 
-	msgs := decodeBatch(t, <-sink)
+	msgs := recvBatch(t, sink)
 	require.Len(t, msgs, 1)
 	assert.Equal(t, "/x", msgs[0].Topic)
 	assert.Equal(t, map[string]any{"k": "v"}, msgs[0].Value)

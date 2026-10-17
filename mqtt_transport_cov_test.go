@@ -147,6 +147,7 @@ func TestMqttTransport_QueueOverflowStopsTransport(t *testing.T) {
 
 	msg := fakeMessage{topic: "t"}
 
+	// onMessage stops the transport after more than 20 consecutive overflows, but only while connected.
 	for range 22 {
 		mqtt.onMessage(nil, msg)
 	}
