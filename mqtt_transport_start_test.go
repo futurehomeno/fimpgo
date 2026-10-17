@@ -127,8 +127,12 @@ func TestMqttTransport_StartReconnectsWhenPendingConnectFailsDuringBackoff(t *te
 	mqtt := NewMqttTransportFromConnection(MQTT.NewClient(opts), 1, 1)
 	mqtt.SetStartAutoRetryCount(2)
 
+	start := time.Now()
+
 	assert.ErrorIs(t, mqtt.Start(300*time.Millisecond), utils.ErrTimeout)
 	assert.EqualValues(t, 2, accepts.Load())
+	// Reconnecting right after the failure would race paho's status reset and skip the backoff.
+	assert.GreaterOrEqual(t, time.Since(start), 4*time.Second)
 	assert.True(t, slices.ContainsFunc(hook.AllEntries(), func(e *log.Entry) bool {
 		return strings.Contains(e.Message, "pending connect failed")
 	}))

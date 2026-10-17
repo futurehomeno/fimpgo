@@ -8,6 +8,8 @@
 - [x] 1.6 Drop a failed pending attempt in the backoff wait so the round connects again
 - [x] 1.7 Failing test: the failed pending attempt's error is logged
 - [x] 1.8 Check for a failed pending attempt before reusing it, whichever wait branch fired, and log its error
+- [x] 1.9 Failing test: a failed pending attempt does not cut the backoff short
+- [x] 1.10 Keep waiting out the backoff after the pending attempt fails
 
 ## 2. Parse error log
 
