@@ -6,11 +6,12 @@
 
 ## What Changes
 
-- `Start` and `Stop` are serialized by one mutex. `Stop` closes the done channel before it takes the mutex, so a `Start` still connecting gives up at once instead of holding `Stop` for its whole retry budget.
+- `Start` and `Stop` are serialized by one mutex. `Stop` closes the done channel before it takes the mutex, so a `Start` still connecting gives up at once instead of holding `Stop` for its whole retry budget. `Stop` also counts itself pending, so a `Start` that took the mutex before `Stop` closed done does not connect.
+- `Start` on an already started transport waits for the connection without holding the mutex.
 - `Start` waits for the reader of a stopped session to exit before it starts a new one.
 - `Stop` disconnects with a 250 ms quiesce. paho returns as soon as its disconnect has finished, which normally takes a few milliseconds.
 
 ## Impact
 
 - `mqtt_transport.go`: `Start`, `Stop`.
-- `mqtt_transport_defs.go`: one mutex field.
+- `mqtt_transport_defs.go`: a mutex and a pending-stop counter.

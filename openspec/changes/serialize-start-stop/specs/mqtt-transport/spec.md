@@ -30,8 +30,8 @@ Concurrent `Start` and `Stop` calls on one transport SHALL take effect one after
 
 ### Requirement: Stop ends delivery
 
-Stop SHALL disconnect immediately and return only after the MQTT client has left the connected state and the
-receive loop has exited, so no handler runs after Stop returns. A stopped transport SHALL be startable again.
+Stop SHALL start disconnecting at once, wait up to 250 ms for the disconnect to finish, and return only after
+the receive loop has exited, so no handler runs after Stop returns. A stopped transport SHALL be startable again.
 
 #### Scenario: Restart
 
