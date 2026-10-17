@@ -3,7 +3,6 @@ package fimpgo
 import (
 	"context"
 	"fmt"
-	"io"
 	"net"
 	"strings"
 	"sync/atomic"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
+	"github.com/eclipse/paho.mqtt.golang/packets"
 	log "github.com/sirupsen/logrus"
 	logtest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -32,6 +32,49 @@ func (m fakeMessage) MessageID() uint16 { return 0 }
 func (m fakeMessage) Payload() []byte   { return m.payload }
 func (m fakeMessage) Ack()              {}
 
+func listen(t *testing.T, addr string) net.Listener {
+	t.Helper()
+
+	var lc net.ListenConfig
+
+	ln, err := lc.Listen(t.Context(), "tcp", addr)
+	require.NoError(t, err)
+
+	t.Cleanup(func() { _ = ln.Close() })
+
+	return ln
+}
+
+func serveBroker(ln net.Listener, subackDelay time.Duration) {
+	for {
+		c, err := ln.Accept()
+		if err != nil {
+			return
+		}
+
+		go func() {
+			defer func() { _ = c.Close() }()
+
+			for {
+				p, err := packets.ReadPacket(c)
+				if err != nil {
+					return
+				}
+
+				switch p := p.(type) {
+				case *packets.ConnectPacket:
+					_ = packets.NewControlPacket(packets.Connack).Write(c)
+				case *packets.SubscribePacket:
+					time.Sleep(subackDelay)
+
+					ack := packets.SubackPacket{FixedHeader: packets.FixedHeader{MessageType: packets.Suback}, MessageID: p.MessageID, ReturnCodes: p.Qoss}
+					_ = ack.Write(c)
+				}
+			}
+		}()
+	}
+}
+
 func TestMqttTransport_StartWaitsOnPendingConnect(t *testing.T) {
 	hook := logtest.NewGlobal()
 	defer hook.Reset()
@@ -39,9 +82,8 @@ func TestMqttTransport_StartWaitsOnPendingConnect(t *testing.T) {
 	mqtt := NewMqttTransport("tcp://127.0.0.1:1", "test_pending_connect", "", "", true, 1, 1, nil)
 	mqtt.SetStartAutoRetryCount(2)
 
-	err := mqtt.Start(500 * time.Millisecond)
-
-	assert.ErrorIs(t, err, utils.ErrTimeout)
+	assert.ErrorIs(t, mqtt.Start(100*time.Millisecond), utils.ErrTimeout)
+	assert.False(t, mqtt.IsConnected())
 	assert.Eventually(t, func() bool { return !mqtt.client.IsConnected() }, time.Second, 10*time.Millisecond)
 
 	for _, e := range hook.AllEntries() {
@@ -49,44 +91,16 @@ func TestMqttTransport_StartWaitsOnPendingConnect(t *testing.T) {
 	}
 }
 
-func TestMqttTransport_StartReturnsWhenPendingConnectSucceedsDuringBackoff(t *testing.T) {
-	ctx := t.Context()
+func TestMqttTransport_StartReturnsWhenPendingConnectSucceeds(t *testing.T) {
+	ln := listen(t, "127.0.0.1:0")
 
-	var lc net.ListenConfig
-
-	ln, err := lc.Listen(ctx, "tcp", "127.0.0.1:0")
-	require.NoError(t, err)
-
-	context.AfterFunc(ctx, func() { _ = ln.Close() })
-
-	mqtt := NewMqttTransport("tcp://"+ln.Addr().String(), "test_backoff_connect", "", "", true, 1, 1, nil)
+	mqtt := NewMqttTransport("tcp://"+ln.Addr().String(), "test_late_connect", "", "", true, 1, 1, nil)
 	mqtt.SetStartAutoRetryCount(3)
 
 	defer mqtt.Stop()
 
-	// The kernel completes the TCP handshake, so the first attempt stays pending until the proxy starts accepting.
-	go func() {
-		time.Sleep(600 * time.Millisecond)
-
-		var d net.Dialer
-
-		for {
-			c, err := ln.Accept()
-			if err != nil {
-				return
-			}
-
-			b, err := d.DialContext(ctx, "tcp", "127.0.0.1:11883")
-			if err != nil {
-				_ = c.Close()
-
-				continue
-			}
-
-			go func() { _, _ = io.Copy(b, c) }()
-			go func() { _, _ = io.Copy(c, b) }()
-		}
-	}()
+	// The kernel completes the TCP handshake, so the attempt stays pending until the broker starts accepting.
+	time.AfterFunc(600*time.Millisecond, func() { serveBroker(ln, 0) })
 
 	start := time.Now()
 
@@ -94,19 +108,13 @@ func TestMqttTransport_StartReturnsWhenPendingConnectSucceedsDuringBackoff(t *te
 	assert.Less(t, time.Since(start), 2*time.Second)
 }
 
-func TestMqttTransport_StartReconnectsWhenPendingConnectFailsDuringBackoff(t *testing.T) {
+func TestMqttTransport_StartReconnectsWithoutConnectRetry(t *testing.T) {
 	ctx := t.Context()
-
-	var lc net.ListenConfig
-
-	ln, err := lc.Listen(ctx, "tcp", "127.0.0.1:0")
-	require.NoError(t, err)
-
-	context.AfterFunc(ctx, func() { _ = ln.Close() })
+	ln := listen(t, "127.0.0.1:0")
 
 	var accepts atomic.Int32
 
-	// Never answering CONNACK makes each attempt fail after paho's connect timeout, inside the backoff wait.
+	// Never answering CONNACK makes each attempt fail after paho's connect timeout.
 	go func() {
 		for {
 			c, err := ln.Accept()
@@ -125,6 +133,50 @@ func TestMqttTransport_StartReconnectsWhenPendingConnectFailsDuringBackoff(t *te
 
 	assert.ErrorIs(t, mqtt.Start(300*time.Millisecond), utils.ErrTimeout)
 	assert.EqualValues(t, 2, accepts.Load())
+}
+
+func TestMqttTransport_StartConnectsAfterFailedStart(t *testing.T) {
+	ln := listen(t, "127.0.0.1:0")
+	addr := ln.Addr().String()
+	require.NoError(t, ln.Close())
+
+	mqtt := NewMqttTransportFromConnection(nil, 1, 1)
+	opts := defaultClientOptions("tcp://"+addr, "test_restart", "", "", true, mqtt.onConnectionLost)
+	mqtt.client = MQTT.NewClient(opts.SetOnConnectHandler(mqtt.onConnect).SetConnectRetryInterval(500 * time.Millisecond))
+	mqtt.SetStartAutoRetryCount(1)
+
+	defer mqtt.Stop()
+
+	require.ErrorIs(t, mqtt.Start(300*time.Millisecond), utils.ErrTimeout)
+
+	go serveBroker(listen(t, addr), 0)
+
+	require.NoError(t, mqtt.Start(2*time.Second))
+}
+
+func TestMqttTransport_FailedStartStaysDisconnected(t *testing.T) {
+	ln := listen(t, "127.0.0.1:0")
+
+	go serveBroker(ln, 600*time.Millisecond)
+
+	mqtt := NewMqttTransport("tcp://"+ln.Addr().String(), "test_failed_start", "", "", true, 1, 1, nil)
+	mqtt.SetStartAutoRetryCount(1)
+	mqtt.subs["pt:j1/mt:evt/rt:app/rn:test/ad:1"] = 1
+
+	defer mqtt.Stop()
+
+	require.ErrorIs(t, mqtt.Start(300*time.Millisecond), utils.ErrTimeout)
+	assert.Never(t, mqtt.IsConnected, time.Second, 20*time.Millisecond)
+}
+
+func TestConnState_OnConnectAfterDoneStaysDisconnected(t *testing.T) {
+	var c ConnStateT
+
+	c.Init()
+	c.OnDone()
+	c.OnConnect()
+
+	assert.False(t, c.IsConnected())
 }
 
 func TestMqttTransport_LogsKeysOfUnparsablePayload(t *testing.T) {

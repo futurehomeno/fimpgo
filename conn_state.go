@@ -30,6 +30,12 @@ func (c *ConnStateT) OnConnect() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	select {
+	case <-c.done:
+		return
+	default:
+	}
+
 	c.onceConnected.Do(func() {
 		close(c.connected)
 	})

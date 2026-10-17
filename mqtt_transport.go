@@ -93,76 +93,68 @@ func NewMqttTransportFromConfigs(cfg MqttConnectionConfigs, errHandler func(erro
 
 func (mh *MqttTransport) Start(timeout time.Duration) error {
 	mh.connState.Init()
-	done := mh.connState.DoneC()
 
-	// try to connect with retries
-	err := func() (ret error) {
-		var token MQTT.Token
-
-		for i := 1; i <= mh.startFailRetryCount; i++ {
-			if i > 1 {
-				var pending <-chan struct{}
-				if token != nil {
-					pending = token.Done()
-				}
-
-				select {
-				case <-time.After(time.Duration(i*i) * time.Second):
-				case <-pending:
-					if token.Error() != nil {
-						token = nil
-					}
-				case <-done:
-					return utils.ErrConnectionLost
-				}
-			}
-
-			// With connect retry enabled paho keeps a timed-out attempt running and rejects a second Connect.
-			if token == nil {
-				token = mh.client.Connect()
-			}
-
-			select {
-			case <-token.Done():
-				if ret = token.Error(); ret == nil {
-					return nil
-				}
-
-				token = nil
-			case <-time.After(timeout):
-				ret = utils.ErrTimeout
-			case <-done:
-				return utils.ErrConnectionLost
-			}
-
-			log.Warnf("[fimpgo] MQTT connect failed %d/%d err: %v", i, mh.startFailRetryCount, ret)
-		}
-
-		if token != nil {
-			mh.client.Disconnect(0)
-		}
-
-		return ret
-	}()
+	err := mh.connect(timeout)
+	if err == nil {
+		err = mh.connState.WaitConnected(timeout)
+	}
 
 	if err != nil {
+		// Stop also cancels a still pending paho attempt, which would otherwise connect with nobody reading messages.
+		mh.Stop()
+
 		return err
 	}
 
-	ret := mh.connState.WaitConnected(timeout)
+	mh.incMsgsWg = sync.WaitGroup{}
+	mh.incMsgsWg.Add(1)
 
-	if ret == nil {
-		mh.incMsgsWg = sync.WaitGroup{}
-		mh.incMsgsWg.Add(1)
+	var started sync.WaitGroup
+	started.Add(1)
 
-		var started sync.WaitGroup
-		started.Add(1)
+	go mh.handleIncomingMessages(&started)
+	started.Wait()
 
-		go mh.handleIncomingMessages(&started)
-		started.Wait()
+	return nil
+}
+
+// connect re-connects only after an attempt has finished, as paho rejects Connect while one is pending
+// (with connect retry it keeps a single attempt pending until it succeeds).
+func (mh *MqttTransport) connect(timeout time.Duration) error {
+	done := mh.connState.DoneC()
+	budget := time.Duration(mh.startFailRetryCount) * timeout
+
+	for i := 2; i <= mh.startFailRetryCount; i++ {
+		budget += time.Duration(i*i) * time.Second
 	}
 
-	return ret
+	deadline := time.After(budget)
+
+	for i := 1; ; i++ {
+		token := mh.client.Connect()
+
+		select {
+		case <-token.Done():
+		case <-deadline:
+			return utils.ErrTimeout
+		case <-done:
+			return utils.ErrConnectionLost
+		}
+
+		if token.Error() == nil {
+			return nil
+		}
+
+		log.Warnf("[fimpgo] MQTT connect attempt %d failed err: %v", i, token.Error())
+
+		select {
+		case <-time.After(time.Duration(i*i) * time.Second):
+		case <-deadline:
+			return utils.ErrTimeout
+		case <-done:
+			return utils.ErrConnectionLost
+		}
+	}
 }
 
 func (mh *MqttTransport) IsConnected() bool {
