@@ -35,8 +35,8 @@ SHALL be unknown when the prefix is none of `cmd`, `evt` or `rsp`.
 
 ### Requirement: Service definitions expose typed properties
 
-A service definition SHALL return a property as string, float, int, bool, their list forms or a
-caller's object, converting a JSON-decoded value to the requested type, and SHALL return the zero
+A service definition SHALL return a property as string, float, int or bool, a list of strings,
+floats or ints, or a caller's object, converting a JSON-decoded value to the requested type, and SHALL return the zero
 value (or report absence) for a missing or unconvertible property. Ensuring interfaces SHALL add only
 those not already present.
 

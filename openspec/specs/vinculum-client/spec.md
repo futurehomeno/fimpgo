@@ -8,7 +8,7 @@ state) through Vinculum's `pd7` API, with an optional cache kept current by Vinc
 ### Requirement: Requests go to Vinculum and wait for its response
 
 A get or set SHALL be sent as `cmd.pd7.request` with an object value to
-`pt:j1/mt:cmd/rt:app/rn:vinculum/ad:1`, with source and response topic
+`pt:j1/mt:cmd/rt:app/rn:vinculum/ad:1`, with source `<client id>` and response topic
 `pt:j1/mt:rsp/rt:app/rn:<client id>/ad:1`, and SHALL wait up to 5 s for the response. A client for a
 cloud service SHALL receive on `rt:cloud/rn:backend-service/ad:<service>` instead, and a client with a
 global prefix SHALL address that site.
@@ -39,7 +39,8 @@ enable the cache and a failed one SHALL disable it.
 ### Requirement: Notifications keep the cache current
 
 The notify router SHALL subscribe to `pt:j1/mt:evt/rt:app/rn:vinculum/ad:1`, apply each add, edit and
-delete to the cache, and forward it to every registered channel whose command and component filter
+delete of a room, area, thing, device, timer or shortcut to the cache (house, modes and services
+are not updated), and forward it to every registered channel whose command and component filter
 matches, or to every unfiltered channel. Without app sync only rooms, areas, things and devices SHALL
 update the cache. A full channel SHALL miss the notification with a warning, and the router SHALL
 restart after a panic until it is stopped.

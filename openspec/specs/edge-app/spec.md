@@ -31,7 +31,7 @@ Restoring defaults SHALL replace the data file with the defaults file.
 #### Scenario: First start
 
 - **WHEN** an app starts with no `data/config.json`
-- **THEN** the defaults are copied there and loaded
+- **THEN** the defaults file is copied there, ready to be loaded
 
 ### Requirement: Partner tokens are exchanged through the Futurehome proxy
 
