@@ -106,12 +106,27 @@ func (mh *MqttTransport) Start(timeout time.Duration) error {
 					pending = token.Done()
 				}
 
+				backoff := time.After(time.Duration(i*i) * time.Second)
+
 				select {
-				case <-time.After(time.Duration(i*i) * time.Second):
+				case <-backoff:
 				case <-pending:
+					// paho fails the token before resetting its status, so an immediate Connect would be rejected.
+					if token.Error() != nil {
+						select {
+						case <-backoff:
+						case <-done:
+							return utils.ErrConnectionLost
+						}
+					}
 				case <-done:
 					return utils.ErrConnectionLost
 				}
+			}
+
+			if token != nil && token.Error() != nil {
+				log.Warnf("[fimpgo] MQTT pending connect failed err: %v", token.Error())
+				token = nil
 			}
 
 			// With connect retry enabled paho keeps a timed-out attempt running and rejects a second Connect.
