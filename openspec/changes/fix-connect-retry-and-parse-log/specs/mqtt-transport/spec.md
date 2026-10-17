@@ -2,7 +2,7 @@
 
 ### Requirement: Start waits on a pending connect attempt
 
-While a connect attempt is still in progress, the transport SHALL keep waiting on it rather than starting another one; with paho's connect retry on, that single attempt does the retrying. It SHALL start a new attempt, after a growing backoff, only once the previous attempt has finished with an error. `Start` SHALL give up after an overall budget of the start retry count times the timeout plus the backoffs between those attempts. When `Start` fails, it SHALL stop the transport: the pending attempt is cancelled and the transport reports disconnected even if that attempt completes afterwards.
+While a connect attempt is still in progress, the transport SHALL keep waiting on it rather than starting another one; with paho's connect retry on, that single attempt does the retrying. It SHALL start a new attempt, after a growing backoff, only once the previous attempt has finished with an error. `Start` SHALL give up connecting after an overall budget of the start retry count times the timeout plus the backoffs between those attempts; once connected, it SHALL wait up to one more timeout for the subscriptions to be restored. When `Start` fails, it SHALL stop the transport: the pending attempt is cancelled and the transport reports disconnected even if that attempt completes afterwards.
 
 #### Scenario: Broker unreachable for longer than one timeout
 
@@ -31,6 +31,11 @@ While a connect attempt is still in progress, the transport SHALL keep waiting o
 
 - **WHEN** the budget runs out during the backoff after an attempt failed, e.g. with `not Authorized`
 - **THEN** `Start` returns that attempt's error rather than a timeout error
+
+#### Scenario: Subscriptions not restored in time
+
+- **WHEN** the connection comes up within the budget but the broker does not confirm the subscriptions within one more timeout
+- **THEN** `Start` returns a timeout error and the transport reports disconnected
 
 #### Scenario: Owner of a failed Start connects again
 

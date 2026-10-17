@@ -284,7 +284,8 @@ func (mh *MqttTransport) ensureDefaultSource(message *FimpMessage) {
 }
 
 // SetStartAutoRetryCount sizes the Start budget: count times the Start timeout plus the backoffs between count attempts.
-// Start connects again whenever an attempt fails within that budget. Default value is 10.
+// Start connects again whenever an attempt fails within that budget, then waits up to one more timeout for the
+// subscriptions to be restored. Default value is 10.
 func (mh *MqttTransport) SetStartAutoRetryCount(count int) {
 	mh.startFailRetryCount = count
 }

@@ -22,6 +22,7 @@
 - [x] 1.20 SetStartAutoRetryCount documents that the count sizes the Start budget (no test: doc only)
 - [x] 1.21 Failing test: two attempts refused with `not Authorized` end Start within count times the timeout plus the one backoff between them
 - [x] 1.22 Sum the backoffs between the attempts (1² to (count-1)²) into the budget
+- [x] 1.23 Document that Start waits up to one more timeout for the subscriptions after connecting within the budget (no new test: behaviour unchanged, covered by TestMqttTransport_FailedStartStaysDisconnected)
 
 ## 2. Parse error log
 
