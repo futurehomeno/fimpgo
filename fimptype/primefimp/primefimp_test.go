@@ -107,7 +107,6 @@ func TestSiteFromResponseAndLookups(t *testing.T) {
 }
 
 func TestSiteAddFindUpdateRemove(t *testing.T) {
-	ids := func(s *Site, comp string) int { return s.FindIndex(comp, 1) }
 	adders := map[string]func(s *Site){
 		ComponentDevice:   func(s *Site) { s.AddDevice(&Device{ID: 1}) },
 		ComponentRoom:     func(s *Site) { s.AddRoom(&Room{ID: 1}) },
@@ -127,10 +126,9 @@ func TestSiteAddFindUpdateRemove(t *testing.T) {
 	for comp, add := range adders {
 		t.Run(comp, func(t *testing.T) {
 			s := &Site{}
-			assert.Equal(t, -1, ids(s, comp))
-			updaters[comp](s) // inserts when missing
-			assert.Equal(t, 0, ids(s, comp))
-			add(s) // duplicate ignored
+			assert.Equal(t, -1, s.FindIndex(comp, 1))
+			updaters[comp](s)
+			assert.Equal(t, 0, s.FindIndex(comp, 1))
 			s2 := &Site{}
 			add(s2)
 			add(s2)
@@ -138,7 +136,7 @@ func TestSiteAddFindUpdateRemove(t *testing.T) {
 			assert.Equal(t, -1, s2.FindIndex(comp, 2))
 			updaters[comp](s2)
 			require.NoError(t, s2.RemoveWithID(comp, 1))
-			assert.Equal(t, -1, ids(s2, comp))
+			assert.Equal(t, -1, s2.FindIndex(comp, 1))
 			require.Error(t, s2.RemoveWithID(comp, 1))
 		})
 	}
@@ -301,16 +299,11 @@ func TestApiClientCache(t *testing.T) {
 	assert.Equal(t, "home", house.Mode)
 
 	api.siteCache = Site{}
-	assert.False(t, api.IsCacheEnabled() && !api.IsCacheEmpty())
+	assert.True(t, api.IsCacheEmpty())
 }
 
-func TestApiClientCacheEmptyErrors(t *testing.T) {
+func TestApiClientCacheDisabledErrors(t *testing.T) {
 	api := NewApiClient("c", nil, false)
-	api.SetIsCacheEnabled(true)
-	api.siteCache.Devices = []Device{{ID: 1}}
-	api.siteCache.Modes = nil
-
-	api.SetIsCacheEnabled(false)
 	for name, get := range map[string]func() error{
 		"rooms":     func() error { _, err := api.GetRooms(true); return err },
 		"areas":     func() error { _, err := api.GetAreas(true); return err },

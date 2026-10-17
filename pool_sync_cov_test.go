@@ -100,9 +100,13 @@ func TestMqttConnectionPool_CleanupRemovesStaleIdle(t *testing.T) {
 		require.NoError(t, err)
 
 		ids[i] = id
+	}
+
+	for _, id := range ids {
 		pool.ReturnConnection(id)
 	}
 
+	require.Equal(t, 3, pool.TotalConnections())
 	pool.connPool[ids[0]].idleSince = time.Now().Add(-time.Hour)
 	pool.connPool[ids[1]].idleSince = time.Now().Add(-time.Hour)
 
@@ -182,8 +186,8 @@ func TestSyncClient_ConnPool(t *testing.T) {
 	assert.Equal(t, "pong", rsp.Value)
 	assert.Equal(t, 1, pool.IdleConnections())
 
+	pool.Stop()
 	pool.maxSize = 0
-	pool.connPool = map[int]*connection{}
 	_, err = sc.SendFimp(cmdTopic, NewNullMessage("cmd.cov.get", "cov", nil, nil, nil), 1)
 	assert.ErrorContains(t, err, "too many connections")
 }

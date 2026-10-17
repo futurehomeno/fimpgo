@@ -5,7 +5,7 @@ Total statement coverage is 38%. The largest untested code is the Prime FIMP API
 ## What Changes
 
 - Unit tests for the uncovered public behaviour of `fimptype/primefimp`, `edgeapp`, the root `fimpgo` package, `fimptype`, `transport`, `security` and `utils`.
-- HTTP and MQTT peers are faked with `httptest` and the local test broker; no test reaches an external host.
+- HTTP and MQTT peers are faked with `httptest` and the local test broker; no new test reaches an external host.
 
 ## Impact
 

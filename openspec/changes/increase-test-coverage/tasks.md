@@ -5,7 +5,7 @@
 ## 2. Tests
 
 - [x] 2.1 `fimptype/primefimp`: api-client cache and parsing (MQTT round trips not covered), state, site, notify, response
-- [x] 2.2 `edgeapp`: auth, manifest, configs, system_check, lifecycle, utils, formatters
+- [x] 2.2 `edgeapp`: auth, manifest, configs, lifecycle, utils, formatters
 - [x] 2.3 root `fimpgo`: mqtt_transport, message, mqtt_conn_pool, sync_client gaps
 - [x] 2.4 `fimptype`, `transport/streams`, `security`, `utils`
 

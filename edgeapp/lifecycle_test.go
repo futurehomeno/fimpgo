@@ -77,13 +77,14 @@ func TestLifecycle_PublishAndUnsubscribe(t *testing.T) {
 
 func TestLifecycle_BusyListenerDropsEvents(t *testing.T) {
 	lf := NewAppLifecycle()
-	ch := lf.Subscribe("busy", 0)
+	ch := lf.Subscribe("busy", 1)
 	lf.SetConfigState(ConfigStateInProgress)
 	lf.SetAuthState(AuthStateInProgress)
 	lf.SetConnectionState(ConnStateConnecting)
 	lf.SetAppState(AppStateError, nil)
 	lf.PublishSystemEvent("ev", "src", nil)
-	assert.Empty(t, ch)
+	require.Len(t, ch, 1)
+	assert.Equal(t, SystemEventTypeConfigState, (<-ch).Type)
 	assert.Equal(t, State(AppStateError), lf.AppState())
 }
 
