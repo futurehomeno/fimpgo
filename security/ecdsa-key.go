@@ -111,25 +111,29 @@ func (kp *EcdsaKey) ImportX509PublicKey(pemEncodedPub string) error {
 	if blockPub == nil {
 		return errors.New("incorrect PEM format")
 	}
-	x509EncodedPub := blockPub.Bytes
-	genericPublicKey, err := x509.ParsePKIXPublicKey(x509EncodedPub)
+	genericPublicKey, err := x509.ParsePKIXPublicKey(blockPub.Bytes)
 	if err != nil {
 		return err
 	}
-	var ok bool
-	kp.publicKey, ok = genericPublicKey.(*ecdsa.PublicKey)
+	publicKey, ok := genericPublicKey.(*ecdsa.PublicKey)
 	if !ok {
 		return fmt.Errorf("genericPublicKey cast type=%T fail", genericPublicKey)
 	}
+	kp.publicKey = publicKey
 	return nil
 }
 
 func (kp *EcdsaKey) ImportX509PrivateKey(pemEncoded string) error {
-	var err error
 	block, _ := pem.Decode([]byte(pemEncoded))
-	x509Encoded := block.Bytes
-	kp.privateKey, err = x509.ParseECPrivateKey(x509Encoded)
-	return err
+	if block == nil {
+		return errors.New("incorrect PEM format")
+	}
+	privateKey, err := x509.ParseECPrivateKey(block.Bytes)
+	if err != nil {
+		return err
+	}
+	kp.privateKey = privateKey
+	return nil
 }
 
 func (kp *EcdsaKey) ImportJsonPublicKey(jkey JsonEcKey) error {
