@@ -40,3 +40,4 @@
 ## 3. Spec
 
 - [x] 3.1 Modify the baseline Start retry requirement instead of adding a second one that contradicts it (no test: spec only)
+- [x] 3.2 State which error Start returns when the budget runs out during a backoff and while an attempt is pending (no test: spec only, matches `connect`)
