@@ -107,11 +107,10 @@ func (mh *MqttTransport) Start(timeout time.Duration) error {
 
 	defer mh.lifecycleMu.Unlock()
 
-	// A Stop that closed done but waits for this lock leaves its reader running, which would pick up the new done.
-	mh.incMsgsWg.Wait()
 	mh.connState.Init()
 
-	// A Stop that arrived before Init closed only the old done, so it would wait out the whole connect budget.
+	// A Stop that arrived before Init closed only the old done, so it would wait out the whole connect budget,
+	// and its reader, which picks up the new done, exits only once stop below closes it.
 	err := utils.ErrConnectionLost
 	if mh.pendingStops.Load() == 0 {
 		err = mh.connect(timeout)
