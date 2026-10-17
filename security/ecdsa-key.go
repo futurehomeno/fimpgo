@@ -138,9 +138,12 @@ func (kp *EcdsaKey) ImportJsonPublicKey(jkey JsonEcKey) error {
 	if !xok || !yok {
 		return errors.New("json key parse error")
 	}
-	var err error
-	kp.publicKey, err = ecdsa.ParseUncompressedPublicKey(elliptic.P256(), append(append([]byte{0x04}, x...), y...))
-	return err
+	pub, err := ecdsa.ParseUncompressedPublicKey(elliptic.P256(), append(append([]byte{0x04}, x...), y...))
+	if err != nil {
+		return err
+	}
+	kp.publicKey = pub
+	return nil
 }
 
 func (kp *EcdsaKey) ImportJsonPrivateKey(jkey JsonEcKey) error {
@@ -148,9 +151,12 @@ func (kp *EcdsaKey) ImportJsonPrivateKey(jkey JsonEcKey) error {
 	if !ok {
 		return errors.New("json key parse error")
 	}
-	var err error
-	kp.privateKey, err = ecdsa.ParseRawPrivateKey(elliptic.P256(), d)
-	return err
+	priv, err := ecdsa.ParseRawPrivateKey(elliptic.P256(), d)
+	if err != nil {
+		return err
+	}
+	kp.privateKey = priv
+	return nil
 }
 
 // hexToFixed left-pads to the P-256 coordinate size, since keys exported via big.Int dropped leading zeros.
