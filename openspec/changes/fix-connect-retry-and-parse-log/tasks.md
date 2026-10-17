@@ -13,3 +13,5 @@
 - [x] 2.2 Add length and keys to the error line
 - [x] 2.3 Failing test: compressed payloads log their keys; hostile keys are quoted and bounded
 - [x] 2.4 Read keys from the decompressed payload; quote and bound them
+- [x] 2.5 Failing test: a wrong-typed value appears neither in the transport error line nor in NewMessageFromBytes errors and logs; wrong-typed optional fields log at Debug
+- [x] 2.6 Strip jsonparser's appended value from field parse errors; log optional-field errors at Debug

@@ -152,6 +152,7 @@ func TestMqttTransport_LogsKeysOfUnparsablePayload(t *testing.T) {
 		{"plain", "pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:meter_elec/ad:6_0", payload, `keys=["serv" "type" "val"]`},
 		{"compressed", "pt:j1c1/mt:evt/rt:dev/rn:zw/ad:1/sv:meter_elec/ad:6_0", compressed, `keys=["serv" "type" "val"]`},
 		{"escaped and bounded", "pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:meter_elec/ad:6_0", []byte(bounded + "}"), "keys=[" + boundedKeys + ` "..."]`},
+		{"value of wrong type", "pt:j1/mt:evt/rt:dev/rn:zw/ad:1/sv:meter_elec/ad:6_0", []byte(`{"type":"evt.meter.report","val_t":"float","val":"user@example.com"}`), `keys=["type" "val_t" "val"]`},
 	}
 
 	for _, tc := range tcs {
@@ -175,6 +176,7 @@ func TestMqttTransport_LogsKeysOfUnparsablePayload(t *testing.T) {
 			assert.Contains(t, msg, fmt.Sprintf("len=%d", len(tc.payload)))
 			assert.Contains(t, msg, tc.keys)
 			assert.NotContains(t, msg, "\n")
+			assert.NotContains(t, msg, "user@example.com")
 		})
 	}
 }

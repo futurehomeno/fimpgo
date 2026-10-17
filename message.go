@@ -430,15 +430,21 @@ func NewBinaryMessage(iface string, service fimptype.ServiceNameT, value []byte,
 	return NewMessage(iface, service, fimptype.VTypeBinary, valEnc, props, tags, rqMsg)
 }
 
-// optionalString reads an optional string field. A missing key or a null/empty
-// value is normal and silent; only a genuine parse error (malformed JSON, wrong
-// type) is logged.
+// withoutValue drops the offending value jsonparser appends to type-mismatch errors, as it may be user data.
+func withoutValue(err error) error {
+	if kind, _, ok := strings.Cut(err.Error(), ": "); ok && strings.HasPrefix(kind, "Value is not a ") {
+		return errors.New(kind)
+	}
+
+	return err
+}
+
 func optionalString(msg []byte, iface, key string) string {
 	v, err := jsonparser.GetString(msg, key)
 	if err != nil &&
 		!errors.Is(err, jsonparser.KeyPathNotFoundError) &&
 		!errors.Is(err, jsonparser.NullValueError) {
-		log.Errorf("[fimpgo] Parse %s %s err: %v", iface, key, err)
+		log.Debugf("[fimpgo] Parse %s %s err: %v", iface, key, withoutValue(err))
 	}
 
 	return v
@@ -449,6 +455,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	var err error
 
 	if fimpmsg.Interface, err = jsonparser.GetString(msg, "type"); err != nil {
+		err = withoutValue(err)
 		log.Warnf("[fimpgo] Parse type err: %v", err)
 		return nil, err
 	}
@@ -456,7 +463,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	serviceStr, err := jsonparser.GetString(msg, "serv")
 
 	if err != nil {
-		log.Warnf("[fimpgo] Parse %s serv err: %v", fimpmsg.Interface, err)
+		log.Warnf("[fimpgo] Parse %s serv err: %v", fimpmsg.Interface, withoutValue(err))
 	} else {
 		fimpmsg.Service = fimptype.ServiceNameT(serviceStr)
 	}
@@ -464,13 +471,11 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	valueTypeStr, err := jsonparser.GetString(msg, ValTypeField)
 
 	if err != nil {
-		log.Warnf("[fimpgo] Parse %s %s err: %v", fimpmsg.Interface, ValTypeField, err)
+		log.Warnf("[fimpgo] Parse %s %s err: %v", fimpmsg.Interface, ValTypeField, withoutValue(err))
 	} else {
 		fimpmsg.ValueType = fimptype.ValueTypeT(valueTypeStr)
 	}
 
-	// These fields are optional: a missing key is normal and silent, but any other
-	// parse error is logged.
 	fimpmsg.UID = optionalString(msg, fimpmsg.Interface, "uid")
 	fimpmsg.CorrelationID = optionalString(msg, fimpmsg.Interface, "corid")
 	fimpmsg.CreationTime = optionalString(msg, fimpmsg.Interface, "ctime")
@@ -601,7 +606,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	case fimptype.VTypeBinary:
 		fimpmsg.Value, err = jsonparser.GetString(msg, ValField)
 		if err != nil {
-			log.Warnf("[fimpgo] GetString %s val err: %v", fimpmsg.Interface, err)
+			log.Warnf("[fimpgo] GetString %s val err: %v", fimpmsg.Interface, withoutValue(err))
 		}
 
 	case fimptype.VTypeObject:
@@ -613,7 +618,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("val=%s err: %w", fimpmsg.ValueType, err)
+		return nil, fmt.Errorf("val=%s err: %w", fimpmsg.ValueType, withoutValue(err))
 	}
 
 	if properties, dt, _, err := jsonparser.Get(msg, "props"); dt != jsonparser.NotExist && dt != jsonparser.Null && err == nil {
