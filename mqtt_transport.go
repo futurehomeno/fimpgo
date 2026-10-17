@@ -141,16 +141,17 @@ func (mh *MqttTransport) connect(timeout time.Duration) error {
 			return utils.ErrConnectionLost
 		}
 
-		if token.Error() == nil {
+		err := token.Error()
+		if err == nil {
 			return nil
 		}
 
-		log.Warnf("[fimpgo] MQTT connect attempt %d failed err: %v", i, token.Error())
+		log.Warnf("[fimpgo] MQTT connect attempt %d failed err: %v", i, err)
 
 		select {
 		case <-time.After(time.Duration(i*i) * time.Second):
 		case <-deadline:
-			return utils.ErrTimeout
+			return err
 		case <-done:
 			return utils.ErrConnectionLost
 		}

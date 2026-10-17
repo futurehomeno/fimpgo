@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -131,8 +132,34 @@ func TestMqttTransport_StartReconnectsWithoutConnectRetry(t *testing.T) {
 	mqtt := NewMqttTransportFromConnection(MQTT.NewClient(opts), 1, 1)
 	mqtt.SetStartAutoRetryCount(2)
 
-	assert.ErrorIs(t, mqtt.Start(300*time.Millisecond), utils.ErrTimeout)
+	assert.ErrorIs(t, mqtt.Start(300*time.Millisecond), os.ErrDeadlineExceeded)
 	assert.EqualValues(t, 2, accepts.Load())
+}
+
+func TestMqttTransport_StartReturnsLastConnectError(t *testing.T) {
+	ln := listen(t, "127.0.0.1:0")
+
+	go func() {
+		for {
+			c, err := ln.Accept()
+			if err != nil {
+				return
+			}
+
+			if _, err := packets.ReadPacket(c); err == nil {
+				ack := packets.ConnackPacket{FixedHeader: packets.FixedHeader{MessageType: packets.Connack}, ReturnCode: packets.ErrRefusedNotAuthorised}
+				_ = ack.Write(c)
+			}
+
+			_ = c.Close()
+		}
+	}()
+
+	opts := MQTT.NewClientOptions().AddBroker("tcp://" + ln.Addr().String()).SetProtocolVersion(4)
+	mqtt := NewMqttTransportFromConnection(MQTT.NewClient(opts), 1, 1)
+	mqtt.SetStartAutoRetryCount(1)
+
+	assert.ErrorIs(t, mqtt.Start(300*time.Millisecond), packets.ErrorRefusedNotAuthorised)
 }
 
 func TestMqttTransport_StartConnectsAfterFailedStart(t *testing.T) {

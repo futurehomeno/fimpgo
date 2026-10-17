@@ -9,6 +9,9 @@
 - [x] 1.7 Failing tests: a second Start right after a failed one connects once the broker is back; a connection completing after a failed Start leaves the transport disconnected
 - [x] 1.8 Replace the round loop with one overall budget: Connect again only after a finished attempt, and Stop the transport on any Start failure
 - [x] 1.9 Ignore OnConnect once the transport is stopped
+- [x] 1.10 Failing test: a broker refusing with `not Authorized` makes Start return that error, not a timeout
+- [x] 1.11 Return the last attempt's error when the budget runs out during the backoff
+- [x] 1.12 SyncClient.Connect and ConfigureFimpSyncClient drop the transport of a failed Start (no test: Start's budget is fixed at minutes there)
 
 ## 2. Parse error log
 

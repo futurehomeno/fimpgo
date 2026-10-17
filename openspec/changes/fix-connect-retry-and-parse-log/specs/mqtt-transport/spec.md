@@ -26,6 +26,16 @@ While a connect attempt is still in progress, the transport SHALL keep waiting o
 - **THEN** `Start` returns a timeout error
 - **AND** the pending attempt is cancelled without waiting for it to wind down
 
+#### Scenario: Budget runs out after a failed attempt
+
+- **WHEN** the budget runs out during the backoff after an attempt failed, e.g. with `not Authorized`
+- **THEN** `Start` returns that attempt's error rather than a timeout error
+
+#### Scenario: Owner of a failed Start connects again
+
+- **WHEN** `SyncClient.Connect` or the edge app's FIMP sync client setup fails in `Start`
+- **THEN** it drops the stopped transport, so the next call creates and starts a new one rather than using the stopped one
+
 #### Scenario: Attempt completes after Start failed
 
 - **WHEN** the connection comes up after `Start` has returned an error

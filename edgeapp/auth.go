@@ -129,6 +129,7 @@ func (oac *FhOAuth2Client) ConfigureFimpSyncClient() error {
 		oac.mqt = fimpgo.NewMqttTransport(oac.mqttServerURI, oac.mqttClientID, "", "", true, 1, 1, nil)
 		err := oac.mqt.Start(10 * time.Second)
 		if err != nil {
+			oac.mqt = nil
 			log.Error("[edgeapp] Error connecting to broker ", err)
 			return err
 		}
