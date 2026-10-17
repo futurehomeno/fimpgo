@@ -31,4 +31,10 @@ func TestEcdsaKey_JsonRoundTrip(t *testing.T) {
 	if err := verifier.ImportJsonPublicKey(JsonEcKey{X: "01", Y: "02"}); err == nil {
 		t.Fatal("expected error for point off the curve")
 	}
+	if err := verifier.ImportJsonPublicKey(JsonEcKey{X: "-" + pub.X, Y: pub.Y}); err == nil {
+		t.Fatal("expected error for signed coordinate")
+	}
+	if err := signer.ImportJsonPrivateKey(JsonEcKey{D: "-1"}); err == nil {
+		t.Fatal("expected error for signed scalar")
+	}
 }
