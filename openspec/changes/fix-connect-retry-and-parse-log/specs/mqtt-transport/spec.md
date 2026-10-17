@@ -42,6 +42,11 @@ While a connect attempt is still in progress, the transport SHALL keep waiting o
 - **WHEN** the connection comes up after `Start` has returned an error
 - **THEN** the transport reports disconnected
 
+#### Scenario: Attempt of a failed Start completes during the next Start
+
+- **WHEN** the connection of a failed `Start` comes up after the next `Start` began
+- **THEN** the transport does not report the next `Start` connected because of it
+
 #### Scenario: Start again while the previous attempt winds down
 
 - **WHEN** `Start` is called again while paho is still winding down the attempt cancelled by a failed `Start`

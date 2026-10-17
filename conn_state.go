@@ -26,12 +26,14 @@ func (c *ConnStateT) Init() {
 	c.onceDone = sync.Once{}
 }
 
-func (c *ConnStateT) OnConnect() {
+// OnConnect takes the done channel of the Start the connection belongs to, so a late callback of a failed Start
+// does not mark the next Start connected.
+func (c *ConnStateT) OnConnect(done <-chan struct{}) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	select {
-	case <-c.done:
+	case <-done:
 		return
 	default:
 	}

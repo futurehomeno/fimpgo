@@ -351,6 +351,8 @@ func onConnectionNotifEvt(client MQTT.Client, _type MQTT.ConnectionNotification)
 }
 
 func (mh *MqttTransport) onConnect(client MQTT.Client) {
+	done := mh.connState.DoneC()
+
 	mh.subscribeLock.Lock()
 	defer mh.subscribeLock.Unlock()
 
@@ -363,7 +365,7 @@ func (mh *MqttTransport) onConnect(client MQTT.Client) {
 		}
 	}
 
-	mh.connState.OnConnect()
+	mh.connState.OnConnect(done)
 }
 
 // onMessage is a message handler registered with MQTT client.

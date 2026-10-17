@@ -17,6 +17,8 @@
 - [x] 1.15 Return the last attempt's error when the budget runs out during the backoff
 - [x] 1.16 SyncClient.Connect and ConfigureFimpSyncClient drop the transport of a failed Start (no test: Start's budget is fixed at minutes there)
 - [x] 1.17 The failed attempt's error is still logged and the backoff still elapses before the next Connect
+- [x] 1.18 Failing test: a connect callback of a failed Start that completes after the next Start began leaves the transport disconnected
+- [x] 1.19 OnConnect takes the done channel of the Start its connection belongs to
 
 ## 2. Parse error log
 

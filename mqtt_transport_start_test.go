@@ -203,12 +203,29 @@ func TestMqttTransport_FailedStartStaysDisconnected(t *testing.T) {
 	assert.Never(t, mqtt.IsConnected, time.Second, 20*time.Millisecond)
 }
 
+func TestMqttTransport_StaleConnectDuringRestartStaysDisconnected(t *testing.T) {
+	ln := listen(t, "127.0.0.1:0")
+
+	go serveBroker(ln, 600*time.Millisecond)
+
+	mqtt := NewMqttTransport("tcp://"+ln.Addr().String(), "test_stale_connect", "", "", true, 1, 1, nil)
+	mqtt.SetStartAutoRetryCount(1)
+	mqtt.subs["pt:j1/mt:evt/rt:app/rn:test/ad:1"] = 1
+
+	defer mqtt.Stop()
+
+	require.ErrorIs(t, mqtt.Start(300*time.Millisecond), utils.ErrTimeout)
+
+	mqtt.connState.Init()
+	assert.Never(t, mqtt.IsConnected, time.Second, 20*time.Millisecond)
+}
+
 func TestConnState_OnConnectAfterDoneStaysDisconnected(t *testing.T) {
 	var c ConnStateT
 
 	c.Init()
 	c.OnDone()
-	c.OnConnect()
+	c.OnConnect(c.DoneC())
 
 	assert.False(t, c.IsConnected())
 }
