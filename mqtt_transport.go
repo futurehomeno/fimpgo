@@ -1,6 +1,7 @@
 package fimpgo
 
 import (
+	"context"
 	"fmt"
 	"runtime/debug"
 	"strings"
@@ -497,23 +498,44 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 		mh.msgHandler(topic, addr, fimpMsg, msg.Payload())
 	}
 
+	// Sends stay under the lock: callers such as SyncFimpClient close their channel right after UnregisterChannel.
 	mh.channelRegLock.Lock()
+	defer mh.channelRegLock.Unlock()
+
+	var full []string
+
 	for name, c := range mh.subChannels {
 		if !mh.isChannelInterested(name, topic, addr, fimpMsg) {
 			continue
 		}
 
-		timer := time.NewTimer(time.Second * time.Duration(mh.receiveChTimeout.Load()))
-
 		select {
 		case c <- &Message{Topic: topic, Addr: addr, Payload: fimpMsg}:
-		case <-timer.C:
-			log.Warnf("[fimpgo] Channel %s not read for %d sec", name, mh.receiveChTimeout.Load())
+		default:
+			full = append(full, name)
 		}
-
-		timer.Stop()
 	}
-	mh.channelRegLock.Unlock()
+
+	if len(full) == 0 {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(mh.receiveChTimeout.Load()))
+	defer cancel()
+
+	var wg sync.WaitGroup
+
+	for _, name := range full {
+		wg.Go(func() {
+			select {
+			case mh.subChannels[name] <- &Message{Topic: topic, Addr: addr, Payload: fimpMsg}:
+			case <-ctx.Done():
+				log.Warnf("[fimpgo] Channel %s not read for %d sec", name, mh.receiveChTimeout.Load())
+			}
+		})
+	}
+
+	wg.Wait()
 }
 
 // payloadKeys lists the top-level JSON keys, which identifies a malformed producer without logging values.
