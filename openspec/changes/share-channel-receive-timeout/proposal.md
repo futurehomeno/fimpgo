@@ -6,7 +6,7 @@ Each received message goes to the registered channels one by one, under the chan
 
 - A message is offered to every interested channel without blocking first, so channels with room get it at once.
 - Full channels are then waited on together against one shared deadline, in the receiving goroutine, so one message costs at most one receive timeout.
-- A channel closed by its consumer during that wait is logged as a handler crash and the registration lock is released, as before.
+- A channel closed by its consumer during that wait is logged as a handler crash, as before. The registration lock is now released too; before, it stayed held and the next message blocked forever.
 
 ## Impact
 
