@@ -13,3 +13,7 @@ A decision on the delivery rule, then a change:
 - give each channel its own forwarding queue and goroutine, so one stuck consumer cannot slow the shared dispatcher.
 
 Both drop messages for a stuck consumer sooner than today, which changes what consumers such as tpflow see.
+
+## Resolved
+
+Option A (the operator, 2026-11-22): a stuck channel is skipped while full until it takes a message again. OpenSpec change `skip-stuck-channels`.

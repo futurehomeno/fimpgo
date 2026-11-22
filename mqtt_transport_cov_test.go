@@ -304,3 +304,33 @@ func TestMqttTransport_StuckChannelsShareOneTimeout(t *testing.T) {
 	assert.Len(t, healthy, 1)
 	assert.True(t, <-gotLate, "a channel read within the timeout still gets the message")
 }
+
+func TestMqttTransport_StuckChannelIsSkippedUntilRead(t *testing.T) {
+	mqtt := NewMqttTransport(covBroker, "cov_skip", "", "", true, 1, 1, nil)
+	mqtt.SetReceiveChTimeout(1)
+	payload, err := NewStringMessage("evt.a.b", "svc", "v", nil, nil, nil).SerializeToJson()
+	require.NoError(t, err)
+
+	stuck := make(MessageCh, 1)
+	stuck <- &Message{}
+	mqtt.RegisterChannel("stuck", stuck)
+
+	healthy := make(MessageCh, 10)
+	mqtt.RegisterChannel("healthy", healthy)
+
+	deliver := func() time.Duration {
+		start := time.Now()
+		mqtt.handleIncomingMessage(fakeMessage{topic: "pt:j1/mt:evt/rt:app/rn:n/ad:1", payload: payload})
+
+		return time.Since(start)
+	}
+
+	assert.GreaterOrEqual(t, deliver(), 900*time.Millisecond, "the first miss waits the timeout")
+	assert.Less(t, deliver(), 500*time.Millisecond, "a stuck channel is not waited on again")
+	assert.Len(t, healthy, 2)
+
+	<-stuck
+	deliver()
+	assert.Len(t, stuck, 1, "a channel read again gets messages again")
+	assert.GreaterOrEqual(t, deliver(), 900*time.Millisecond, "a channel read again is waited on again")
+}
