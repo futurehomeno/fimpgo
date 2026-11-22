@@ -1,9 +1,10 @@
 package fimpgo
 
 import (
-	"context"
 	"fmt"
+	"reflect"
 	"runtime/debug"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -502,7 +503,12 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 	mh.channelRegLock.Lock()
 	defer mh.channelRegLock.Unlock()
 
-	var full []string
+	out := &Message{Topic: topic, Addr: addr, Payload: fimpMsg}
+
+	var (
+		full  []string
+		cases []reflect.SelectCase
+	)
 
 	for name, c := range mh.subChannels {
 		if !mh.isChannelInterested(name, topic, addr, fimpMsg) {
@@ -510,9 +516,10 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 		}
 
 		select {
-		case c <- &Message{Topic: topic, Addr: addr, Payload: fimpMsg}:
+		case c <- out:
 		default:
 			full = append(full, name)
+			cases = append(cases, reflect.SelectCase{Dir: reflect.SelectSend, Chan: reflect.ValueOf(c), Send: reflect.ValueOf(out)})
 		}
 	}
 
@@ -520,22 +527,24 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(mh.receiveChTimeout.Load()))
-	defer cancel()
+	timer := time.NewTimer(time.Second * time.Duration(mh.receiveChTimeout.Load()))
+	defer timer.Stop()
 
-	var wg sync.WaitGroup
+	cases = append(cases, reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(timer.C)})
 
-	for _, name := range full {
-		wg.Go(func() {
-			select {
-			case mh.subChannels[name] <- &Message{Topic: topic, Addr: addr, Payload: fimpMsg}:
-			case <-ctx.Done():
+	for len(full) > 0 {
+		i, _, _ := reflect.Select(cases)
+		if i == len(full) {
+			for _, name := range full {
 				log.Warnf("[fimpgo] Channel %s not read for %d sec", name, mh.receiveChTimeout.Load())
 			}
-		})
-	}
 
-	wg.Wait()
+			return
+		}
+
+		full = slices.Delete(full, i, i+1)
+		cases = slices.Delete(cases, i, i+1)
+	}
 }
 
 // payloadKeys lists the top-level JSON keys, which identifies a malformed producer without logging values.
