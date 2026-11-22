@@ -503,8 +503,6 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 	mh.channelRegLock.Lock()
 	defer mh.channelRegLock.Unlock()
 
-	out := &Message{Topic: topic, Addr: addr, Payload: fimpMsg}
-
 	var (
 		full  []string
 		cases []reflect.SelectCase
@@ -514,6 +512,8 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 		if !mh.isChannelInterested(name, topic, addr, fimpMsg) {
 			continue
 		}
+
+		out := &Message{Topic: topic, Addr: addr, Payload: fimpMsg}
 
 		select {
 		case c <- out:
@@ -527,7 +527,8 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 		return
 	}
 
-	timer := time.NewTimer(time.Second * time.Duration(mh.receiveChTimeout.Load()))
+	timeout := mh.receiveChTimeout.Load()
+	timer := time.NewTimer(time.Second * time.Duration(timeout))
 	defer timer.Stop()
 
 	cases = append(cases, reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(timer.C)})
@@ -536,7 +537,7 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 		i, _, _ := reflect.Select(cases)
 		if i == len(full) {
 			for _, name := range full {
-				log.Warnf("[fimpgo] Channel %s not read for %d sec", name, mh.receiveChTimeout.Load())
+				log.Warnf("[fimpgo] Channel %s not read for %d sec", name, timeout)
 			}
 
 			return
