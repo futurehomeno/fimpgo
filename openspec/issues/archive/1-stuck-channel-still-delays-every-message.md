@@ -4,7 +4,7 @@ PR #85 (review finding 2). After `share-channel-receive-timeout`, N stuck channe
 
 ## Reproduce
 
-Register a channel that is never read and send more than one matching message per 10 s: the healthy channels get message k+1 only 10 s after message k, RegisterChannel and UnregisterChannel block for up to 10 s, the receive queue fills and after 20 drops the transport stops (`main msg queue stuck`).
+Register a channel that is never read and send more than one matching message per 10 s: the healthy channels get message k+1 only 10 s after message k, RegisterChannel and UnregisterChannel block for up to 10 s, the receive queue fills and on the 21st drop in a row the transport stops (`main msg queue stuck`).
 
 ## What would close it
 

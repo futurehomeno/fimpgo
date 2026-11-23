@@ -20,13 +20,18 @@ dropped with a log line, and a panic in a filter function SHALL be logged and co
 #### Scenario: Stuck consumer
 
 - **WHEN** a registered channel is not read for longer than the receive timeout
-- **THEN** that message is skipped for it, a warning names the channel, and delivery continues
+- **THEN** that message is skipped for it, a warning names the channel and the timeout it waited, and delivery continues
 
 #### Scenario: Several stuck consumers
 
 - **WHEN** three registered channels are not read, one has room and one is read shortly after the message arrives
 - **THEN** delivery of that message ends within one receive timeout
 - **AND** the channel with room and the channel read late both get the message
+
+#### Scenario: Each channel gets its own message
+
+- **WHEN** two registered channels both get a message
+- **THEN** each receives its own `Message` value, so one consumer changing it does not affect the other
 
 #### Scenario: Channel closed while waited on
 
