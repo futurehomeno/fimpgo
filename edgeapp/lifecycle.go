@@ -95,7 +95,7 @@ func (al *Lifecycle) GetAllStates() *AppStates {
 		Connection:    string(al.connectionState),
 		Config:        string(al.configState),
 		Auth:          string(al.authState),
-		LastErrorText: "",
+		LastErrorText: al.lastError,
 		LastErrorCode: "",
 	}
 	return &appStates
