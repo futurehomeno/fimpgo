@@ -116,6 +116,7 @@ func TestLifecycle_States(t *testing.T) {
 	assert.Equal(t, State(AppStateRunning), lf.AppState())
 	assert.Equal(t, State(AppStateStarting), lf.previousAppState)
 	assert.Equal(t, "boom", lf.LastError())
+	assert.Equal(t, "boom", lf.GetAllStates().LastErrorText)
 
 	for _, want := range []SystemEvent{
 		{Type: SystemEventTypeConfigState, State: ConfigStateConfigured, Info: "sys"},
