@@ -338,6 +338,7 @@ func (mh *MqttTransport) SetMessageHandler(msgHandler MessageHandler) {
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannel(channelId string, messageCh MessageCh) {
 	mh.channelRegLock.Lock()
+	delete(mh.stuckChannels, channelId)
 	mh.subChannels[channelId] = messageCh
 	mh.channelRegLock.Unlock()
 }
@@ -356,6 +357,7 @@ func (mh *MqttTransport) UnregisterChannel(channelId string) {
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannelWithFilter(channelId string, messageCh MessageCh, filter FimpFilter) {
 	mh.channelRegLock.Lock()
+	delete(mh.stuckChannels, channelId)
 	mh.subChannels[channelId] = messageCh
 	mh.subFilters[channelId] = filter
 	mh.channelRegLock.Unlock()
@@ -365,6 +367,7 @@ func (mh *MqttTransport) RegisterChannelWithFilter(channelId string, messageCh M
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannelWithFilterFunc(channelId string, messageCh MessageCh, filterFunc FilterFunc) {
 	mh.channelRegLock.Lock()
+	delete(mh.stuckChannels, channelId)
 	mh.subChannels[channelId] = messageCh
 	mh.subFilterFuncs[channelId] = filterFunc
 	mh.channelRegLock.Unlock()

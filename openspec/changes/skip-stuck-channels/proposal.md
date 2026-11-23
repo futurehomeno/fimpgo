@@ -7,7 +7,7 @@ After `share-channel-receive-timeout`, a channel that is never read again still 
 - A channel that misses a message after the receive timeout is marked stuck and logged once.
 - A stuck channel gets a message only when it has room; otherwise the message is dropped for it without waiting.
 - The first message it takes again clears the mark and logs that the channel is read again; from then on it is waited on as before.
-- Unregistering a channel clears its mark.
+- Registering or unregistering a channel clears its mark, so a channel that replaces a stuck one under the same name starts unmarked.
 
 A consumer that blocks for longer than the timeout now misses messages sent while its channel stays full, where it used to get them up to one timeout late each.
 

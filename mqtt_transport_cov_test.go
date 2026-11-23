@@ -364,3 +364,18 @@ func TestMqttTransport_StuckChannelLogShowsTimeoutUsed(t *testing.T) {
 
 	assert.Contains(t, hook.LastEntry().Message, "not read for 1 sec")
 }
+
+func TestMqttTransport_RegisteringClearsStuckMark(t *testing.T) {
+	mqtt := NewMqttTransport(covBroker, "cov_reg", "", "", true, 1, 1, nil)
+
+	for name, register := range map[string]func(){
+		"plain":       func() { mqtt.RegisterChannel("ch", make(MessageCh)) },
+		"filter":      func() { mqtt.RegisterChannelWithFilter("ch", make(MessageCh), FimpFilter{}) },
+		"filter func": func() { mqtt.RegisterChannelWithFilterFunc("ch", make(MessageCh), nil) },
+	} {
+		mqtt.stuckChannels["ch"] = true
+
+		register()
+		assert.Empty(t, mqtt.stuckChannels, name)
+	}
+}

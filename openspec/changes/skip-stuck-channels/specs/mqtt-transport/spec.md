@@ -8,7 +8,7 @@ filter accepts it. A channel filter SHALL match its topic as an MQTT route and i
 exactly, `*` matching any service or interface; a filter function SHALL take precedence over it,
 and a channel without a filter SHALL get every message. A channel not read within the receive
 timeout (10 s by default) SHALL miss that message with a warning and SHALL then count as stuck: while
-stuck it SHALL get a message only when it has room, without any wait, until it takes one again. All
+stuck it SHALL get a message only when it has room, without any wait, until it takes one again or a channel is registered under its name. All
 full channels SHALL share one receive timeout per message, so channels with room get the message at once
 and stuck channels do not add their timeouts up. A message with an unknown payload type or an
 unparsable topic or payload SHALL be dropped with a log line, and a panic in a filter function SHALL be
@@ -33,6 +33,11 @@ logged and count as no match.
 
 - **WHEN** a stuck channel has room again
 - **THEN** it gets the next message, a log line says it is read again, and later messages wait for it up to the receive timeout
+
+#### Scenario: Stuck consumer is replaced
+
+- **WHEN** a channel is registered under the name of a stuck channel
+- **THEN** the new channel is waited on up to the receive timeout like any other
 
 #### Scenario: Several stuck consumers
 
