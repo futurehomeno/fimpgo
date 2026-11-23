@@ -7,6 +7,7 @@ import (
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
+	logtest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -267,4 +268,69 @@ func TestNewMqttTransportFromConfigs(t *testing.T) {
 	assert.Nil(t, NewMqttTransportFromConfigs(MqttConnectionConfigs{
 		ServerURI: covBroker, PrivateKeyFileName: "k", CertFileName: "c", CertDir: t.TempDir(),
 	}, nil))
+}
+
+func TestMqttTransport_StuckChannelsShareOneTimeout(t *testing.T) {
+	mqtt := NewMqttTransport(covBroker, "cov_stuck", "", "", true, 1, 1, nil)
+	mqtt.SetReceiveChTimeout(2)
+	payload, err := NewStringMessage("evt.a.b", "svc", "v", nil, nil, nil).SerializeToJson()
+	require.NoError(t, err)
+
+	for _, name := range []string{"stuck1", "stuck2", "stuck3"} {
+		mqtt.RegisterChannel(name, make(MessageCh))
+	}
+
+	healthy := make(MessageCh, 1)
+	mqtt.RegisterChannel("healthy", healthy)
+
+	late := make(MessageCh)
+	mqtt.RegisterChannel("late", late)
+
+	gotLate := make(chan bool, 1)
+
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		select {
+		case <-late:
+			gotLate <- true
+		case <-time.After(5 * time.Second):
+			gotLate <- false
+		}
+	}()
+
+	start := time.Now()
+	mqtt.handleIncomingMessage(fakeMessage{topic: "pt:j1/mt:evt/rt:app/rn:n/ad:1", payload: payload})
+
+	assert.Less(t, time.Since(start), 3500*time.Millisecond, "stuck channels must share one timeout, not add up")
+	assert.Len(t, healthy, 1)
+	assert.True(t, <-gotLate, "a channel read within the timeout still gets the message")
+}
+
+func TestMqttTransport_EachChannelGetsItsOwnMessage(t *testing.T) {
+	mqtt := NewMqttTransport(covBroker, "cov_own", "", "", true, 1, 1, nil)
+	payload, err := NewStringMessage("evt.a.b", "svc", "v", nil, nil, nil).SerializeToJson()
+	require.NoError(t, err)
+
+	a, b := make(MessageCh, 1), make(MessageCh, 1)
+	mqtt.RegisterChannel("a", a)
+	mqtt.RegisterChannel("b", b)
+
+	mqtt.handleIncomingMessage(fakeMessage{topic: "pt:j1/mt:evt/rt:app/rn:n/ad:1", payload: payload})
+
+	require.NotSame(t, <-a, <-b)
+}
+
+func TestMqttTransport_StuckChannelLogShowsTimeoutUsed(t *testing.T) {
+	hook := logtest.NewGlobal()
+	mqtt := NewMqttTransport(covBroker, "cov_stuck_log", "", "", true, 1, 1, nil)
+	mqtt.SetReceiveChTimeout(1)
+	payload, err := NewStringMessage("evt.a.b", "svc", "v", nil, nil, nil).SerializeToJson()
+	require.NoError(t, err)
+
+	mqtt.RegisterChannel("stuck", make(MessageCh))
+	time.AfterFunc(100*time.Millisecond, func() { mqtt.SetReceiveChTimeout(9) })
+
+	mqtt.handleIncomingMessage(fakeMessage{topic: "pt:j1/mt:evt/rt:app/rn:n/ad:1", payload: payload})
+
+	assert.Contains(t, hook.LastEntry().Message, "not read for 1 sec")
 }
