@@ -34,6 +34,7 @@ func NewMqttTransport(serverURI, clientID, username, password string, cleanSessi
 	mh.subChannels = make(map[string]MessageCh)
 	mh.subFilters = make(map[string]FimpFilter)
 	mh.subFilterFuncs = make(map[string]FilterFunc)
+	mh.stuckChannels = make(map[string]bool)
 	mh.mainQueue = make(chan MQTT.Message, defaultMainQueueSize)
 	mh.startFailRetryCount = 10
 	mh.receiveChTimeout.Store(10)
@@ -52,6 +53,7 @@ func NewMqttTransportFromConnection(client MQTT.Client, subQos byte, pubQos byte
 	mh.subChannels = make(map[string]MessageCh)
 	mh.subFilters = make(map[string]FimpFilter)
 	mh.subFilterFuncs = make(map[string]FilterFunc)
+	mh.stuckChannels = make(map[string]bool)
 	mh.mainQueue = make(chan MQTT.Message, defaultMainQueueSize)
 	mh.startFailRetryCount = 10
 	mh.receiveChTimeout.Store(10)
@@ -336,6 +338,7 @@ func (mh *MqttTransport) SetMessageHandler(msgHandler MessageHandler) {
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannel(channelId string, messageCh MessageCh) {
 	mh.channelRegLock.Lock()
+	delete(mh.stuckChannels, channelId)
 	mh.subChannels[channelId] = messageCh
 	mh.channelRegLock.Unlock()
 }
@@ -346,6 +349,7 @@ func (mh *MqttTransport) UnregisterChannel(channelId string) {
 	delete(mh.subChannels, channelId)
 	delete(mh.subFilters, channelId)
 	delete(mh.subFilterFuncs, channelId)
+	delete(mh.stuckChannels, channelId)
 	mh.channelRegLock.Unlock()
 }
 
@@ -353,6 +357,7 @@ func (mh *MqttTransport) UnregisterChannel(channelId string) {
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannelWithFilter(channelId string, messageCh MessageCh, filter FimpFilter) {
 	mh.channelRegLock.Lock()
+	delete(mh.stuckChannels, channelId)
 	mh.subChannels[channelId] = messageCh
 	mh.subFilters[channelId] = filter
 	mh.channelRegLock.Unlock()
@@ -362,6 +367,7 @@ func (mh *MqttTransport) RegisterChannelWithFilter(channelId string, messageCh M
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannelWithFilterFunc(channelId string, messageCh MessageCh, filterFunc FilterFunc) {
 	mh.channelRegLock.Lock()
+	delete(mh.stuckChannels, channelId)
 	mh.subChannels[channelId] = messageCh
 	mh.subFilterFuncs[channelId] = filterFunc
 	mh.channelRegLock.Unlock()
@@ -517,9 +523,15 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 
 		select {
 		case c <- out:
+			if mh.stuckChannels[name] {
+				delete(mh.stuckChannels, name)
+				log.Infof("[fimpgo] Channel %s is read again", name)
+			}
 		default:
-			full = append(full, name)
-			cases = append(cases, reflect.SelectCase{Dir: reflect.SelectSend, Chan: reflect.ValueOf(c), Send: reflect.ValueOf(out)})
+			if !mh.stuckChannels[name] {
+				full = append(full, name)
+				cases = append(cases, reflect.SelectCase{Dir: reflect.SelectSend, Chan: reflect.ValueOf(c), Send: reflect.ValueOf(out)})
+			}
 		}
 	}
 
@@ -537,7 +549,8 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 		i, _, _ := reflect.Select(cases)
 		if i == len(full) {
 			for _, name := range full {
-				log.Warnf("[fimpgo] Channel %s not read for %d sec", name, timeout)
+				mh.stuckChannels[name] = true
+				log.Warnf("[fimpgo] Channel %s not read for %d sec, skipped while full", name, timeout)
 			}
 
 			return
@@ -783,6 +796,7 @@ func NewMqttTransportTLS(serverURI, clientID, username, password string, cleanSe
 	mh.subChannels = make(map[string]MessageCh)
 	mh.subFilters = make(map[string]FimpFilter)
 	mh.subFilterFuncs = make(map[string]FilterFunc)
+	mh.stuckChannels = make(map[string]bool)
 	mh.mainQueue = make(chan MQTT.Message, defaultMainQueueSize)
 	mh.startFailRetryCount = 10
 	mh.receiveChTimeout.Store(10)
