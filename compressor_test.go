@@ -76,3 +76,24 @@ func TestNewMsgCompressor2(t *testing.T) {
 		}
 	}
 }
+
+func TestMsgCompressor_PayloadSurvivesNextCompression(t *testing.T) {
+	comp := NewMsgCompressor("", "")
+
+	first, err := comp.CompressBinMsg([]byte(`{"serv":"first"}`))
+	if err != nil {
+		t.Fatal("Compressor error:", err)
+	}
+
+	if _, err := comp.CompressBinMsg([]byte(`{"serv":"second, and longer"}`)); err != nil {
+		t.Fatal("Compressor error:", err)
+	}
+
+	got, err := NewMsgCompressor("", "").DecompressBinMsg(first)
+	if err != nil {
+		t.Fatal("Decompressor error:", err)
+	}
+	if string(got) != `{"serv":"first"}` {
+		t.Fatal("First payload changed:", string(got))
+	}
+}

@@ -2,11 +2,14 @@ package fimpgo
 
 import (
 	"fmt"
+	"reflect"
 	"runtime/debug"
+	"slices"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/buger/jsonparser"
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -31,6 +34,7 @@ func NewMqttTransport(serverURI, clientID, username, password string, cleanSessi
 	mh.subChannels = make(map[string]MessageCh)
 	mh.subFilters = make(map[string]FimpFilter)
 	mh.subFilterFuncs = make(map[string]FilterFunc)
+	mh.stuckChannels = make(map[string]bool)
 	mh.mainQueue = make(chan MQTT.Message, defaultMainQueueSize)
 	mh.startFailRetryCount = 10
 	mh.receiveChTimeout.Store(10)
@@ -49,6 +53,7 @@ func NewMqttTransportFromConnection(client MQTT.Client, subQos byte, pubQos byte
 	mh.subChannels = make(map[string]MessageCh)
 	mh.subFilters = make(map[string]FimpFilter)
 	mh.subFilterFuncs = make(map[string]FilterFunc)
+	mh.stuckChannels = make(map[string]bool)
 	mh.mainQueue = make(chan MQTT.Message, defaultMainQueueSize)
 	mh.startFailRetryCount = 10
 	mh.receiveChTimeout.Store(10)
@@ -91,57 +96,92 @@ func NewMqttTransportFromConfigs(cfg MqttConnectionConfigs, errHandler func(erro
 }
 
 func (mh *MqttTransport) Start(timeout time.Duration) error {
-	mh.connState.Init()
-	done := mh.connState.DoneC()
+	mh.lifecycleMu.Lock()
 
-	// try to connect with retries
-	err := func() (ret error) {
-		for i := 1; i <= mh.startFailRetryCount; i++ {
-			if i > 1 {
-				select {
-				case <-time.After(time.Duration(i*i) * time.Second):
-				case <-done:
-					return utils.ErrConnectionLost
-				}
-			}
+	if done := mh.connState.DoneC(); done != nil {
+		select {
+		case <-done:
+		default:
+			// Already started: Init would replace the done channel the running reader waits on.
+			mh.lifecycleMu.Unlock()
 
-			token := mh.client.Connect()
-
-			select {
-			case <-token.Done():
-				if ret = token.Error(); ret == nil {
-					return nil
-				}
-			case <-time.After(timeout):
-				ret = utils.ErrTimeout
-			case <-done:
-				return utils.ErrConnectionLost
-			}
-
-			log.Warnf("[fimpgo] MQTT connect failed %d/%d err: %v", i, mh.startFailRetryCount, ret)
+			return mh.connState.WaitConnected(timeout)
 		}
+	}
 
-		return ret
-	}()
+	defer mh.lifecycleMu.Unlock()
+
+	mh.connState.Init()
+
+	// A Stop that arrived before Init closed only the old done, so it would wait out the whole connect budget,
+	// and its reader, which picks up the new done, exits only once stop below closes it.
+	err := utils.ErrConnectionLost
+	if mh.pendingStops.Load() == 0 {
+		err = mh.connect(timeout)
+	}
+
+	if err == nil {
+		err = mh.connState.WaitConnected(timeout)
+	}
 
 	if err != nil {
+		// Stop also cancels a still pending paho attempt, which would otherwise connect with nobody reading messages.
+		mh.stop()
+
 		return err
 	}
 
-	ret := mh.connState.WaitConnected(timeout)
+	mh.incMsgsWg.Add(1)
 
-	if ret == nil {
-		mh.incMsgsWg = sync.WaitGroup{}
-		mh.incMsgsWg.Add(1)
+	var started sync.WaitGroup
+	started.Add(1)
 
-		var started sync.WaitGroup
-		started.Add(1)
+	go mh.handleIncomingMessages(&started)
+	started.Wait()
 
-		go mh.handleIncomingMessages(&started)
-		started.Wait()
+	return nil
+}
+
+// connect re-connects only after an attempt has finished, as paho rejects Connect while one is pending
+// (with connect retry it keeps a single attempt pending until it succeeds).
+func (mh *MqttTransport) connect(timeout time.Duration) error {
+	done := mh.connState.DoneC()
+	// Beyond ~3000 the backoff sum overflows time.Duration; 1000 already gives a budget of years.
+	count := min(max(mh.startFailRetryCount, 1), 1000)
+	budget := time.Duration(count) * timeout
+
+	for i := 1; i < count; i++ {
+		budget += time.Duration(i*i) * time.Second
 	}
 
-	return ret
+	deadline := time.After(budget)
+
+	for i := 1; ; i++ {
+		token := mh.client.Connect()
+
+		select {
+		case <-token.Done():
+		case <-deadline:
+			return utils.ErrTimeout
+		case <-done:
+			return utils.ErrConnectionLost
+		}
+
+		err := token.Error()
+		if err == nil {
+			return nil
+		}
+
+		log.Warnf("[fimpgo] MQTT connect attempt %d failed err: %v", i, err)
+
+		select {
+		case <-time.After(time.Duration(i*i) * time.Second):
+		case <-deadline:
+			return err
+		case <-done:
+			return utils.ErrConnectionLost
+		}
+	}
 }
 
 func (mh *MqttTransport) IsConnected() bool {
@@ -149,9 +189,22 @@ func (mh *MqttTransport) IsConnected() bool {
 }
 
 func (mh *MqttTransport) Stop() {
+	mh.pendingStops.Add(1)
+	// Closing done before taking the lock makes a Start that is still connecting give up at once.
+	mh.connState.OnDone()
+
+	mh.lifecycleMu.Lock()
+	defer mh.lifecycleMu.Unlock()
+
+	mh.stop()
+	mh.pendingStops.Add(-1)
+}
+
+func (mh *MqttTransport) stop() {
 	log.Debugf("[fimpgo] Stop connection")
 	mh.connState.OnDone()
-	mh.client.Disconnect(0)
+	// With quiesce 0 paho returns before it has disconnected, and a Start right after gets a status error.
+	mh.client.Disconnect(250)
 	mh.incMsgsWg.Wait()
 	log.Debugf("[fimpgo] Connection stopped")
 }
@@ -269,7 +322,9 @@ func (mh *MqttTransport) ensureDefaultSource(message *FimpMessage) {
 	message.Source = mh.defaultSource
 }
 
-// SetStartAutoRetryCount Set number of retries transport will attempt on startup . Default value is 10
+// SetStartAutoRetryCount sizes the Start budget: count times the Start timeout plus the backoffs between count attempts.
+// Start connects again whenever an attempt fails within that budget, then waits up to one more timeout for the
+// subscriptions to be restored. Default value is 10, counts are clamped to 1..1000.
 func (mh *MqttTransport) SetStartAutoRetryCount(count int) {
 	mh.startFailRetryCount = count
 }
@@ -283,6 +338,7 @@ func (mh *MqttTransport) SetMessageHandler(msgHandler MessageHandler) {
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannel(channelId string, messageCh MessageCh) {
 	mh.channelRegLock.Lock()
+	delete(mh.stuckChannels, channelId)
 	mh.subChannels[channelId] = messageCh
 	mh.channelRegLock.Unlock()
 }
@@ -293,6 +349,7 @@ func (mh *MqttTransport) UnregisterChannel(channelId string) {
 	delete(mh.subChannels, channelId)
 	delete(mh.subFilters, channelId)
 	delete(mh.subFilterFuncs, channelId)
+	delete(mh.stuckChannels, channelId)
 	mh.channelRegLock.Unlock()
 }
 
@@ -300,6 +357,7 @@ func (mh *MqttTransport) UnregisterChannel(channelId string) {
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannelWithFilter(channelId string, messageCh MessageCh, filter FimpFilter) {
 	mh.channelRegLock.Lock()
+	delete(mh.stuckChannels, channelId)
 	mh.subChannels[channelId] = messageCh
 	mh.subFilters[channelId] = filter
 	mh.channelRegLock.Unlock()
@@ -309,6 +367,7 @@ func (mh *MqttTransport) RegisterChannelWithFilter(channelId string, messageCh M
 // multiple channels can be registered , in that case a message bill be multicasted to all channels.
 func (mh *MqttTransport) RegisterChannelWithFilterFunc(channelId string, messageCh MessageCh, filterFunc FilterFunc) {
 	mh.channelRegLock.Lock()
+	delete(mh.stuckChannels, channelId)
 	mh.subChannels[channelId] = messageCh
 	mh.subFilterFuncs[channelId] = filterFunc
 	mh.channelRegLock.Unlock()
@@ -337,6 +396,8 @@ func onConnectionNotifEvt(client MQTT.Client, _type MQTT.ConnectionNotification)
 }
 
 func (mh *MqttTransport) onConnect(client MQTT.Client) {
+	done := mh.connState.DoneC()
+
 	mh.subscribeLock.Lock()
 	defer mh.subscribeLock.Unlock()
 
@@ -349,7 +410,7 @@ func (mh *MqttTransport) onConnect(client MQTT.Client) {
 		}
 	}
 
-	mh.connState.OnConnect()
+	mh.connState.OnConnect(done)
 }
 
 // onMessage is a message handler registered with MQTT client.
@@ -414,16 +475,20 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 
 	var fimpMsg *FimpMessage
 
+	payload := msg.Payload()
+
 	switch addr.PayloadType {
 	case DefaultPayload:
-		fimpMsg, err = NewMessageFromBytes(msg.Payload())
+		fimpMsg, err = NewMessageFromBytes(payload)
 	case CompressedJsonPayload:
 		if mh.compressor == nil {
 			log.Warnf("[fimpgo] Compressor is not initialized for topic=%s", topic)
 			return
 		}
 
-		fimpMsg, err = mh.compressor.DecompressFimpMsg(msg.Payload())
+		if payload, err = mh.compressor.DecompressBinMsg(payload); err == nil {
+			fimpMsg, err = NewMessageFromBytes(payload)
+		}
 	default:
 		// This means unknown binary payload, for instance compressed message
 		log.Warnf("[fimpgo] Unknown payload type=%s topic=%s", addr.PayloadType, topic)
@@ -431,7 +496,7 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 	}
 
 	if err != nil {
-		log.Errorf("[fimpgo] Processing payload from topic=%s err: %v", topic, err)
+		log.Errorf("[fimpgo] Processing payload from topic=%s len=%d keys=%q err: %v", topic, len(msg.Payload()), payloadKeys(payload), err)
 		log.Tracef("[fimpgo] Payload preview len=%d: %.100s", len(msg.Payload()), msg.Payload())
 		return
 	}
@@ -440,23 +505,81 @@ func (mh *MqttTransport) handleIncomingMessage(msg MQTT.Message) {
 		mh.msgHandler(topic, addr, fimpMsg, msg.Payload())
 	}
 
+	// Sends stay under the lock: callers such as SyncFimpClient close their channel right after UnregisterChannel.
 	mh.channelRegLock.Lock()
+	defer mh.channelRegLock.Unlock()
+
+	var (
+		full  []string
+		cases []reflect.SelectCase
+	)
+
 	for name, c := range mh.subChannels {
 		if !mh.isChannelInterested(name, topic, addr, fimpMsg) {
 			continue
 		}
 
-		timer := time.NewTimer(time.Second * time.Duration(mh.receiveChTimeout.Load()))
+		out := &Message{Topic: topic, Addr: addr, Payload: fimpMsg}
 
 		select {
-		case c <- &Message{Topic: topic, Addr: addr, Payload: fimpMsg}:
-		case <-timer.C:
-			log.Warnf("[fimpgo] Channel %s not read for %d sec", name, mh.receiveChTimeout.Load())
+		case c <- out:
+			if mh.stuckChannels[name] {
+				delete(mh.stuckChannels, name)
+				log.Infof("[fimpgo] Channel %s is read again", name)
+			}
+		default:
+			if !mh.stuckChannels[name] {
+				full = append(full, name)
+				cases = append(cases, reflect.SelectCase{Dir: reflect.SelectSend, Chan: reflect.ValueOf(c), Send: reflect.ValueOf(out)})
+			}
+		}
+	}
+
+	if len(full) == 0 {
+		return
+	}
+
+	timeout := mh.receiveChTimeout.Load()
+	timer := time.NewTimer(time.Second * time.Duration(timeout))
+	defer timer.Stop()
+
+	cases = append(cases, reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(timer.C)})
+
+	for len(full) > 0 {
+		i, _, _ := reflect.Select(cases)
+		if i == len(full) {
+			for _, name := range full {
+				mh.stuckChannels[name] = true
+				log.Warnf("[fimpgo] Channel %s not read for %d sec, skipped while full", name, timeout)
+			}
+
+			return
 		}
 
-		timer.Stop()
+		full = slices.Delete(full, i, i+1)
+		cases = slices.Delete(cases, i, i+1)
 	}
-	mh.channelRegLock.Unlock()
+}
+
+// payloadKeys lists the top-level JSON keys, which identifies a malformed producer without logging values.
+func payloadKeys(payload []byte) []string {
+	const maxKeys = 16
+
+	var keys []string
+
+	_ = jsonparser.ObjectEach(payload, func(key []byte, _ []byte, _ jsonparser.ValueType, _ int) error {
+		if len(keys) == maxKeys {
+			keys = append(keys, "...")
+
+			return errors.New("too many keys")
+		}
+
+		keys = append(keys, string(key[:min(len(key), 64)]))
+
+		return nil
+	})
+
+	return keys
 }
 
 // isChannelInterested validates if channel is interested in message. Filtering is executed against either static filters or filter function
@@ -673,6 +796,7 @@ func NewMqttTransportTLS(serverURI, clientID, username, password string, cleanSe
 	mh.subChannels = make(map[string]MessageCh)
 	mh.subFilters = make(map[string]FimpFilter)
 	mh.subFilterFuncs = make(map[string]FilterFunc)
+	mh.stuckChannels = make(map[string]bool)
 	mh.mainQueue = make(chan MQTT.Message, defaultMainQueueSize)
 	mh.startFailRetryCount = 10
 	mh.receiveChTimeout.Store(10)

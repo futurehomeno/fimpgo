@@ -3,6 +3,7 @@ package fimpgo
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"reflect"
@@ -429,11 +430,32 @@ func NewBinaryMessage(iface string, service fimptype.ServiceNameT, value []byte,
 	return NewMessage(iface, service, fimptype.VTypeBinary, valEnc, props, tags, rqMsg)
 }
 
+// withoutValue drops the offending value jsonparser appends to type-mismatch errors, as it may be user data.
+func withoutValue(err error) error {
+	if kind, _, ok := strings.Cut(err.Error(), ": "); ok && strings.HasPrefix(kind, "Value is not a ") {
+		return errors.New(kind)
+	}
+
+	return err
+}
+
+func optionalString(msg []byte, iface, key string) string {
+	v, err := jsonparser.GetString(msg, key)
+	if err != nil &&
+		!errors.Is(err, jsonparser.KeyPathNotFoundError) &&
+		!errors.Is(err, jsonparser.NullValueError) {
+		log.Debugf("[fimpgo] Parse %s %s err: %v", iface, key, withoutValue(err))
+	}
+
+	return v
+}
+
 func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	fimpmsg := FimpMessage{}
 	var err error
 
 	if fimpmsg.Interface, err = jsonparser.GetString(msg, "type"); err != nil {
+		err = withoutValue(err)
 		log.Warnf("[fimpgo] Parse type err: %v", err)
 		return nil, err
 	}
@@ -441,7 +463,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	serviceStr, err := jsonparser.GetString(msg, "serv")
 
 	if err != nil {
-		log.Warnf("[fimpgo] Parse %s serv err: %v", fimpmsg.Interface, err)
+		log.Warnf("[fimpgo] Parse %s serv err: %v", fimpmsg.Interface, withoutValue(err))
 	} else {
 		fimpmsg.Service = fimptype.ServiceNameT(serviceStr)
 	}
@@ -449,39 +471,18 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	valueTypeStr, err := jsonparser.GetString(msg, ValTypeField)
 
 	if err != nil {
-		log.Warnf("[fimpgo] Parse %s %s err: %v", fimpmsg.Interface, ValTypeField, err)
+		log.Warnf("[fimpgo] Parse %s %s err: %v", fimpmsg.Interface, ValTypeField, withoutValue(err))
 	} else {
 		fimpmsg.ValueType = fimptype.ValueTypeT(valueTypeStr)
 	}
 
-	if fimpmsg.UID, err = jsonparser.GetString(msg, "uid"); err != nil {
-		log.Tracef("[fimpgo] Parse %s uid err: %v", fimpmsg.Interface, err)
-	}
-	if fimpmsg.CorrelationID, err = jsonparser.GetString(msg, "corid"); err != nil {
-		log.Tracef("[fimpgo] Parse %s coreid err: %v", fimpmsg.Interface, err)
-	}
-	if fimpmsg.CreationTime, err = jsonparser.GetString(msg, "ctime"); err != nil {
-		log.Tracef("[fimpgo] Parse %s ctime err: %v", fimpmsg.Interface, err)
-	}
-	if fimpmsg.ResponseToTopic, err = jsonparser.GetString(msg, "resp_to"); err != nil {
-		log.Tracef("[fimpgo] Parse %s resp_t err: %v", fimpmsg.Interface, err)
-	}
-
-	sourceStr, err := jsonparser.GetString(msg, "src")
-
-	if err != nil {
-		log.Tracef("[fimpgo] Parse %s src err: %v", fimpmsg.Interface, err)
-	} else {
-		fimpmsg.Source = fimptype.ResourceNameT(sourceStr)
-	}
-
-	if fimpmsg.Topic, err = jsonparser.GetString(msg, "topic"); err != nil {
-		log.Tracef("[fimpgo] Parse %s topic err: %v", fimpmsg.Interface, err)
-	}
-
-	if fimpmsg.Version, err = jsonparser.GetString(msg, "ver"); err != nil {
-		log.Tracef("[fimpgo] Parse %s ver err: %v", fimpmsg.Interface, err)
-	}
+	fimpmsg.UID = optionalString(msg, fimpmsg.Interface, "uid")
+	fimpmsg.CorrelationID = optionalString(msg, fimpmsg.Interface, "corid")
+	fimpmsg.CreationTime = optionalString(msg, fimpmsg.Interface, "ctime")
+	fimpmsg.ResponseToTopic = optionalString(msg, fimpmsg.Interface, "resp_to")
+	fimpmsg.Source = fimptype.ResourceNameT(optionalString(msg, fimpmsg.Interface, "src"))
+	fimpmsg.Topic = optionalString(msg, fimpmsg.Interface, "topic")
+	fimpmsg.Version = optionalString(msg, fimpmsg.Interface, "ver")
 
 	err = nil
 
@@ -605,7 +606,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	case fimptype.VTypeBinary:
 		fimpmsg.Value, err = jsonparser.GetString(msg, ValField)
 		if err != nil {
-			log.Warnf("[fimpgo] GetString %s val err: %v", fimpmsg.Interface, err)
+			log.Warnf("[fimpgo] GetString %s val err: %v", fimpmsg.Interface, withoutValue(err))
 		}
 
 	case fimptype.VTypeObject:
@@ -617,7 +618,7 @@ func NewMessageFromBytes(msg []byte) (*FimpMessage, error) { //nolint:gocyclo
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("val=%s err: %w", fimpmsg.ValueType, err)
+		return nil, fmt.Errorf("val=%s err: %w", fimpmsg.ValueType, withoutValue(err))
 	}
 
 	if properties, dt, _, err := jsonparser.Get(msg, "props"); dt != jsonparser.NotExist && dt != jsonparser.Null && err == nil {

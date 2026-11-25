@@ -1,0 +1,89 @@
+# fimptype Specification
+
+## Purpose
+The shared FIMP vocabulary (message, resource and value types, service and thing definitions), so
+every consumer writes the same wire values.
+
+## Requirements
+### Requirement: Wire values for message, resource and value types
+
+The library SHALL define the message types `cmd`, `evt` and `rsp`; the resource types `dev`, `app`,
+`ad`, `cloud`, `discovery` and `loc`; and the value types `string`, `int`, `float`, `bool`,
+`str_map`, `int_map`, `float_map`, `bool_map`, `str_array`, `int_array`, `float_array`,
+`bool_array`, `object`, `base64`, `bin` and `null`. Exported names SHALL only be added; renaming or
+removing one SHALL go through a deprecation.
+
+#### Scenario: Adapter resource type
+
+- **WHEN** a consumer addresses an adapter
+- **THEN** the topic segment is `rt:ad`
+
+### Requirement: An interface name determines its message type
+
+The message type of an interface SHALL be taken from its prefix, ignoring surrounding spaces, and
+SHALL be unknown when the prefix is none of `cmd`, `evt` or `rsp`.
+
+#### Scenario: Command
+
+- **WHEN** the message type of ` cmd.binary.set` is asked
+- **THEN** it is `cmd`
+
+#### Scenario: Other prefix
+
+- **WHEN** the message type of `report.binary` is asked
+- **THEN** it is unknown
+
+### Requirement: Service definitions expose typed properties
+
+A service definition SHALL return a property as string, float, int or bool, a list of strings,
+floats or ints, or a caller's object, converting a JSON-decoded value to the requested type, and SHALL return the zero
+value (or report absence) for a missing or unconvertible property. Ensuring interfaces SHALL add only
+those not already present.
+
+#### Scenario: Decoded number list
+
+- **WHEN** a service decoded from JSON has `sup_setpoints` `[18, 21]` and its ints are asked
+- **THEN** the result is `[18, 21]`
+
+#### Scenario: Interface already present
+
+- **WHEN** an interface the service already lists is ensured again
+- **THEN** the interface list is unchanged
+
+### Requirement: Thing inclusion and exclusion reports
+
+The thing inclusion report SHALL carry the thing's address, services, groups, product name, hash and
+ID, manufacturer, device ID, hardware and software version, communication technology, power source,
+wake-up interval, security level, technology-specific properties and property sets under their FIMP
+JSON keys. The exclusion report SHALL carry the address.
+
+#### Scenario: Inclusion report keys
+
+- **WHEN** an inclusion report is encoded
+- **THEN** it has the keys `address`, `services`, `product_hash`, `comm_tech`, `power_source` and `wakeup_interval`
+
+### Requirement: Error codes
+
+`fimptype` SHALL declare `ErrorCodeT`, a string type with a `Str()` method like `ValueTypeT`, and
+one constant for each error code of an `evt.error.report` value, valued with the exact wire name:
+`ErrorCodeBadRequest` `bad_request`, `ErrorCodeOutOfRange` `out_of_range`,
+`ErrorCodeNotSupported` `not_supported`, `ErrorCodeNotFound` `not_found`, `ErrorCodeBusy` `busy`,
+`ErrorCodeUnauthorized` `unauthorized`, `ErrorCodeDeviceRefused` `device_refused`,
+`ErrorCodeUnavailable` `unavailable`, `ErrorCodeRateLimited` `rate_limited` (too many requests for
+now; temporary, the caller may try again later) and `ErrorCodeInternal` `internal`. Every wire name SHALL be
+lower_snake. A producer MAY send a lower_snake code of its own as an `ErrorCodeT`.
+
+#### Scenario: Code on the wire
+
+- **WHEN** a producer sends `fimptype.ErrorCodeOutOfRange` as the value of an `evt.error.report`
+- **THEN** the value on the wire is `out_of_range`
+
+#### Scenario: Internal code
+
+- **WHEN** `fimptype.ErrorCodeInternal.Str()` is asked
+- **THEN** it is `internal`
+
+#### Scenario: Producer's own code
+
+- **WHEN** a producer sends `fimptype.ErrorCodeT("eco_mode")`
+- **THEN** the value on the wire is `eco_mode`

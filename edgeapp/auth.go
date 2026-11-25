@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/futurehomeno/fimpgo"
@@ -53,9 +54,13 @@ type FhOAuth2Client struct {
 	retryDelay         time.Duration
 	cbRetry            int
 	cbRetryDelay       time.Duration
+	hubTokenMux        sync.Mutex
 }
 
 func (oac *FhOAuth2Client) SetHubToken(hubToken string) {
+	oac.hubTokenMux.Lock()
+	defer oac.hubTokenMux.Unlock()
+
 	oac.hubToken = hubToken
 }
 
@@ -129,6 +134,7 @@ func (oac *FhOAuth2Client) ConfigureFimpSyncClient() error {
 		oac.mqt = fimpgo.NewMqttTransport(oac.mqttServerURI, oac.mqttClientID, "", "", true, 1, 1, nil)
 		err := oac.mqt.Start(10 * time.Second)
 		if err != nil {
+			oac.mqt = nil
 			log.Error("[edgeapp] Error connecting to broker ", err)
 			return err
 		}
@@ -143,11 +149,34 @@ func (oac *FhOAuth2Client) ConfigureFimpSyncClient() error {
 
 // LoadHubTokenFromCB - requests hub token from CloudBridge
 func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
+	oac.hubTokenMux.Lock()
+	defer oac.hubTokenMux.Unlock()
+
+	return oac.loadHubTokenFromCB()
+}
+
+func (oac *FhOAuth2Client) loadedHubToken() (string, error) {
+	oac.hubTokenMux.Lock()
+	defer oac.hubTokenMux.Unlock()
+
+	if oac.hubToken == "" {
+		if err := oac.loadHubTokenFromCB(); err != nil {
+			return "", err
+		}
+	}
+	return oac.hubToken, nil
+}
+
+func (oac *FhOAuth2Client) loadHubTokenFromCB() error {
 	if oac.mqt == nil || oac.syncClient == nil {
 		if err := oac.ConfigureFimpSyncClient(); err != nil {
 			return fmt.Errorf("[edgeapp] Configure FIMP sync client err: %w", err)
 		}
 	}
+	defer func() {
+		oac.mqt.Stop()
+		oac.mqt, oac.syncClient = nil, nil
+	}()
 
 	rspTopic := fmt.Sprintf("pt:j1/mt:rsp/rt:app/rn:%s/ad:1", oac.appName)
 	if err := oac.syncClient.AddSubscription(rspTopic); err != nil {
@@ -166,8 +195,6 @@ func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
 		log.Errorf("[edgeapp] No rsp from Cb err=%v", err)
 	}
 
-	oac.syncClient.Stop()
-	oac.mqt.Stop()
 	if err != nil {
 		return err
 	}
@@ -181,7 +208,7 @@ func (oac *FhOAuth2Client) LoadHubTokenFromCB() error {
 // ExchangeCodeForTokens - exchanging code for access token
 func (oac *FhOAuth2Client) ExchangeCodeForTokens(code string) (*OAuth2TokenResponse, error) {
 	req := OAuth2AuthCodeProxyRequest{AuthCode: code, PartnerCode: oac.partnerName}
-	return oac.postMsg(req, oac.refreshTokenApiUrl)
+	return oac.postMsg(req, oac.authCodeApiUrl)
 }
 
 // ExchangeRefreshToken - exchange refresh token for new access
@@ -191,13 +218,6 @@ func (oac *FhOAuth2Client) ExchangeRefreshToken(refreshToken string) (*OAuth2Tok
 }
 
 func (oac *FhOAuth2Client) postMsg(req any, url string) (*OAuth2TokenResponse, error) {
-	if oac.hubToken == "" {
-		err := oac.LoadHubTokenFromCB()
-		if err != nil {
-			return nil, errors.New("empty hub token.operation aborted")
-		}
-	}
-
 	reqB, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
@@ -208,12 +228,17 @@ func (oac *FhOAuth2Client) postMsg(req any, url string) (*OAuth2TokenResponse, e
 	var lastErr error
 
 	for range oac.refreshRetry {
+		hubToken, err := oac.loadedHubToken()
+		if err != nil {
+			return nil, errors.New("empty hub token.operation aborted")
+		}
+
 		r, err := http.NewRequestWithContext(context.Background(), "POST", url, bytes.NewBuffer(reqB))
 		if err != nil {
 			return nil, err
 		}
 		r.Header.Add("Content-Type", "application/json")
-		r.Header.Add("Authorization", "Bearer "+oac.hubToken)
+		r.Header.Add("Authorization", "Bearer "+hubToken)
 
 		resp, lastErr = client.Do(r)
 		if lastErr != nil {

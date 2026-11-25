@@ -55,6 +55,7 @@ func (sc *SyncClient) Connect(serverURI string, clientID string, username string
 		sc.mqttTransport = NewMqttTransport(serverURI, clientID, username, password, cleanSession, subQos, pubQos, errHandler)
 		err := sc.mqttTransport.Start(10 * time.Second)
 		if err != nil {
+			sc.mqttTransport = nil
 			return err
 		}
 

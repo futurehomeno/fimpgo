@@ -7,8 +7,53 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/futurehomeno/fimpgo/fimptype"
+	log "github.com/sirupsen/logrus"
+	logtest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestNewMessageFromBytes_OptionalFieldErrorNamesKeyAtDebug(t *testing.T) {
+	log.SetLevel(log.TraceLevel)
+	defer log.SetLevel(log.InfoLevel)
+
+	for _, key := range []string{"corid", "resp_to"} {
+		t.Run(key, func(t *testing.T) {
+			hook := logtest.NewGlobal()
+			defer hook.Reset()
+
+			_, err := NewMessageFromBytes([]byte(`{"type":"cmd.a.b","serv":"s","val_t":"null","` + key + `":1}`))
+			require.NoError(t, err)
+			require.Len(t, hook.AllEntries(), 1)
+			assert.Equal(t, log.DebugLevel, hook.LastEntry().Level)
+			assert.Contains(t, hook.LastEntry().Message, " "+key+" ")
+		})
+	}
+}
+
+func TestNewMessageFromBytes_ParseErrorsOmitValues(t *testing.T) {
+	log.SetLevel(log.TraceLevel)
+	defer log.SetLevel(log.InfoLevel)
+
+	for _, payload := range []string{
+		`{"type":4242}`,
+		`{"type":"cmd.a.b","serv":4242,"val_t":4242,"ver":4242}`,
+		`{"type":"cmd.a.b","serv":"s","val_t":"float","val":"4242"}`,
+		`{"type":"cmd.a.b","serv":"s","val_t":"bin","val":4242}`,
+	} {
+		hook := logtest.NewGlobal()
+
+		_, err := NewMessageFromBytes([]byte(payload))
+		require.Error(t, err, payload)
+		assert.NotContains(t, err.Error(), "4242", payload)
+
+		for _, e := range hook.AllEntries() {
+			assert.NotContains(t, e.Message, "4242", payload)
+		}
+
+		hook.Reset()
+	}
+}
 
 func TestFimpMessage_SerializeToJson(t *testing.T) {
 	tcs := []struct {

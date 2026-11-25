@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -28,10 +29,13 @@ type EcdsaKey struct {
 }
 
 func (kp *EcdsaKey) SetPrivateKey(privateKey *ecdsa.PrivateKey) {
-	kp.privateKey = privateKey
+	kp.privateKey, kp.publicKey = privateKey, nil
 }
 
 func (kp *EcdsaKey) PublicKey() *ecdsa.PublicKey {
+	if kp.publicKey == nil && kp.privateKey != nil {
+		return &kp.privateKey.PublicKey
+	}
 	return kp.publicKey
 }
 
@@ -49,7 +53,7 @@ func (kp *EcdsaKey) Generate() error {
 	if err != nil {
 		return err
 	}
-	kp.publicKey = &kp.privateKey.PublicKey
+	kp.publicKey = nil
 	return nil
 }
 
@@ -60,8 +64,8 @@ func (kp *EcdsaKey) ExportX509EncodedKeys() (string, string) {
 		pemEncoded := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: x509Encoded})
 		pemEncodedStr = string(pemEncoded)
 	}
-	if kp.publicKey != nil {
-		x509EncodedPub, _ := x509.MarshalPKIXPublicKey(kp.publicKey)
+	if pub := kp.PublicKey(); pub != nil {
+		x509EncodedPub, _ := x509.MarshalPKIXPublicKey(pub)
 		pemEncodedPub := pem.EncodeToMemory(&pem.Block{Type: "PUBLIC KEY", Bytes: x509EncodedPub})
 		pemEncodedPubStr = string(pemEncodedPub)
 	}
@@ -81,7 +85,7 @@ func (kp *EcdsaKey) ExportJsonEncodedKeys() (privKey JsonEcKey, pubKey JsonEcKey
 	}
 
 	// ----- PUBLIC KEY -----
-	pubBytes, err := kp.publicKey.Bytes()
+	pubBytes, err := kp.PublicKey().Bytes()
 	if err != nil {
 		return privKey, pubKey, err
 	}
@@ -111,57 +115,65 @@ func (kp *EcdsaKey) ImportX509PublicKey(pemEncodedPub string) error {
 	if blockPub == nil {
 		return errors.New("incorrect PEM format")
 	}
-	x509EncodedPub := blockPub.Bytes
-	genericPublicKey, err := x509.ParsePKIXPublicKey(x509EncodedPub)
+	genericPublicKey, err := x509.ParsePKIXPublicKey(blockPub.Bytes)
 	if err != nil {
 		return err
 	}
-	var ok bool
-	kp.publicKey, ok = genericPublicKey.(*ecdsa.PublicKey)
+	publicKey, ok := genericPublicKey.(*ecdsa.PublicKey)
 	if !ok {
 		return fmt.Errorf("genericPublicKey cast type=%T fail", genericPublicKey)
 	}
+	kp.publicKey = publicKey
 	return nil
 }
 
 func (kp *EcdsaKey) ImportX509PrivateKey(pemEncoded string) error {
-	var err error
 	block, _ := pem.Decode([]byte(pemEncoded))
-	x509Encoded := block.Bytes
-	kp.privateKey, err = x509.ParseECPrivateKey(x509Encoded)
-	return err
+	if block == nil {
+		return errors.New("incorrect PEM format")
+	}
+	privateKey, err := x509.ParseECPrivateKey(block.Bytes)
+	if err != nil {
+		return err
+	}
+	kp.privateKey, kp.publicKey = privateKey, nil
+	return nil
 }
 
 func (kp *EcdsaKey) ImportJsonPublicKey(jkey JsonEcKey) error {
-	x, xok := big.NewInt(0).SetString(jkey.X, 16)
-	y, yok := big.NewInt(0).SetString(jkey.Y, 16)
+	x, xok := hexToFixed(jkey.X)
+	y, yok := hexToFixed(jkey.Y)
 	if !xok || !yok {
 		return errors.New("json key parse error")
 	}
-	kp.publicKey = &ecdsa.PublicKey{
-		Curve: elliptic.P256(),
-		X:     x,
-		Y:     y,
+	pub, err := ecdsa.ParseUncompressedPublicKey(elliptic.P256(), append(append([]byte{0x04}, x...), y...))
+	if err != nil {
+		return err
 	}
+	kp.publicKey = pub
 	return nil
 }
 
 func (kp *EcdsaKey) ImportJsonPrivateKey(jkey JsonEcKey) error {
-	x, xok := big.NewInt(0).SetString(jkey.X, 16)
-	y, yok := big.NewInt(0).SetString(jkey.Y, 16)
-	d, dok := big.NewInt(0).SetString(jkey.D, 16)
-	if !xok || !yok || !dok {
+	d, ok := hexToFixed(jkey.D)
+	if !ok {
 		return errors.New("json key parse error")
 	}
-	kp.privateKey = &ecdsa.PrivateKey{
-		PublicKey: ecdsa.PublicKey{
-			Curve: elliptic.P256(),
-			X:     x,
-			Y:     y,
-		},
-		D: d,
+	priv, err := ecdsa.ParseRawPrivateKey(elliptic.P256(), d)
+	if err != nil {
+		return err
 	}
+	kp.privateKey, kp.publicKey = priv, nil
 	return nil
+}
+
+// hexToFixed left-pads to the P-256 coordinate size, since keys exported via big.Int dropped leading zeros.
+func hexToFixed(s string) ([]byte, bool) {
+	n, ok := big.NewInt(0).SetString(s, 16)
+	if !ok || strings.ContainsAny(s, "+-") || n.BitLen() > 256 {
+		return nil, false
+	}
+	return n.FillBytes(make([]byte, 32)), true
 }
 
 // SignStringES256 signs string and returns as result .

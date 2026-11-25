@@ -7,6 +7,7 @@ import (
 	"github.com/futurehomeno/fimpgo"
 	"github.com/futurehomeno/fimpgo/security"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSignMessageES256(t *testing.T) {
@@ -146,4 +147,46 @@ func TestSignMessageES256_TestVerify2(t *testing.T) {
 		t.Error("Message can't be verified. Err:", err)
 		t.FailNow()
 	}
+}
+
+func TestSignedMessageES256_Errors(t *testing.T) {
+	keys := security.NewEcdsaKey()
+	require.NoError(t, keys.Generate())
+	msg := fimpgo.NewBoolMessage("cmd.binary.set", "out_bin_switch", true, nil, nil, nil)
+
+	signed, err := SignMessageES256(msg, nil, "u", keys, &fimpgo.Props{"device_id": "d"})
+	require.NoError(t, err)
+	assert.Equal(t, "cmd.transport.signed", signed.Interface)
+	assert.Equal(t, "d", signed.Properties["device_id"])
+
+	clone := func(mod func(m *fimpgo.FimpMessage)) *fimpgo.FimpMessage {
+		c := *signed
+		c.Properties = fimpgo.Props{}
+		for k, v := range signed.Properties {
+			c.Properties[k] = v
+		}
+		mod(&c)
+		return &c
+	}
+	other := security.NewEcdsaKey()
+	require.NoError(t, other.Generate())
+
+	for name, c := range map[string]struct {
+		msg *fimpgo.FimpMessage
+		key *security.EcdsaKey
+	}{
+		"wrong interface":  {clone(func(m *fimpgo.FimpMessage) { m.Interface = "cmd.binary.set" }), keys},
+		"non-string value": {clone(func(m *fimpgo.FimpMessage) { m.Value = 1 }), keys},
+		"missing sig":      {clone(func(m *fimpgo.FimpMessage) { delete(m.Properties, "sig") }), keys},
+		"bad sig base64":   {clone(func(m *fimpgo.FimpMessage) { m.Properties["sig"] = "!!!" }), keys},
+		"wrong key":        {signed, other},
+		"tampered value":   {clone(func(m *fimpgo.FimpMessage) { m.Value = "QUJD" }), keys},
+	} {
+		_, err := GetVerifiedMessageES256(c.msg, c.key)
+		assert.Error(t, err, name)
+	}
+
+	got, err := GetVerifiedMessageES256(signed, keys)
+	require.NoError(t, err)
+	assert.Equal(t, "cmd.binary.set", got.Interface)
 }
