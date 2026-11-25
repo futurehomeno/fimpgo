@@ -6,7 +6,8 @@ one constant for each error code of an `evt.error.report` value, valued with the
 `ErrorCodeBadRequest` `bad_request`, `ErrorCodeOutOfRange` `out_of_range`,
 `ErrorCodeNotSupported` `not_supported`, `ErrorCodeNotFound` `not_found`, `ErrorCodeBusy` `busy`,
 `ErrorCodeUnauthorized` `unauthorized`, `ErrorCodeDeviceRefused` `device_refused`,
-`ErrorCodeUnavailable` `unavailable` and `ErrorCodeInternal` `internal`. Every wire name SHALL be
+`ErrorCodeUnavailable` `unavailable`, `ErrorCodeRateLimited` `rate_limited` (too many requests for
+now; temporary, the caller may try again later) and `ErrorCodeInternal` `internal`. Every wire name SHALL be
 lower_snake. A consumer MAY build an `ErrorCodeT` from a lower_snake code of its own.
 
 #### Scenario: Code on the wire

@@ -11,6 +11,7 @@ const (
 	ErrorCodeUnauthorized  ErrorCodeT = "unauthorized"
 	ErrorCodeDeviceRefused ErrorCodeT = "device_refused"
 	ErrorCodeUnavailable   ErrorCodeT = "unavailable"
+	ErrorCodeRateLimited   ErrorCodeT = "rate_limited"
 	ErrorCodeInternal      ErrorCodeT = "internal"
 )
 
