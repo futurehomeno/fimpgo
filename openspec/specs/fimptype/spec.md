@@ -3,6 +3,7 @@
 ## Purpose
 The shared FIMP vocabulary (message, resource and value types, service and thing definitions), so
 every consumer writes the same wire values.
+
 ## Requirements
 ### Requirement: Wire values for message, resource and value types
 
@@ -82,4 +83,3 @@ lower_snake. A consumer MAY build an `ErrorCodeT` from a lower_snake code of its
 #### Scenario: Producer's own code
 - **WHEN** a producer sends `fimptype.ErrorCodeT("eco_mode")`
 - **THEN** the value on the wire is `eco_mode`
-
